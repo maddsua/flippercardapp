@@ -7,6 +7,10 @@ const props = defineProps<{
 	entries: CardNode[];
 }>();
 
+const emit = defineEmits<{
+	(e: 'end'): void;
+}>();
+
 const activeIdx = ref(0);
 const activeCard = computed(() => props.entries[activeIdx.value]);
 
@@ -16,9 +20,7 @@ const nextCard = () => {
 		return;
 	}
 
-	alert('End of the line!');
-
-	//	todo: show end screen
+	emit('end');
 };
 
 const prevCard = () => {
@@ -32,12 +34,16 @@ const prevCard = () => {
 </script>
 
 <template>
-	<Card :key="activeCard.id" :card="activeCard" @next="nextCard" @prev="prevCard" />
+	<div class="card-view">
+		<Card :key="activeCard.id" :card="activeCard" @next="nextCard" @prev="prevCard" />
+	</div>
 </template>
 
 <style lang="scss" scoped>
 	.card-view {
-		display: block;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
 		position: relative;
 		width: 100%;
 		height: 100%;

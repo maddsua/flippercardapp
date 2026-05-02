@@ -72,6 +72,8 @@ const handleDragDone = () => {
 	dragState.value = null;
 };
 
+//	todo: fix clicking
+
 </script>
 
 <template>

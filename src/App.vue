@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue';
 import CardView from './components/Cards/CardView.vue';
 
 import type { CardNode } from './components/Cards/content';
@@ -104,8 +105,18 @@ const cards: CardNode[] = [
 	}
 ];
 
+//	todo: setup proper endscreens
+
+const isEndscreen = ref(false);
+
 </script>
 
 <template>
-	<CardView :entries="cards" />
+	<CardView v-if="!isEndscreen" :entries="cards" @end="isEndscreen = true" />
+	<div v-else class="endscreen">
+		<p>
+			Endscreen
+		</p>
+		<button type="button" @click="isEndscreen = false">Start again?</button>
+	</div>
 </template>
