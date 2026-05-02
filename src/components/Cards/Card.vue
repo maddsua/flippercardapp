@@ -58,7 +58,8 @@ const handleDragUpdate = (event: PointerEvent) => {
 	dragState.value.y = clientY;
 };
 
-const relativeSwipeThreshold = 0.25;
+const relativeSwipeThresholdY = 0.25;
+const relativeSwipeThresholdX = 0.45;
 
 const handleDragDone = () => {
 
@@ -68,9 +69,9 @@ const handleDragDone = () => {
 
 		const delta = Math.abs(x) + Math.abs(y)
 	
-		if (Math.abs(y) > window.innerHeight * relativeSwipeThreshold) {
+		if (Math.abs(y) > window.innerHeight * relativeSwipeThresholdY) {
 			y > 1 ? emit('prev') : emit('next');
-		} else if (Math.abs(x) > window.innerWidth * relativeSwipeThreshold) {
+		} else if (Math.abs(x) > window.innerWidth * relativeSwipeThresholdX) {
 			flip();
 		} else if (delta < 1 && !dragState.value?.targetInteractive) {
 			flip();
