@@ -22,11 +22,15 @@ const dragState = ref<{
 	initY: number;
 	x: number;
 	y: number;
+	targetInteractive: boolean;
 } | null>(null);
 
+const dragDelta = computed(() => dragState.value ? ({ x: dragState.value.x - dragState.value.initX, y: dragState.value.y - dragState.value.initY }) : null);
+const dragging = computed(() => dragDelta.value ? Math.abs(dragDelta.value.x) + Math.abs(dragDelta.value.y) > 1 : false);
+
 const transformStyle = computed(() => ({
-	rotate: dragState.value ? `${((dragState.value.x - dragState.value.initX) / 100).toFixed(1)}deg` : `${randomRotate.value.toFixed(1)}deg`,
-	transform: dragState.value ? `translateX(${dragState.value.x - dragState.value.initX}px) translateY(${dragState.value.y - dragState.value.initY}px)` : undefined,
+	rotate: dragDelta.value && dragging.value ? `${((dragDelta.value.x) / 100).toFixed(1)}deg` : `${randomRotate.value.toFixed(1)}deg`,
+	transform: dragDelta.value ? `translateX(${dragDelta.value.x}px) translateY(${dragDelta.value.y}px)` : undefined,
 }));
 
 const handleDragStart = (event: PointerEvent) => {
@@ -38,6 +42,7 @@ const handleDragStart = (event: PointerEvent) => {
 		initY: clientY,
 		x: clientX,
 		y: clientY,
+		targetInteractive: !!(event.target as HTMLElement | undefined)?.closest('button, a, input, textarea'),
 	};
 };
 
@@ -53,31 +58,31 @@ const handleDragUpdate = (event: PointerEvent) => {
 	dragState.value.y = clientY;
 };
 
+const relativeSwipeThreshold = 0.25;
+
 const handleDragDone = () => {
 
-	if (!dragState.value) {
-		return;
-	}
+	if (dragDelta.value) {
 
-	const delta = dragState.value.initY - dragState.value.y;
+		const { x, y } = dragDelta.value;
 
-	if (Math.abs(delta) > 50) {
-		if (delta > 0) {
-			emit('next');
-		} else {
-			emit('prev');
+		const thresohld = window.innerHeight * relativeSwipeThreshold;
+		const delta = Math.abs(x) + Math.abs(y)
+	
+		if (Math.abs(y) > thresohld) {
+			y > 1 ? emit('prev') : emit('next');
+		} else if (delta < 1 && !dragState.value?.targetInteractive) {
+			flip();
 		}
 	}
 
 	dragState.value = null;
 };
 
-//	todo: fix clicking
-
 </script>
 
 <template>
-	<div class="card-container" :class="{ flipped, dragging: !!dragState }" :style="transformStyle" @pointerdown="handleDragStart" @pointermove="handleDragUpdate" @pointerup="handleDragDone" @pointercancel="handleDragDone" @pointerout="handleDragDone" @flip="flip">
+	<div class="card-container" :class="{ flipped, dragging }" :style="transformStyle" @pointerdown="handleDragStart" @pointermove="handleDragUpdate" @pointerup="handleDragDone" @pointercancel="handleDragDone" @pointerout="handleDragDone" @flip="flip">
 		<CardFace :entry="card.front" @flip="flip" @next="emit('next')" />
 		<CardFace :entry="card.back" @flip="flip" @next="emit('next')" />
 	</div>
@@ -103,6 +108,7 @@ const handleDragDone = () => {
 		}
 
 		&.dragging {
+			scale: 0.9;
 			transition: none;
 		}
 	}
