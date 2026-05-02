@@ -4,31 +4,16 @@ import CardPoll from './CardPoll.vue';
 import CardTextBox from './CardTextBox.vue';
 import CardTextNode from './CardTextNode.vue';
 import CardTitle from './CardTitle.vue';
-import type { CardSide, PollOption } from './content';
+import type { CardSideNode } from './content';
 
 const props = defineProps<{
-	entry: CardSide;
+	entry: CardSideNode;
 }>();
 
 const emit = defineEmits<{
 	(e: 'flip'): void;
 	(e: 'next'): void;
 }>();
-
-const handlePollOptionSelect = (opt: PollOption) => {
-	switch (opt.action) {
-		case 'fail':
-			//	todo: show as failed
-			break;
-		case 'fail-show':
-			//	todo: show as failed and flip
-			setTimeout(() => emit('flip'), 500);
-			break;
-		default:
-			emit('next');
-			break;
-	}
-};
 
 </script>
 
@@ -46,7 +31,7 @@ const handlePollOptionSelect = (opt: PollOption) => {
 					<br v-else-if="txtnode.type === 'newline'" />
 				</template>
 			</CardTextBox>
-			<CardPoll v-else-if="node.type === 'poll'" :entry="node" @select="handlePollOptionSelect" />
+			<CardPoll v-else-if="node.type === 'poll'" :entry="node" @flip="emit('flip')" @next="emit('next')" />
 		</template>
 	</CardBody>
 </template>

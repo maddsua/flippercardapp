@@ -24,20 +24,27 @@ export interface NewlineNode extends BaseNode {
 };
 
 export interface PollNode extends BaseNode {
-	type: 'poll'
+	type: 'poll';
+	is_quiz?: boolean;
 	content: PollOption[];
 };
 
 export interface PollOption {
 	value: string;
-	action?: 'next' | 'fail' | 'fail-show';
+	is_answer?: boolean;
 }
 
 //	todo: add images
 
 export type ContentNode = TitleNode | TextBoxNode | PollNode;
 
-export interface CardSide {
+export interface CardSideNode {
 	content: ContentNode[];
 	//	todo: add styling info
+};
+
+export interface CardNode {
+	id: string;
+	front: CardSideNode;
+	back: CardSideNode;
 };

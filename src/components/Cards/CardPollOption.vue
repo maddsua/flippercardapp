@@ -3,7 +3,8 @@ import { ref } from 'vue';
 import type { PollOption } from './content';
 
 const props = defineProps<{
-	entry: PollOption
+	entry: PollOption;
+	is_quiz?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -11,13 +12,16 @@ const emit = defineEmits<{
 }>();
 
 const wrong = ref(false);
+const right = ref(false);
 
 const handleSelect = () => {
 
-	const { action } = props.entry;
-
-	if (action === 'fail' || action === 'fail-show') {
-		wrong.value = true;
+	if (props.is_quiz) {
+		if (!props.entry.is_answer) {
+			wrong.value = true;
+		} else {
+			right.value = true;
+		}
 	}
 
 	emit('select');
@@ -29,7 +33,7 @@ const handleSelect = () => {
 </script>
 
 <template>
-	<button type="button" class="card-poll-option" :class="{ wrong }" @click.stop="handleSelect">
+	<button type="button" class="card-poll-option" :class="{ wrong, right }" @click.stop="handleSelect">
 		{{ entry.value }}
 	</button>
 </template>
@@ -55,6 +59,10 @@ const handleSelect = () => {
 			animation: horizontal-shaking 200ms 2;
 			background-color: red;
 			cursor: not-allowed;
+		}
+
+		&.right {
+			background-color: limegreen;
 		}
 	}
 
