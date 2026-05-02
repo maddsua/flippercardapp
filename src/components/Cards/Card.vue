@@ -29,8 +29,8 @@ const dragDelta = computed(() => dragState.value ? ({ x: dragState.value.x - dra
 const dragging = computed(() => dragDelta.value ? Math.abs(dragDelta.value.x) + Math.abs(dragDelta.value.y) > 1 : false);
 
 const transformStyle = computed(() => ({
-	rotate: dragDelta.value && dragging.value ? `${((dragDelta.value.x) / 100).toFixed(1)}deg` : `${randomRotate.value.toFixed(1)}deg`,
-	transform: dragDelta.value ? `translateX(${dragDelta.value.x}px) translateY(${dragDelta.value.y}px)` : undefined,
+	rotate: dragDelta.value && dragging.value ? `${((dragDelta.value.x) / 25).toFixed(1)}deg` : `${randomRotate.value.toFixed(1)}deg`,
+	transform: dragDelta.value ? `translateX(${dragDelta.value.x}px) translateY(${dragDelta.value.y}px) rotateY(${flipped.value ? 180 : 0}deg)` : undefined,
 }));
 
 const handleDragStart = (event: PointerEvent) => {
@@ -66,11 +66,12 @@ const handleDragDone = () => {
 
 		const { x, y } = dragDelta.value;
 
-		const thresohld = window.innerHeight * relativeSwipeThreshold;
 		const delta = Math.abs(x) + Math.abs(y)
 	
-		if (Math.abs(y) > thresohld) {
+		if (Math.abs(y) > window.innerHeight * relativeSwipeThreshold) {
 			y > 1 ? emit('prev') : emit('next');
+		} else if (Math.abs(x) > window.innerWidth * relativeSwipeThreshold) {
+			flip();
 		} else if (delta < 1 && !dragState.value?.targetInteractive) {
 			flip();
 		}
