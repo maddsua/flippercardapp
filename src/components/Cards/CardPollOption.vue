@@ -27,9 +27,6 @@ const handleSelect = () => {
 	emit('select');
 };
 
-
-//	todo: add additional styling
-
 </script>
 
 <template>
@@ -45,8 +42,8 @@ const handleSelect = () => {
 		max-width: 25rem;
 		font-weight: 600;
 		font-size: 1.125em;
-		color: white;
-		background-color: blue;
+		color: var(--app-color-white);
+		background-color: var(--app-accent-blue);
 		transition: all 150ms ease;
 
 		&:hover {
@@ -54,15 +51,19 @@ const handleSelect = () => {
 			transform: scale(1.025);
 		}
 
+		//	todo: add style overrides
+
 		&.wrong {
 			pointer-events: none;
 			animation: horizontal-shaking 200ms 2;
-			background-color: red;
+			color: var(--app-color-white);
+			background-color: var(--app-accent-red);
 			cursor: not-allowed;
 		}
 
 		&.right {
-			background-color: limegreen;
+			color: var(--app-color-white);
+			background-color: var(--app-accent-green);
 		}
 	}
 
