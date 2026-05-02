@@ -3,6 +3,7 @@ import { nextTick, reactive, ref } from 'vue';
 import type { CardNode } from './content';
 import Card from './Card.vue';
 import CardNavigation from './CardNavigation.vue';
+import CardDeckInfo from './CardDeckInfo.vue';
 
 const props = defineProps<{
 	entries: CardNode[];
@@ -147,6 +148,7 @@ const prevCard = () => {
 
 <template>
 	<div class="card-view">
+		<CardDeckInfo collectionName="Test collection" tagName="All" :size="entries.length" :index="activeIdx" />
 		<template v-for="(item,idx) of [pairState.a, pairState.b]" :key="`${idx}:${item?.card.id}`">
 			<div class="card-slot" :class="item?.flags">
 				<Card v-if="item" :key="item.card.id" :card="item.card" @next="nextCard" @prev="prevCard" />

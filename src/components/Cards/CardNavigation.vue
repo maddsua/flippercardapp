@@ -27,7 +27,7 @@ const emit = defineEmits<{
 		width: 100%;
 		display: flex;
 		justify-content: space-around;
-		z-index: 20;
+		z-index: 10;
 	}
 
 	button {
