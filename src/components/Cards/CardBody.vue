@@ -32,6 +32,18 @@
 		&:nth-child(2n) {
 			transform: rotateY(180deg);
 		}
+
+		&:not(:nth-child(2n))::before {
+			content: "?";
+			display: block;
+			font-size: 3.5em;
+			line-height: 1em;
+			position: absolute;
+			left: 0.65em;
+			top: 0.5em;
+			font-weight: 600;
+			color: orange;
+		}
 	}
 	.card-content {
 		display: flex;
