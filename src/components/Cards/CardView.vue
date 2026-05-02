@@ -2,6 +2,7 @@
 import { nextTick, reactive, ref } from 'vue';
 import type { CardNode } from './content';
 import Card from './Card.vue';
+import CardNavigation from './CardNavigation.vue';
 
 const props = defineProps<{
 	entries: CardNode[];
@@ -27,7 +28,9 @@ interface CardState {
 type SlideInDirection = 'from-top' | 'from-bottom';
 type SlideOutDirection = 'to-top' | 'to-bottom';
 
-const slideOut = (direction?: SlideInDirection): SlideOutDirection | undefined => direction === 'from-bottom' ? 'to-top' : direction === 'from-top' ? 'to-bottom' : undefined;
+const slideOut = (direction?: SlideInDirection): SlideOutDirection | undefined =>
+	direction === 'from-bottom' ? 'to-top' :
+		direction === 'from-top' ? 'to-bottom' : undefined;
 
 const newAnimatedState = (direction?: SlideInDirection): CardState => {
 
@@ -149,10 +152,7 @@ const prevCard = () => {
 				<Card v-if="item" :key="item.card.id" :card="item.card" @next="nextCard" @prev="prevCard" />
 			</div>
 		</template>
-		<div class="controls">
-			<button type="button" @click="prevCard">Prev</button>
-			<button type="button" @click="nextCard">Next</button>
-		</div>
+		<CardNavigation :has_prev="activeIdx > 0" :has_next="activeIdx < entries.length - 1" @prev="prevCard" @next="nextCard" />
 	</div>
 </template>
 
@@ -193,17 +193,6 @@ const prevCard = () => {
 			&.fade {
 				opacity: 0;
 			}
-		}
-
-		//	todo: rm
-		.controls {
-			position: absolute;
-			bottom: 0;
-			left: 0;
-			width: 100%;
-			display: flex;
-			justify-content: space-around;
-			z-index: 20;
 		}
 	}
 </style>
