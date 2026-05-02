@@ -3,6 +3,7 @@ import { ref } from 'vue';
 import CardView from './components/Cards/CardView.vue';
 
 import type { CardNode } from './components/Cards/content';
+import EndscreenView from './components/Endscreen/EndscreenView.vue';
 
 const cards: CardNode[] = [
 	{
@@ -113,10 +114,5 @@ const isEndscreen = ref(false);
 
 <template>
 	<CardView v-if="!isEndscreen" :entries="cards" @end="isEndscreen = true" />
-	<div v-else class="endscreen">
-		<p>
-			Endscreen
-		</p>
-		<button type="button" @click="isEndscreen = false">Start again?</button>
-	</div>
+	<EndscreenView collectionName="Test collection" :size="2" :correct="1" :time="30" v-else />
 </template>

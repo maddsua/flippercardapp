@@ -31,11 +31,17 @@ const emit = defineEmits<{
 	}
 
 	button {
+		display: block;
+		border-radius: 0.5rem;
+		border: 1px solid transparent;
 		width: 5rem;
 		height: 3rem;
+		background-color: var(--app-color-dark-grey);
 		background-size: 2rem;
 		background-position: center;
 		background-repeat: no-repeat;
+		cursor: pointer;
+		transition: border-color 0.25s;
 
 		&.prev {
 			background-image: url(/src/assets/icons/arrow-right-mask.svg);
@@ -55,6 +61,15 @@ const emit = defineEmits<{
 			cursor: pointer;
 			pointer-events: none;
 			opacity: 0.5;
+		}
+
+		&:hover {
+			cursor: pointer;
+			border-color: var(--app-accent-blue);
+		}
+
+		&:focus, &:focus-visible {
+			outline: 4px auto -webkit-focus-ring-color;
 		}
 	}
 </style>

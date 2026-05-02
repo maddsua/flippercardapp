@@ -30,25 +30,34 @@ const handleSelect = () => {
 </script>
 
 <template>
-	<button type="button" class="card-poll-option" :class="{ wrong, right }" @click.stop="handleSelect">
+	<button type="button" :class="{ wrong, right }" @click.stop="handleSelect">
 		{{ entry.value }}
 	</button>
 </template>
 
 <style lang="scss" scoped>
-	.card-poll-option {
+	button {
 		display: block;
 		width: 100%;
 		max-width: 25rem;
 		font-weight: 600;
 		font-size: 1.125em;
+		font-weight: 500;
+		border-radius: 0.5rem;
+		border: 1px solid transparent;
+		padding: 0.6rem 1.2rem;
 		color: var(--app-color-white);
-		background-color: var(--app-accent-blue);
+		background-color: var(--app-accent-dark-blue);
 		transition: all 150ms ease;
 
 		&:hover {
 			cursor: pointer;
 			transform: scale(1.025);
+			border-color: var(--app-accent-blue);
+		}
+
+		&:focus, &:focus-visible {
+			outline: 4px auto -webkit-focus-ring-color;
 		}
 
 		//	todo: add style overrides
