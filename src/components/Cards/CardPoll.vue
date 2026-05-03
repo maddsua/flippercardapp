@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import CardPollOption from './CardPollOption.vue';
-import type { PollNode, PollOption } from './content';
+import type { ElementTheme, PollNode, PollOption } from './content';
 
 const props = defineProps<{
 	entry: PollNode;
+	theme?: ElementTheme;
 }>();
 
 const emit = defineEmits<{
@@ -44,7 +45,7 @@ const handleOptionSelect = (opt: PollOption) => {
 
 <template>
 	<div class="card-poll">
-		<CardPollOption v-for="option of entry.content" :entry="option" :is_quiz="props.entry.is_quiz" @select="handleOptionSelect(option)" />
+		<CardPollOption v-for="option of entry.content" :entry="option" :is_quiz="props.entry.is_quiz" :theme="theme" @select="handleOptionSelect(option)" />
 	</div>
 </template>
 

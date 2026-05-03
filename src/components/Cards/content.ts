@@ -40,8 +40,22 @@ export type ContentNode = TitleNode | TextBoxNode | PollNode;
 
 export interface CardSideNode {
 	content: ContentNode[];
-	//	todo: add styling info
+	theme?: CardNodeTheme;
 };
+
+export interface ElementTheme {
+	fill_color?: string;
+	mask_color?: string;
+}
+
+export interface CardFaceTheme extends ElementTheme {
+	outline_color?: string;
+};
+
+export interface CardNodeTheme {
+	card: CardFaceTheme;
+	interactives?: ElementTheme;
+}
 
 export interface CardNode {
 	id: string;

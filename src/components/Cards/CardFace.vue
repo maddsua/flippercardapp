@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import CardBody from './CardBody.vue';
+import CardCanvas from './CardCanvas.vue';
 import CardPoll from './CardPoll.vue';
 import CardTextBox from './CardTextBox.vue';
 import CardTextNode from './CardTextNode.vue';
@@ -19,7 +19,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-	<CardBody>
+	<CardCanvas :theme="entry.theme?.card">
 		<template v-for="node of entry.content">
 			<CardTitle v-if="node.type === 'title'">
 				{{ node.content }}
@@ -32,7 +32,7 @@ const emit = defineEmits<{
 					<br v-else-if="txtnode.type === 'newline'" />
 				</template>
 			</CardTextBox>
-			<CardPoll v-else-if="node.type === 'poll'" :entry="node" @score="(score) => emit('score', score)" @flip="emit('flip')" @next="emit('next')" />
+			<CardPoll v-else-if="node.type === 'poll'" :entry="node" :theme="entry.theme?.interactives" @score="(score) => emit('score', score)" @flip="emit('flip')" @next="emit('next')" />
 		</template>
-	</CardBody>
+	</CardCanvas>
 </template>

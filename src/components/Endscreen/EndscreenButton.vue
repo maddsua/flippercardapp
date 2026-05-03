@@ -32,7 +32,7 @@ const props = defineProps<{
 		background-color: var(--app-color-blueish-dark);
 		outline: none;
 		transition: all 200ms ease;
-		color: var(--app-color-white);
+		color: var(--app-theme-snow-white);
 
 		&.filled {
 			background-color: var(--app-accent-blue);

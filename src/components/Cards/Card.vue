@@ -102,8 +102,6 @@ const emitScore = (score: number) => {
 
 <style lang="scss" scoped>
 	.card-container {
-		//	todo: research
-		//	font-size: clamp(2rem, 5vw, 5rem);
 		position: relative;
 		width: 100%;
 		padding-bottom: 150%;

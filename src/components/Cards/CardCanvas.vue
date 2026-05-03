@@ -1,6 +1,16 @@
+<script setup lang="ts">
+import type { CardFaceTheme } from './content';
+
+const props = defineProps<{
+	theme?: CardFaceTheme;
+}>();
+
+</script>
+
 <template>
-	<div class="card-body">
-		<div class="card-content">
+	<div class="card-canvas" :style="{ color: theme?.mask_color }">
+		<div class="card-decoration"></div>
+		<div class="card-content" :style="{ backgroundColor: theme?.fill_color, borderColor: theme?.fill_color || theme?.outline_color, color: theme?.mask_color }">
 			<slot>
 				[Card content]
 			</slot>
@@ -9,7 +19,7 @@
 </template>
 
 <style lang="scss" scoped>
-	.card-body {
+	.card-canvas {
 		position: absolute;
 		top: 0;
 		bottom: 0;
@@ -18,7 +28,8 @@
 		flex-direction: column;
 		width: 100%;
 		height: 100%;
-		background-color: white;
+		color: var(--app-accent-orange);
+		background-color: var(--app-theme-snow-white);
 		border-radius: 2rem;
 		padding: 1rem;
 		
@@ -33,6 +44,7 @@
 			transform: rotateY(180deg);
 		}
 
+		//	todo: connect
 		&:not(:nth-child(2n))::before {
 			content: "?";
 			display: block;
@@ -42,18 +54,19 @@
 			left: 2.65rem;
 			top: 3.25rem;
 			font-weight: 600;
-			color: orange;
+			color: inherit;
 		}
 	}
+
 	.card-content {
 		display: flex;
 		flex-direction: column;
 		gap: 2rem;
 		align-items: center;
 		flex-grow: 1;
-		border: 3px solid orange;
+		border: 3px solid var(--app-accent-orange);
 		border-radius: 1.5rem;
 		padding: 2rem;
-		color: black;
+		color: var(--app-theme-midnight);
 	}
 </style>

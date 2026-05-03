@@ -4,6 +4,16 @@ export const exampleDeck: CardNode[] = [
 	{
 		id: 'geo-1',
 		front: {
+			theme: {
+				card: {
+					fill_color: 'var(--app-theme-sapphire)',
+					mask_color: 'var(--app-theme-snow-white)',
+				},
+				interactives: {
+					fill_color: 'var(--app-theme-snow-white)',
+					mask_color: 'var(--app-theme-midnight)',
+				}
+			},
 			content: [
 				{
 					type: 'title',
@@ -37,6 +47,11 @@ export const exampleDeck: CardNode[] = [
 			]
 		},
 		back: {
+			theme: {
+				card: {
+					outline_color: 'var(--app-theme-sapphire)',
+				}	
+			},
 			content: [
 				{
 					type: 'textbox',
@@ -53,6 +68,16 @@ export const exampleDeck: CardNode[] = [
 	{
 		id: 'tur-1',
 		front: {
+			theme: {
+				card: {
+					fill_color: 'var(--app-accent-orange)',
+					mask_color: 'var(--app-theme-snow-white)',
+				},
+				interactives: {
+					fill_color: 'var(--app-theme-snow-white)',
+					mask_color: 'var(--app-accent-orange)',
+				}
+			},
 			content: [
 				{
 					type: 'title',

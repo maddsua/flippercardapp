@@ -59,7 +59,7 @@
 
 		h1 {
 			font-size: 2.25rem;
-			color: var(--app-color-white);
+			color: var(--app-theme-snow-white);
 		}
 
 		h2 {

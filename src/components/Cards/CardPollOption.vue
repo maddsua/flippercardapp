@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import type { PollOption } from './content';
+import type { ElementTheme, PollOption } from './content';
 
 const props = defineProps<{
 	entry: PollOption;
 	is_quiz?: boolean;
+	theme?: ElementTheme;
 }>();
 
 const emit = defineEmits<{
@@ -30,7 +31,7 @@ const handleSelect = () => {
 </script>
 
 <template>
-	<button type="button" :class="{ wrong, right }" @click.stop="handleSelect">
+	<button type="button" :class="{ wrong, right }" :style="{ backgroundColor: theme?.fill_color, color: theme?.mask_color }" @click.stop="handleSelect">
 		{{ entry.value }}
 	</button>
 </template>
@@ -44,35 +45,29 @@ const handleSelect = () => {
 		font-size: 1.125rem;
 		font-weight: 500;
 		border-radius: 0.5rem;
-		border: 1px solid transparent;
 		padding: 0.6rem 1.2rem;
-		color: var(--app-color-white);
+		color: var(--app-theme-snow-white);
 		background-color: var(--app-accent-dark-blue);
 		transition: all 150ms ease;
+		outline: none;
+		border: none;
 
 		&:hover {
 			cursor: pointer;
 			transform: scale(1.025);
-			border-color: var(--app-accent-blue);
 		}
-
-		&:focus, &:focus-visible {
-			outline: 4px auto -webkit-focus-ring-color;
-		}
-
-		//	todo: add style overrides
 
 		&.wrong {
 			pointer-events: none;
-			animation: horizontal-shaking 200ms 2;
-			color: var(--app-color-white);
-			background-color: var(--app-accent-red);
 			cursor: not-allowed;
+			animation: horizontal-shaking 200ms 2;
+			color: var(--app-theme-snow-white) !important;
+			background-color: var(--app-accent-red) !important;
 		}
 
 		&.right {
-			color: var(--app-color-white);
-			background-color: var(--app-accent-green);
+			color: var(--app-theme-snow-white) !important;
+			background-color: var(--app-accent-green) !important;
 		}
 	}
 
