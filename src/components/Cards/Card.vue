@@ -10,6 +10,7 @@ const props = defineProps<{
 const emit = defineEmits<{
 	(e: 'prev'): void;
 	(e: 'next'): void;
+	(e: 'score', score: number): void;
 }>();
 
 const flipped = ref(false);
@@ -81,12 +82,21 @@ const handleDragDone = () => {
 	dragState.value = null;
 };
 
+// 	allow only one score to be emitted per-card
+let scoreEmitted = false;
+const emitScore = (score: number) => {
+	if (!scoreEmitted) {
+		scoreEmitted=true;
+		emit('score', score);
+	}
+};
+
 </script>
 
 <template>
 	<div class="card-container" :class="{ flipped, dragging }" :style="transformStyle" @pointerdown="handleDragStart" @pointermove="handleDragUpdate" @pointerup="handleDragDone" @pointercancel="handleDragDone" @pointerout="handleDragDone" @flip="flip">
-		<CardFace :entry="card.front" @flip="flip" @next="emit('next')" />
-		<CardFace :entry="card.back" @flip="flip" @next="emit('next')" />
+		<CardFace :entry="card.front" @flip="flip" @score="emitScore" @next="emit('next')" />
+		<CardFace :entry="card.back" @flip="flip" @score="emitScore" @next="emit('next')" />
 	</div>
 </template>
 

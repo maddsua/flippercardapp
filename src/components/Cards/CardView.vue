@@ -6,11 +6,13 @@ import CardNavigation from './CardNavigation.vue';
 import CardDeckInfo from './CardDeckInfo.vue';
 
 const props = defineProps<{
+	labels: string[];
 	entries: CardNode[];
 }>();
 
 const emit = defineEmits<{
 	(e: 'end'): void;
+	(e: 'score', score: number): void;
 }>();
 
 const activeIdx = ref(0);
@@ -148,10 +150,10 @@ const prevCard = () => {
 
 <template>
 	<div class="card-view">
-		<CardDeckInfo :labels="['Test collection', 'All decks']" :size="entries.length" :index="activeIdx" />
+		<CardDeckInfo :labels="labels" :size="entries.length" :index="activeIdx" />
 		<template v-for="(item,idx) of [pairState.a, pairState.b]" :key="`${idx}:${item?.card.id}`">
 			<div class="card-slot" :class="item?.flags">
-				<Card v-if="item" :key="item.card.id" :card="item.card" @next="nextCard" @prev="prevCard" />
+				<Card v-if="item" :key="item.card.id" :card="item.card" @score="(score) => emit('score', score)" @next="nextCard" @prev="prevCard" />
 			</div>
 		</template>
 		<CardNavigation :has_prev="activeIdx > 0" :has_next="activeIdx < entries.length - 1" @prev="prevCard" @next="nextCard" />

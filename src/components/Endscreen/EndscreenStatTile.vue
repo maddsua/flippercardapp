@@ -2,9 +2,6 @@
 const props = defineProps<{
 	icon?: 'time' | 'target' | 'prize';
 }>();
-
-//	todo: add /value
-
 </script>
 
 <template>

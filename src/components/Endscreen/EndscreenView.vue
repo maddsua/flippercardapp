@@ -7,26 +7,35 @@ import EndscreenActions from './EndscreenActions.vue';
 import EndscreenButton from './EndscreenButton.vue';
 import EndscreenHeader from './EndscreenHeader.vue';
 
-const props = defineProps<{
-	collectionName: string;
-	tagName?: string;
-	size: number;
-	correct: number;
+interface DeckStats {
+	questions: number;
+	score: number;
 	time: number;
+}
+
+const props = defineProps<{
+	stats: DeckStats;
 }>();
 
-//	todo: calc
-const time = computed(() => '4:32');
+const emit = defineEmits<{
+	(e: 'navigate', target: 'home' | 'try_again'): void;
+}>();
 
-//	todo: style buttons
+const scoreRate = computed(() => props.stats.score / props.stats.questions);
 
-//	todo: add events
+const time = computed(() => {
 
-//	todo: style stats
+	const { time } = props.stats;
 
-//	todo: wrap the whole thing int a card
+	const mins = Math.floor(time / 60);
+	if (mins > 60) {
+		return "1hr+";
+	}
 
-//	todo: make reactive
+	const secs = time - (mins * 60);
+
+	return `${mins}:${secs.toString().padStart(2, '0')}`;
+});
 
 </script>
 
@@ -36,19 +45,39 @@ const time = computed(() => '4:32');
 
 			<EndscreenHeader>
 				<template v-slot:summary>
-					Good job!
+
+					<template v-if="scoreRate > 0.95">
+						You've nailed it!
+					</template>
+
+					<template v-else-if="scoreRate > 0.75">
+						Good job!
+					</template>
+
+					<template v-else-if="scoreRate > 0.6">
+						Hey, not bad!
+					</template>
+
+					<template v-else-if="scoreRate > 0.3">
+						You could do better!
+					</template>
+
+					<template v-else>
+						Better luck next time!
+					</template>
+
 				</template>
 			</EndscreenHeader>
 
-			<EndscreenScore :score="correct/size" />
+			<EndscreenScore :rate="scoreRate" />
 			<EndscreenStats>
 				<EndscreenStatTile icon="target">
 					<template v-slot:title>
 						Correct
 					</template>
-					{{ correct }}
+					{{ stats.score }}
 					<template v-slot:after>
-						/{{ size }}
+						/{{ stats.questions }}
 					</template>
 				</EndscreenStatTile>
 				<EndscreenStatTile icon="time">
@@ -62,14 +91,14 @@ const time = computed(() => '4:32');
 						Accuracy
 					</template>
 
-					{{ (correct/size)*100 }}%
+					{{ scoreRate*100 }}%
 				</EndscreenStatTile>
 			</EndscreenStats>
 			<EndscreenActions>
-				<EndscreenButton icon="retry" :filled="true">
+				<EndscreenButton icon="retry" :filled="true" @click="emit('navigate', 'try_again')">
 					Try again
 				</EndscreenButton>
-				<EndscreenButton icon="home">
+				<EndscreenButton icon="home" @click="emit('navigate', 'home')">
 					Home
 				</EndscreenButton>
 			</EndscreenActions>

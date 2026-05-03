@@ -13,6 +13,7 @@ const props = defineProps<{
 const emit = defineEmits<{
 	(e: 'flip'): void;
 	(e: 'next'): void;
+	(e: 'score', score: number): void;
 }>();
 
 </script>
@@ -31,7 +32,7 @@ const emit = defineEmits<{
 					<br v-else-if="txtnode.type === 'newline'" />
 				</template>
 			</CardTextBox>
-			<CardPoll v-else-if="node.type === 'poll'" :entry="node" @flip="emit('flip')" @next="emit('next')" />
+			<CardPoll v-else-if="node.type === 'poll'" :entry="node" @score="(score) => emit('score', score)" @flip="emit('flip')" @next="emit('next')" />
 		</template>
 	</CardBody>
 </template>

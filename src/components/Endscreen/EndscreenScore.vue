@@ -2,10 +2,10 @@
 import { computed } from 'vue';
 
 const props = defineProps<{
-	score: number;
+	rate: number;
 }>();
 
-const score = computed(() => props.score > 1 ? 100 : props.score < 0 ? 0 : props.score * 100);
+const percentage = computed(() => props.rate > 1 ? 100 : props.rate < 0 ? 0 : props.rate * 100);
 
 </script>
 
@@ -16,11 +16,11 @@ const score = computed(() => props.score > 1 ? 100 : props.score < 0 ? 0 : props
 				Your score
 			</div>
 			<div class="score">
-				{{ score.toFixed(0) }}%
+				{{ percentage.toFixed(0) }}%
 			</div>
 		</div>
 		<div class="progress">
-			<div class="fill" :class="{ red: score < 30, orange: score < 60 }" :style="{ width: `${score}%` }"></div>
+			<div class="fill" :class="{ red: rate < 0.3, orange: rate < 0.6 }" :style="{ width: `${percentage}%` }"></div>
 		</div>
 	</div>
 </template>

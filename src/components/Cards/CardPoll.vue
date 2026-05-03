@@ -9,6 +9,7 @@ const props = defineProps<{
 const emit = defineEmits<{
 	(e: 'flip'): void;
 	(e: 'next'): void;
+	(e: 'score', score: number): void;
 }>();
 
 let wrongQuizTakes = 0;
@@ -22,9 +23,12 @@ const handleOptionSelect = (opt: PollOption) => {
 
 	if (!opt.is_answer) {
 		wrongQuizTakes++;
+		emit('score', 0);
 	}
 
 	if (opt.is_answer) {
+
+		emit('score', 1);
 
 		if (wrongQuizTakes === 0) {
 			setTimeout(() => emit('next'), 300);
