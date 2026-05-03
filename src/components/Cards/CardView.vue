@@ -148,7 +148,7 @@ const prevCard = () => {
 
 <template>
 	<div class="card-view">
-		<CardDeckInfo collectionName="Test collection" tagName="All" :size="entries.length" :index="activeIdx" />
+		<CardDeckInfo :labels="['Test collection', 'All decks']" :size="entries.length" :index="activeIdx" />
 		<template v-for="(item,idx) of [pairState.a, pairState.b]" :key="`${idx}:${item?.card.id}`">
 			<div class="card-slot" :class="item?.flags">
 				<Card v-if="item" :key="item.card.id" :card="item.card" @next="nextCard" @prev="prevCard" />

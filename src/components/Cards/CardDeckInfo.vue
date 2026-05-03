@@ -1,8 +1,7 @@
 <script setup lang="ts">
 
 const props = defineProps<{
-	collectionName: string;
-	tagName?: string;
+	labels: string[]
 	size: number;
 	index: number;
 }>();
@@ -15,13 +14,13 @@ const props = defineProps<{
 			<div v-for="idx of size" class="marker" :class="{ filled: idx <= index + 1 }"></div>
 		</div>
 		<div class="summary">
-			<span class="collection">
-				{{ collectionName }}
-			</span>
-			<template v-if="tagName">
-				<hr />
-				<span class="tag">
-					{{ tagName }}
+
+			<template v-for="(item, idx) of labels">
+				<template v-if="idx > 0">
+					<hr />
+				</template>
+				<span>
+					{{ item }}
 				</span>
 			</template>
 		</div>
