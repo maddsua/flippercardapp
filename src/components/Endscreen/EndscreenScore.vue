@@ -16,7 +16,7 @@ const percentage = computed(() => props.rate > 1 ? 100 : props.rate < 0 ? 0 : pr
 				Your score
 			</div>
 			<div class="score">
-				{{ percentage.toFixed(0) }}%
+				{{ Math.floor(percentage) }}%
 			</div>
 		</div>
 		<div class="progress">

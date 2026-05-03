@@ -91,7 +91,7 @@ const time = computed(() => {
 						Accuracy
 					</template>
 
-					{{ scoreRate*100 }}%
+					{{ Math.floor(scoreRate*100) }}%
 				</EndscreenStatTile>
 			</EndscreenStats>
 			<EndscreenActions>
