@@ -20,7 +20,7 @@
 	header {
 		display: flex;
 		flex-direction: column;
-		gap: 2rem;
+		gap: 3rem;
 		align-items: center;
 
 		.prize-icon {
@@ -46,7 +46,7 @@
 		.headline {
 			display: flex;
 			flex-direction: column;
-			gap: 1rem;
+			gap: 2rem;
 			align-items: center;
 		}
 
@@ -58,7 +58,7 @@
 		}
 
 		h1 {
-			font-size: 2.5rem;
+			font-size: 2.25rem;
 			color: var(--app-color-white);
 		}
 
