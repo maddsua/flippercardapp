@@ -41,7 +41,7 @@ const handleSelect = () => {
 		width: 100%;
 		max-width: 25rem;
 		font-weight: 600;
-		font-size: 1.125em;
+		font-size: 1.125rem;
 		font-weight: 500;
 		border-radius: 0.5rem;
 		border: 1px solid transparent;

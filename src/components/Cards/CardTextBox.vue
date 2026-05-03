@@ -16,7 +16,8 @@
 
 	.card-text-box {
 		display: inline-block;
-		font-size: 1.5em;
+		width: 100%;
+		container-type: inline-size;
 	}
 
 </style>

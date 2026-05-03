@@ -13,5 +13,7 @@
 <style lang="scss" scoped>
 	.card-text-node {
 		display: inline;
+		font-size: 7.5cqw;
+		line-height: 1.5em;
 	}
 </style>

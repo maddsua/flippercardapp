@@ -51,7 +51,7 @@
 		}
 
 		h1, h2 {
-			line-height: 1em;
+			line-height: 1rem;
 			margin: 0;
 			padding: 0;
 			font-weight: 500;
