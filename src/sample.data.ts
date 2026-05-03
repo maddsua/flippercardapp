@@ -70,12 +70,12 @@ export const exampleDeck: CardNode[] = [
 		front: {
 			theme: {
 				card: {
-					fill_color: 'var(--app-accent-orange)',
+					fill_color: 'var(--app-theme-spooky-orange)',
 					mask_color: 'var(--app-theme-snow-white)',
 				},
 				interactives: {
 					fill_color: 'var(--app-theme-snow-white)',
-					mask_color: 'var(--app-accent-orange)',
+					mask_color: 'var(--app-theme-spooky-orange)',
 				}
 			},
 			content: [

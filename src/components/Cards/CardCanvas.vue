@@ -28,7 +28,7 @@ const props = defineProps<{
 		flex-direction: column;
 		width: 100%;
 		height: 100%;
-		color: var(--app-accent-orange);
+		color: var(--app-theme-spooky-orange);
 		background-color: var(--app-theme-snow-white);
 		border-radius: 2rem;
 		padding: 1rem;
@@ -64,7 +64,7 @@ const props = defineProps<{
 		gap: 2rem;
 		align-items: center;
 		flex-grow: 1;
-		border: 3px solid var(--app-accent-orange);
+		border: 3px solid var(--app-theme-spooky-orange);
 		border-radius: 1.5rem;
 		padding: 2rem;
 		color: var(--app-theme-midnight);

@@ -64,7 +64,7 @@
 
 		h2 {
 			font-size: 1.75rem;
-			color: var(--app-accent-light-blue);
+			color: var(--app-theme-deep-lavender);
 		}
 	}
 </style>

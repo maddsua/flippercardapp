@@ -38,7 +38,7 @@ const percentage = computed(() => props.rate > 1 ? 100 : props.rate < 0 ? 0 : pr
 			gap: 1rem;
 
 			.title {
-				color: var(--app-color-light-grey);
+				color: var(--app-theme-mysterious-white);
 			}
 
 			.score {
@@ -51,18 +51,18 @@ const percentage = computed(() => props.rate > 1 ? 100 : props.rate < 0 ? 0 : pr
 			height: 0.75rem;
 			overflow: hidden;
 			border-radius: 1rem;
-			background-color: var(--app-color-blueish-dark);
+			background-color: var(--app-theme-midnight-glow);
 
 			.fill {
-				background-color: var(--app-accent-blue);
+				background-color: var(--app-theme-sky-blue);
 				height: 100%;
 
 				&.red {
-					background-color: var(--app-accent-red);
+					background-color: var(--app-theme-blood-red);
 				}
 
 				&.orange {
-					background-color: var(--app-accent-orange);
+					background-color: var(--app-theme-spooky-orange);
 				}
 			}
 		}

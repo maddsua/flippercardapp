@@ -29,13 +29,13 @@ const props = defineProps<{
 		flex-grow: 1;
 		border: 1px solid transparent;
 		border-radius: 0.75rem;
-		background-color: var(--app-color-blueish-dark);
+		background-color: var(--app-theme-midnight-glow);
 		outline: none;
 		transition: all 200ms ease;
 		color: var(--app-theme-snow-white);
 
 		&.filled {
-			background-color: var(--app-accent-blue);
+			background-color: var(--app-theme-sky-blue);
 		}
 
 		.icon {
@@ -58,7 +58,7 @@ const props = defineProps<{
 
 		&:hover {
 			cursor: pointer;
-			background-color: var(--app-accent-light-blue);
+			background-color: var(--app-theme-deep-lavender);
 		}
 	}
 </style>

@@ -33,7 +33,7 @@ const props = defineProps<{
 		flex-direction: column;
 		gap: 0.5rem;
 		padding: 0.5rem;
-		background-color: var(--app-color-blueish-dark);
+		background-color: var(--app-theme-midnight-glow);
 		border-radius: 0.5rem;
 		min-width: 0;
 
@@ -71,7 +71,7 @@ const props = defineProps<{
 
 			.title {
 				font-size: 0.85rem;
-				color: var(--app-color-light-grey);
+				color: var(--app-theme-mysterious-white);
 				overflow: hidden;
 				white-space: nowrap;
 				text-overflow: ellipsis;

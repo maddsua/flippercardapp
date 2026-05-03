@@ -47,7 +47,7 @@ const handleSelect = () => {
 		border-radius: 0.5rem;
 		padding: 0.6rem 1.2rem;
 		color: var(--app-theme-snow-white);
-		background-color: var(--app-accent-dark-blue);
+		background-color: var(--app-theme-sky-blue);
 		transition: all 150ms ease;
 		outline: none;
 		border: none;
@@ -55,6 +55,7 @@ const handleSelect = () => {
 		&:hover {
 			cursor: pointer;
 			transform: scale(1.025);
+			background-color: var(--app-theme-deep-lavender);
 		}
 
 		&.wrong {
@@ -62,12 +63,12 @@ const handleSelect = () => {
 			cursor: not-allowed;
 			animation: horizontal-shaking 200ms 2;
 			color: var(--app-theme-snow-white) !important;
-			background-color: var(--app-accent-red) !important;
+			background-color: var(--app-theme-blood-red) !important;
 		}
 
 		&.right {
 			color: var(--app-theme-snow-white) !important;
-			background-color: var(--app-accent-green) !important;
+			background-color: var(--app-theme-irish-green) !important;
 		}
 	}
 

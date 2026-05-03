@@ -36,7 +36,7 @@ const emit = defineEmits<{
 		border: 1px solid transparent;
 		width: 5rem;
 		height: 3rem;
-		background-color: var(--app-color-dark-grey);
+		background-color: var(--app-theme-ghostly-glow);
 		background-size: 2rem;
 		background-position: center;
 		background-repeat: no-repeat;
@@ -65,7 +65,7 @@ const emit = defineEmits<{
 
 		&:hover {
 			cursor: pointer;
-			border-color: var(--app-accent-blue);
+			border-color: var(--app-theme-sky-blue);
 		}
 
 		&:focus, &:focus-visible {
