@@ -15,6 +15,7 @@ const emit = defineEmits<{
 
 const flipped = ref(false);
 const randomRotate = computed(() => (Math.random() - 0.5) * 6);
+const containerRef = ref<HTMLElement | null>(null);
 
 const flip = () => flipped.value = !flipped.value;
 
@@ -41,28 +42,8 @@ const transformStyle = computed(() => ({
 	transform: dragDelta.value ? `translateX(${dragDelta.value.x}px) translateY(${dragDelta.value.y}px) rotateY(${flipped.value ? 180 : 0}deg)` : undefined,
 }));
 
-const pointerID = (event: PointerEvent): number | null => {
-	if (event.pointerId > 0) {
-		return event.pointerId
-	}
-	return null;
-};
-
-const capturePointer = (event: PointerEvent) => {
-	const target = event.target as HTMLElement;
-	const ptrID = pointerID(event);
-	if (ptrID) {
-		target.setPointerCapture(ptrID);
-	}
-};
-
-const releasePointerCapture = (event: PointerEvent) => {
-	const target = event.target as HTMLElement;
-	const ptrID = pointerID(event);
-	if (ptrID) {
-		target.releasePointerCapture(ptrID);
-	}
-};
+const capturePointer = ({ pointerId }: PointerEvent) => pointerId > 0 ? containerRef.value?.setPointerCapture(pointerId) : undefined;
+const releasePointerCapture = ({ pointerId }: PointerEvent) => pointerId > 0 ? containerRef.value?.releasePointerCapture(pointerId) : undefined;
 
 const handleDragStart = (event: PointerEvent) => {
 
@@ -140,7 +121,7 @@ const handleDragDone = (event?: PointerEvent) => {
 </script>
 
 <template>
-	<div class="card-container" :class="{ flipped, dragging }" :style="transformStyle" @pointerdown="handleDragStart" @pointermove="handleDragUpdate" @pointerup="handleDragDone" @pointercancel="handleDragDone">
+	<div class="card-container" :class="{ flipped, dragging }" :style="transformStyle" @pointerdown="handleDragStart" @pointermove="handleDragUpdate" @pointerup="handleDragDone" @pointercancel="handleDragDone" ref="containerRef">
 		<CardFace :entry="card.front" @flip="flip" @score="(score) => emit('score', score)" @next="emit('next')" />
 		<CardFace :entry="card.back" @flip="flip" @score="(score) => emit('score', score)" @next="emit('next')" />
 	</div>
