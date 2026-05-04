@@ -146,6 +146,19 @@ const prevCard = () => {
 	}
 };
 
+const scoreSet = new Set<string>();
+const countScore = (score: number) => {
+
+	const key = props.entries[activeIdx.value].id;
+
+	if (scoreSet.has(key)) {
+		return;
+	}
+
+	scoreSet.add(key);
+	emit('score', score);
+};
+
 </script>
 
 <template>
@@ -153,7 +166,7 @@ const prevCard = () => {
 		<CardDeckInfo :labels="labels" :size="entries.length" :index="activeIdx" />
 		<template v-for="(item,idx) of [pairState.a, pairState.b]" :key="`${idx}:${item?.card.id}`">
 			<div class="card-slot" :class="item?.flags">
-				<Card v-if="item" :key="item.card.id" :card="item.card" @score="(score) => emit('score', score)" @next="nextCard" @prev="prevCard" />
+				<Card v-if="item" :key="item.card.id" :card="item.card" @score="countScore" @next="nextCard" @prev="prevCard" />
 			</div>
 		</template>
 		<CardNavigation :has_prev="activeIdx > 0" :has_next="activeIdx < entries.length - 1" @prev="prevCard" @next="nextCard" />

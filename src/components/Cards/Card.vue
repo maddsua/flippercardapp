@@ -82,21 +82,12 @@ const handleDragDone = () => {
 	dragState.value = null;
 };
 
-// 	allow only one score to be emitted per-card
-let scoreEmitted = false;
-const emitScore = (score: number) => {
-	if (!scoreEmitted) {
-		scoreEmitted=true;
-		emit('score', score);
-	}
-};
-
 </script>
 
 <template>
 	<div class="card-container" :class="{ flipped, dragging }" :style="transformStyle" @pointerdown="handleDragStart" @pointermove="handleDragUpdate" @pointerup="handleDragDone" @pointercancel="handleDragDone" @pointerout="handleDragDone" @flip="flip">
-		<CardFace :entry="card.front" @flip="flip" @score="emitScore" @next="emit('next')" />
-		<CardFace :entry="card.back" @flip="flip" @score="emitScore" @next="emit('next')" />
+		<CardFace :entry="card.front" @flip="flip" @score="(score) => emit('score', score)" @next="emit('next')" />
+		<CardFace :entry="card.back" @flip="flip" @score="(score) => emit('score', score)" @next="emit('next')" />
 	</div>
 </template>
 
