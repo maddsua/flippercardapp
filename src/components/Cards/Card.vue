@@ -33,14 +33,27 @@ const transformStyle = computed(() => ({
 	transform: dragDelta.value ? `translateX(${dragDelta.value.x}px) translateY(${dragDelta.value.y}px) rotateY(${flipped.value ? 180 : 0}deg)` : undefined,
 }));
 
+const pointerID = (event: PointerEvent): number | null => {
+	if (event.pointerId > 0) {
+		return event.pointerId
+	}
+	return null;
+};
+
 const capturePointer = (event: PointerEvent) => {
 	const target = event.target as HTMLElement;
-	target.setPointerCapture(event.pointerId);
+	const ptrID = pointerID(event);
+	if (ptrID) {
+		target.setPointerCapture(ptrID);
+	}
 };
 
 const releasePointerCapture = (event: PointerEvent) => {
 	const target = event.target as HTMLElement;
-	target.releasePointerCapture(event.pointerId);
+	const ptrID = pointerID(event);
+	if (ptrID) {
+		target.releasePointerCapture(ptrID);
+	}
 };
 
 const targetDraggable = (event: PointerEvent): boolean => {
