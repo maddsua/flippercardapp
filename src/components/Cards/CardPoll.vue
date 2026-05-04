@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import CardPollOption from './CardPollOption.vue';
 import type { ElementTheme, PollNode, PollOption } from './content';
+import { shuffleArray } from '../../shuffle';
 
 const props = defineProps<{
 	entry: PollNode;
@@ -41,14 +42,6 @@ const handleOptionSelect = (opt: PollOption) => {
 		return
 	}
 };
-
-const shuffleArray = <T>(array: T[]) => {
-	for (let i = array.length - 1; i > 0; i--) {
-		const j = Math.floor(Math.random() * (i + 1));
-		[array[i], array[j]] = [array[j], array[i]];
-	}
-	return array;
-}
 
 const options = computed(() => {
 	const entries = [...props.entry.content];

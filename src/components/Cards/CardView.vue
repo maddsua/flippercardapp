@@ -37,6 +37,10 @@ const slideOut = (direction?: SlideInDirection): SlideOutDirection | undefined =
 
 const newAnimatedState = (direction?: SlideInDirection): CardState => {
 
+	if (!props.entries.length) {
+		throw new Error('Mounting card view without any cards is undefined behavior');
+	}
+
 	const nextCard = props.entries[activeIdx.value];
 	const state: CardState = {
 		card: nextCard,
@@ -164,7 +168,7 @@ const countScore = (score: number) => {
 <template>
 	<div class="card-view">
 		<CardDeckInfo :labels="labels" :size="entries.length" :index="activeIdx" />
-		<template v-for="(item,idx) of [pairState.a, pairState.b]" :key="`${idx}:${item?.card.id}`">
+		<template v-for="(item,idx) of [pairState.a, pairState.b]" :key="`${idx}:${item?.card.id || 'null'}`">
 			<div class="card-slot" :class="item?.flags">
 				<Card v-if="item" :key="item.card.id" :card="item.card" @score="countScore" @next="nextCard" @prev="prevCard" />
 			</div>

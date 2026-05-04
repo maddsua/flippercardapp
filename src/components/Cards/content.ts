@@ -1,3 +1,4 @@
+import type { MethodResult } from "../../api";
 
 interface BaseNode {
 	type: string;
@@ -73,4 +74,23 @@ export interface CardNode {
 	id: string;
 	front: CardSideNode;
 	back: CardSideNode;
+};
+
+export interface CardDeck {
+	id: string;
+	name: string;
+	size: number;
+	collection: () => Promise<MethodResult<CardCollection>>;
+	cards: (id?: string) => Promise<MethodResult<CardNode[]>>;
+};
+
+export interface CardCollection {
+	id: string;
+	name: string;
+	size: number;
+	decks: (id?: string) => Promise<MethodResult<CardDeck[]>>;
+};
+
+export interface CollectionProvider {
+	collections: (id?: string) => Promise<MethodResult<CardCollection[]>>;
 };

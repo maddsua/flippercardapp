@@ -1,6 +1,6 @@
-import type { CardNode } from "./components/Cards/content";
+import type { CardNode } from "../../../components/Cards/content";
 
-export const exampleDeck: CardNode[] = [
+const deck: CardNode[] = [
 	{
 		id: 'geo-1',
 		front: {
@@ -567,3 +567,5 @@ export const exampleDeck: CardNode[] = [
 		}
 	}
 ];
+
+export default deck;
