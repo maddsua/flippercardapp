@@ -59,7 +59,7 @@ const options = computed(() => {
 </script>
 
 <template>
-	<div class="card-poll">
+	<div class="card-poll" data-interactive="">
 		<CardPollOption v-for="option of options" :entry="option" :is_quiz="props.entry.is_quiz" :theme="theme" @select="handleOptionSelect(option)" />
 	</div>
 </template>

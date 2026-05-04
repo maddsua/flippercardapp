@@ -45,7 +45,7 @@ const releasePointerCapture = (event: PointerEvent) => {
 
 const targetDraggable = (event: PointerEvent): boolean => {
 	const target = event.target as HTMLElement;
-	return !target.closest('button, a, input, textarea');
+	return !target.closest('button, a, input, textarea, [data-interactive]');
 };
 
 const handleDragStart = (event: PointerEvent) => {
