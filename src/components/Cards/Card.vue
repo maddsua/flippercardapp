@@ -18,14 +18,22 @@ const randomRotate = computed(() => (Math.random() - 0.5) * 6);
 
 const flip = () => flipped.value = !flipped.value;
 
-const dragState = ref<{
+interface DragState {
 	initX: number;
 	initY: number;
 	x: number;
 	y: number;
-} | null>(null);
+	targetInteractive: boolean;
+};
 
-const dragDelta = computed(() => dragState.value ? ({ x: dragState.value.x - dragState.value.initX, y: dragState.value.y - dragState.value.initY }) : null);
+const dragState = ref<DragState | null>(null);
+
+interface DragDelta {
+	x: number;
+	y: number;
+};
+
+const dragDelta = computed((): DragDelta | null => dragState.value ? ({ x: dragState.value.x - dragState.value.initX, y: dragState.value.y - dragState.value.initY }) : null);
 const dragging = computed(() => dragDelta.value ? Math.abs(dragDelta.value.x) + Math.abs(dragDelta.value.y) > 1 : false);
 
 const transformStyle = computed(() => ({
@@ -56,26 +64,25 @@ const releasePointerCapture = (event: PointerEvent) => {
 	}
 };
 
-const targetDraggable = (event: PointerEvent): boolean => {
-	const target = event.target as HTMLElement;
-	return !target.closest('button, a, input, textarea, [data-interactive]');
-};
-
 const handleDragStart = (event: PointerEvent) => {
 
-	if (!targetDraggable(event)) {
+	// don't process right and auxilary button events
+	if (event.button < 0 || event.button > 1) {
 		return;
 	}
 
+	// allegedly, this prevents chrome from breaking the drag logic
 	capturePointer(event);
 
 	const { clientX, clientY } = event;
+	const target = event.target as HTMLElement;
 
 	dragState.value = {
 		initX: clientX,
 		initY: clientY,
 		x: clientX,
 		y: clientY,
+		targetInteractive: !!target.closest('button, a, input, textarea, [data-interactive]'),
 	};
 };
 
@@ -92,8 +99,30 @@ const handleDragUpdate = (event: PointerEvent) => {
 	dragState.value.y = clientY;
 };
 
-const relativeSwipeThresholdY = 0.25;
-const relativeSwipeThresholdX = 0.45;
+const handleSwipeGesture = (state: DragState) => {
+
+	const dx = dragDelta.value?.x ?? 0;
+	const dy = dragDelta.value?.y ?? 0;
+
+	const thresholdY = window.innerHeight * 0.25;
+	if (Math.abs(dy) > thresholdY) {
+		dy > 1 ? emit('prev') : emit('next');
+		return;
+	}
+
+	const thresholdX = window.innerWidth * 0.4;
+	if (Math.abs(dx) > thresholdX) {
+		flip();
+		return;
+	}
+
+	const delta = Math.abs(dx) + Math.abs(dy);
+	if (delta < 1 && !state.targetInteractive) {
+		flip();
+		return;
+	}
+
+};
 
 const handleDragDone = (event?: PointerEvent) => {
 
@@ -101,17 +130,8 @@ const handleDragDone = (event?: PointerEvent) => {
 		releasePointerCapture(event);
 	}
 
-	if (dragDelta.value) {
-
-		const { x, y } = dragDelta.value;
-
-		const delta = Math.abs(x) + Math.abs(y)
-	
-		if (Math.abs(y) > window.innerHeight * relativeSwipeThresholdY) {
-			y > 1 ? emit('prev') : emit('next');
-		} else if (Math.abs(x) > (window.innerWidth * relativeSwipeThresholdX) || delta < 1) {
-			flip();
-		}
+	if (dragState.value) {
+		handleSwipeGesture(dragState.value);
 	}
 
 	dragState.value = null;
@@ -120,7 +140,7 @@ const handleDragDone = (event?: PointerEvent) => {
 </script>
 
 <template>
-	<div class="card-container" :class="{ flipped, dragging }" :style="transformStyle" @pointerdown="handleDragStart" @pointermove="handleDragUpdate" @pointerup="handleDragDone" @pointercancel="handleDragDone" @pointerout="handleDragDone">
+	<div class="card-container" :class="{ flipped, dragging }" :style="transformStyle" @pointerdown="handleDragStart" @pointermove="handleDragUpdate" @pointerup="handleDragDone" @pointercancel="handleDragDone">
 		<CardFace :entry="card.front" @flip="flip" @score="(score) => emit('score', score)" @next="emit('next')" />
 		<CardFace :entry="card.back" @flip="flip" @score="(score) => emit('score', score)" @next="emit('next')" />
 	</div>
