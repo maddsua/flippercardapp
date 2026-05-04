@@ -1,4 +1,4 @@
-import type { MethodResult } from "../../api";
+import type { MethodResult } from "./content.loaders";
 
 interface BaseNode {
 	type: string;
@@ -91,7 +91,3 @@ export interface CardCollection {
 	decks: (id?: string) => Promise<MethodResult<CardDeck[]>>;
 };
 
-export interface CollectionProvider {
-	collections: (id?: string) => Promise<MethodResult<CardCollection[]>>;
-	decks: (id?: string) => Promise<MethodResult<CardDeck[]>>;
-};

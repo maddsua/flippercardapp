@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive } from 'vue';
-import type { CardDeck, CardNode } from '../Cards/content';
+import type { CardDeck, CardNode } from '../../content';
 import CardView from '../Cards/CardView.vue';
 import EndscreenView from '../Endscreen/EndscreenView.vue';
 import { shuffleArray } from '../../shuffle';
 import { useRoute, useRouter } from 'vue-router';
-import { sampleProvider } from '../../data/sample';
+import { useCollectionProvider } from '../../content.loaders';
 
 const router = useRouter();
 const route = useRoute();
@@ -118,7 +118,7 @@ onMounted(async () => {
 		return;
 	}
 
-	const { data, error } = await sampleProvider.decks(id);
+	const { data, error } = await useCollectionProvider().decks(id);
 	if (!data || error) {
 		state.data.error = error?.message || 'Unable to load a deck'
 		return;

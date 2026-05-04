@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import type { CardNode } from './content';
+import type { CardNode } from '../../content';
 import CardFace from './CardFace.vue';
 
 const props = defineProps<{

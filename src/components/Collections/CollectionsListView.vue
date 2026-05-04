@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, reactive } from 'vue';
-import type { CardCollection } from '../Cards/content';
-import { sampleProvider } from '../../data/sample';
+import type { CardCollection } from '../../content';
+import { useCollectionProvider } from '../../content.loaders';
 
 
 const state = reactive({
@@ -11,7 +11,7 @@ const state = reactive({
 
 onMounted(async () => {
 
-	const { data, error } = await sampleProvider.collections();
+	const { data, error } = await useCollectionProvider().collections();
 	if (!data || error) {
 		state.error = error?.message || 'Unable to load collections';
 		return;

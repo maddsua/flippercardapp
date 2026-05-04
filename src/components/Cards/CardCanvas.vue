@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { CardFaceTheme } from './content';
+import type { CardFaceTheme } from '../../content';
 
 const props = defineProps<{
 	theme?: CardFaceTheme;

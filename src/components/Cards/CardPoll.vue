@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import CardPollOption from './CardPollOption.vue';
-import type { ElementTheme, PollNode, PollOption } from './content';
+import type { ElementTheme, PollNode, PollOption } from '../../content';
 import { shuffleArray } from '../../shuffle';
 
 const props = defineProps<{

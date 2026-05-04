@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { nextTick, reactive, ref } from 'vue';
-import type { CardNode } from './content';
+import type { CardNode } from '../../content';
 import Card from './Card.vue';
 import CardNavigation from './CardNavigation.vue';
 import CardDeckInfo from './CardDeckInfo.vue';

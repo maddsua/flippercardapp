@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import type { ElementTheme, PollOption } from './content';
+import type { ElementTheme, PollOption } from '../../content';
 
 const props = defineProps<{
 	entry: PollOption;

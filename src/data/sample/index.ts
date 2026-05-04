@@ -1,7 +1,7 @@
 // this is a sample data providerd. it is to be deleted later on during development
 
-import type { MethodResult } from "../../api";
-import type { CardCollection, CardDeck, CardNode, CollectionProvider } from "../../components/Cards/content";
+import type { MethodResult, CollectionProvider } from "../../content.loaders";
+import type { CardCollection, CardDeck, CardNode } from "../../content";
 
 import mixed_deck from './decks/mixed_deck';
 
@@ -72,7 +72,7 @@ class SampleDeck implements CardDeck {
 };
 
 export const sampleProvider = new SampleCollectionProvider([
-	new SampleCollection( '630cfd08-924c-49fa-b5b2-2c81e979829d', 'Sample cards', [
+	new SampleCollection('630cfd08-924c-49fa-b5b2-2c81e979829d', 'Sample cards', [
 		new SampleDeck('33511bb5-f9d7-4795-9b3a-c1479378c27b', 'A quiz about everything', mixed_deck)
 	]),
 ]);

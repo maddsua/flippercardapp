@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { onMounted, reactive } from 'vue';
-import type { CardCollection, CardDeck } from '../Cards/content';
-import { sampleProvider } from '../../data/sample';
 import { useRoute } from 'vue-router';
+import { useCollectionProvider } from '../../content.loaders';
+import type { CardCollection, CardDeck } from '../../content';
 
 const route = useRoute();
 
@@ -25,7 +25,7 @@ const loadCollection = async () => {
 		return;
 	}
 
-	const { data, error } = await sampleProvider.collections(id);
+	const { data, error } = await useCollectionProvider().collections(id);
 	if (!data || error) {
 		state.collection.error = error?.message || 'Unable to load collection data';
 		return;
