@@ -98,6 +98,7 @@ const handleDragDone = () => {
 		padding-bottom: 150%;
 
 		user-select: none;
+		touch-action: none;
 
 		transition: transform 400ms ease;
 		transform-style: preserve-3d;
