@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import CardPollOption from './CardPollOption.vue';
 import type { ElementTheme, PollNode, PollOption } from './content';
 
@@ -41,11 +42,25 @@ const handleOptionSelect = (opt: PollOption) => {
 	}
 };
 
+const shuffleArray = <T>(array: T[]) => {
+	for (let i = array.length - 1; i > 0; i--) {
+		const j = Math.floor(Math.random() * (i + 1));
+		[array[i], array[j]] = [array[j], array[i]];
+	}
+	return array;
+}
+
+const options = computed(() => {
+	const entries = [...props.entry.content];
+	shuffleArray(entries);
+	return entries;
+});
+
 </script>
 
 <template>
 	<div class="card-poll">
-		<CardPollOption v-for="option of entry.content" :entry="option" :is_quiz="props.entry.is_quiz" :theme="theme" @select="handleOptionSelect(option)" />
+		<CardPollOption v-for="option of options" :entry="option" :is_quiz="props.entry.is_quiz" :theme="theme" @select="handleOptionSelect(option)" />
 	</div>
 </template>
 
