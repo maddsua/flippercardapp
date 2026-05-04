@@ -23,7 +23,6 @@ const dragState = ref<{
 	initY: number;
 	x: number;
 	y: number;
-	targetInteractive: boolean;
 } | null>(null);
 
 const dragDelta = computed(() => dragState.value ? ({ x: dragState.value.x - dragState.value.initX, y: dragState.value.y - dragState.value.initY }) : null);
@@ -34,7 +33,28 @@ const transformStyle = computed(() => ({
 	transform: dragDelta.value ? `translateX(${dragDelta.value.x}px) translateY(${dragDelta.value.y}px) rotateY(${flipped.value ? 180 : 0}deg)` : undefined,
 }));
 
+const capturePointer = (event: PointerEvent) => {
+	const target = event.target as HTMLElement;
+	target.setPointerCapture(event.pointerId);
+};
+
+const releasePointerCapture = (event: PointerEvent) => {
+	const target = event.target as HTMLElement;
+	target.releasePointerCapture(event.pointerId);
+};
+
+const targetDraggable = (event: PointerEvent): boolean => {
+	const target = event.target as HTMLElement;
+	return !target.closest('button, a, input, textarea');
+};
+
 const handleDragStart = (event: PointerEvent) => {
+
+	if (!targetDraggable(event)) {
+		return;
+	}
+
+	capturePointer(event);
 
 	const { clientX, clientY } = event;
 
@@ -43,13 +63,13 @@ const handleDragStart = (event: PointerEvent) => {
 		initY: clientY,
 		x: clientX,
 		y: clientY,
-		targetInteractive: !!(event.target as HTMLElement | undefined)?.closest('button, a, input, textarea'),
 	};
 };
 
 const handleDragUpdate = (event: PointerEvent) => {
 
 	if (!dragState.value) {
+		releasePointerCapture(event);
 		return;
 	}
 
@@ -62,7 +82,11 @@ const handleDragUpdate = (event: PointerEvent) => {
 const relativeSwipeThresholdY = 0.25;
 const relativeSwipeThresholdX = 0.45;
 
-const handleDragDone = () => {
+const handleDragDone = (event?: PointerEvent) => {
+
+	if (event) {
+		releasePointerCapture(event);
+	}
 
 	if (dragDelta.value) {
 
@@ -72,9 +96,7 @@ const handleDragDone = () => {
 	
 		if (Math.abs(y) > window.innerHeight * relativeSwipeThresholdY) {
 			y > 1 ? emit('prev') : emit('next');
-		} else if (Math.abs(x) > window.innerWidth * relativeSwipeThresholdX) {
-			flip();
-		} else if (delta < 1 && !dragState.value?.targetInteractive) {
+		} else if (Math.abs(x) > (window.innerWidth * relativeSwipeThresholdX) || delta < 1) {
 			flip();
 		}
 	}
