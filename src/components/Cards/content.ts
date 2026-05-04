@@ -93,4 +93,5 @@ export interface CardCollection {
 
 export interface CollectionProvider {
 	collections: (id?: string) => Promise<MethodResult<CardCollection[]>>;
+	decks: (id?: string) => Promise<MethodResult<CardDeck[]>>;
 };

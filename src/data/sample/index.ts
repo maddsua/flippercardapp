@@ -1,20 +1,22 @@
 // this is a sample data providerd. it is to be deleted later on during development
 
+import type { MethodResult } from "../../api";
 import type { CardCollection, CardDeck, CardNode, CollectionProvider } from "../../components/Cards/content";
 
 import mixed_deck from './decks/mixed_deck';
 
-const wrapResult = <T>(data: T) => ({ data, error: null });
+const wrapResult = <T>(data: T): MethodResult<T> => ({ data, error: null });
 
 class SampleCollectionProvider implements CollectionProvider {
 
-	private readonly _collections: SampleCollection[];
+	readonly entries: SampleCollection[];
 
 	constructor(collections: SampleCollection[]) {
-		this._collections = collections;
+		this.entries = collections;
 	}
 
-	collections = async (id?: string) => wrapResult(this._collections.filter(item => item.id === id || !id));
+	collections = async (id?: string) => wrapResult(this.entries.filter(item => item.id === id || !id));
+	decks = async (id?: string) => wrapResult(this.entries.map(item => item.entries).flat().filter(item => item.id === id || !id));
 };
 
 class SampleCollection implements CardCollection {
@@ -23,16 +25,16 @@ class SampleCollection implements CardCollection {
 	readonly name: string;
 	readonly size: number;
 
-	private readonly _decks: SampleDeck[];
+	readonly entries: SampleDeck[];
 
-	constructor(name: string, decks: SampleDeck[]) {
-		this.id = crypto.randomUUID();
+	constructor(id: string, name: string, decks: SampleDeck[]) {
+		this.id = id;
 		this.name = name;
 		this.size = decks.length;
-		this._decks = decks.map(item => item.linkWithCollection(this));
+		this.entries = decks.map(item => item.linkWithCollection(this));
 	}
 
-	decks = async (id?: string) => wrapResult(this._decks.filter(item => item.id === id || !id));
+	decks = async (id?: string) => wrapResult(this.entries.filter(item => item.id === id || !id));
 };
 
 class SampleDeck implements CardDeck {
@@ -41,35 +43,36 @@ class SampleDeck implements CardDeck {
 	readonly name: string;
 	readonly size: number;
 
-	private _collection: SampleCollection | null;
-	private readonly _cards: CardNode[];
+	readonly entries: CardNode[];
 
-	constructor(name: string, cards: CardNode[]) {
-		this.id = crypto.randomUUID();
+	private _parent: SampleCollection | null;
+
+	constructor(id: string, name: string, cards: CardNode[]) {
+		this.id = id;
 		this.name = name;
 		this.size = cards.length;
-		this._cards = cards;
-		this._collection = null;
+		this.entries = cards;
+		this._parent = null;
 	}
 
 	linkWithCollection = (collection: SampleCollection) => {
-		this._collection = collection
+		this._parent = collection
 		return this;
 	};
 
 	collection = async () => {
-		if (!this._collection) {
+		if (!this._parent) {
 			throw new Error('Not initialized');
 		}
 
-		return { data: this._collection, error: null };
+		return { data: this._parent, error: null };
 	};
 
-	cards = async (id?: string) => wrapResult(this._cards.filter(item => item.id === id || !id));
+	cards = async (id?: string) => wrapResult(this.entries.filter(item => item.id === id || !id));
 };
 
 export const sampleProvider = new SampleCollectionProvider([
-	new SampleCollection('Sample cards', [
-		new SampleDeck('A quiz about everything', mixed_deck)
+	new SampleCollection( '630cfd08-924c-49fa-b5b2-2c81e979829d', 'Sample cards', [
+		new SampleDeck('33511bb5-f9d7-4795-9b3a-c1479378c27b', 'A quiz about everything', mixed_deck)
 	]),
 ]);

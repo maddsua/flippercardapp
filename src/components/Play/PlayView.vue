@@ -4,18 +4,19 @@ import type { CardDeck, CardNode } from '../Cards/content';
 import CardView from '../Cards/CardView.vue';
 import EndscreenView from '../Endscreen/EndscreenView.vue';
 import { shuffleArray } from '../../shuffle';
+import { useRoute, useRouter } from 'vue-router';
+import { sampleProvider } from '../../data/sample';
 
-const { deck } = defineProps<{
-	deck: CardDeck;
-}>();
+const router = useRouter();
+const route = useRoute();
 
-interface gameState {
+interface GameState {
 	startTime: Date;
 	isFinished: boolean;
 	questions: number;
 	totalScore: number;
 	playTime: number;
-}
+};
 
 const state = reactive({
 	data: {
@@ -25,7 +26,7 @@ const state = reactive({
 		ready: false,
 		error: null as string | null,
 	},
-	game: null as gameState | null,
+	game: null as GameState | null,
 });
 
 const endgameStats = computed(() => state.game?.isFinished ? ({
@@ -45,7 +46,7 @@ const cards = computed(() => {
 	return entries;
 });
 
-const unwrapData = async () => {
+const unwrapData = async (deck: CardDeck) => {
 
 	const { data, error } = await deck.cards();
 	if (!data) {
@@ -67,7 +68,7 @@ const unwrapData = async () => {
 	].filter(item => item.length);
 };
 
-const loadData = async () => {
+const loadDeck = async (deck: CardDeck) => {
 
 	if (state.data.busy) {
 		return;
@@ -79,7 +80,7 @@ const loadData = async () => {
 	state.data.ready = false;
 	state.data.cards = [];
 
-	await unwrapData()
+	await unwrapData(deck);
 
 	state.data.busy = false;
 };
@@ -107,8 +108,29 @@ const updateGameScore = (delta: number) => {
 	state.game.totalScore += delta;
 };
 
+//	todo: refactor all the shitty loaders
+
 onMounted(async () => {
-	await loadData();
+
+	const id = route.params['deck_id'];
+	if (!id || typeof id !== 'string') {
+		state.data.error = 'Deck ID required'
+		return;
+	}
+
+	const { data, error } = await sampleProvider.decks(id);
+	if (!data || error) {
+		state.data.error = error?.message || 'Unable to load a deck'
+		return;
+	}
+
+	if (data.length === 0) {
+		state.data.error = 'Deck ID not found';
+		return;
+	}
+
+	await loadDeck(data[0]);
+
 	initGame();
 });
 
@@ -125,14 +147,16 @@ const finishDeck = () => {
 const handleNavigate = (target: 'home' | 'try_again') => {
 	switch (target) {
 		case 'home':
-			//	todo: implement
-			alert('not implemented');
+			//	todo: redirect back to the specific collection
+			router.push('/collections');
 			break;
 		case 'try_again':
 			initGame();
 			break;
 	}
 };
+
+//	todo: make it look nice
 
 </script>
 
