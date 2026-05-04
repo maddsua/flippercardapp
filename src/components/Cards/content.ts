@@ -16,8 +16,20 @@ export interface TextBoxNode extends BaseNode {
 export interface TextNote extends BaseNode {
 	type: 'text';
 	content: string;
-	//	todo: add styling
+	theme?: TextNodeTheme;
 };
+
+export interface TextNodeTheme {
+	highlight?: TextHighlight;
+	bold?: boolean;
+	italic?: boolean;
+	decoration?: 'underline' | 'strikethrough';
+}
+
+export interface TextHighlight {
+	text_color: string;
+	fill_color: string;
+}
 
 export interface NewlineNode extends BaseNode {
 	type: 'newline';

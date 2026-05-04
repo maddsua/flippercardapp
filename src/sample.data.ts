@@ -24,7 +24,19 @@ export const exampleDeck: CardNode[] = [
 					content: [
 						{
 							type: 'text',
-							content: `What's the current capital of Germany?`
+							content: `What's the current capital of `
+						},
+						{
+							type: 'text',
+							content: `Germany?`,
+							theme: {
+								highlight: {
+									text_color: 'white',
+									fill_color: 'var(--app-theme-spooky-orange)',
+								},
+								bold: true,
+								decoration: 'underline'
+							}
 						}
 					]
 				},

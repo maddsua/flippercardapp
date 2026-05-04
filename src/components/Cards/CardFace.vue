@@ -26,7 +26,7 @@ const emit = defineEmits<{
 			</CardTitle>
 			<CardTextBox v-else-if="node.type === 'textbox'">
 				<template v-for="txtnode of node.content">
-					<CardTextNode v-if="txtnode.type === 'text'">
+					<CardTextNode v-if="txtnode.type === 'text'" :theme="txtnode.theme">
 						{{ txtnode.content }}
 					</CardTextNode>
 					<br v-else-if="txtnode.type === 'newline'" />
