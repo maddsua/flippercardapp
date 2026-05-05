@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const props = defineProps<{
-	icon?: 'home' | 'retry';
+	icon?: 'home' | 'retry' | 'finish';
 	filled?: boolean;
 }>();
 </script>
@@ -27,12 +27,12 @@ const props = defineProps<{
 		font-size: 1rem;
 		font-weight: 600;
 		flex-grow: 1;
-		border: 1px solid transparent;
 		border-radius: 0.75rem;
+		color: var(--app-theme-snow-white);
 		background-color: var(--app-theme-midnight-glow);
+		border: none;
 		outline: none;
 		transition: all 200ms ease;
-		color: var(--app-theme-snow-white);
 
 		&.filled {
 			background-color: var(--app-theme-sky-blue);
@@ -53,6 +53,10 @@ const props = defineProps<{
 
 			&.retry {
 				background-image: url(/src/assets/icons/retry-mask.svg);
+			}
+
+			&.finish {
+				background-image: url(/src/assets/icons/finish-mask.svg);
 			}
 		}
 

@@ -33,7 +33,7 @@ onMounted(async () => {
 
 		<ul v-if="state.collections?.length">
 			<li v-for="item of state.collections">
-				<RouterLink :to="`/collection/${item.id}`">
+				<RouterLink :to="`/app/collection/${item.id}`">
 					{{ item.name }}
 				</RouterLink>
 			</li>

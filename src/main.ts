@@ -13,9 +13,9 @@ import './theme.scss';
 
 const routes = [
 	{ path: '/', component: HomeView },
-	{ path: '/collections', component: CollectionsListView },
-	{ path: '/collection/:collection_id', component: CollectionView },
-	{ path: '/play/deck/:deck_id', component: PlayView },
+	{ path: '/app/collections', component: CollectionsListView },
+	{ path: '/app/collection/:collection_id', component: CollectionView },
+	{ path: '/app/play/deck/:deck_id', component: PlayView },
 	{ path: '/:pathMatch(.*)*', component: NotFoundView },
 ]
 

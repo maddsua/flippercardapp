@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive } from 'vue';
-import type { CardDeck, CardNode } from '../../content';
+import type { CardCollection, CardDeck, CardNode } from '../../content';
 import CardView from '../Cards/CardView.vue';
 import EndscreenView from '../Endscreen/EndscreenView.vue';
+import FullscreenMessage from '../App/FullscreenMessage.vue';
 import { shuffleArray } from '../../shuffle';
 import { useRoute, useRouter } from 'vue-router';
 import { useCollectionProvider } from '../../content.loaders';
+import LoadingMessage from '../App/LoadingMessage.vue';
+import ErrorMessage from '../App/ErrorMessage.vue';
+import Button from '../App/Button.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -22,6 +26,7 @@ const state = reactive({
 	data: {
 		cards: [] as CardNode[],
 		labels: [] as string[],
+		collection: null as CardCollection | null,
 		busy: false,
 		ready: false,
 		error: null as string | null,
@@ -46,6 +51,8 @@ const cards = computed(() => {
 	return entries;
 });
 
+//	todo: refactor all the shitty loaders
+
 const unwrapData = async (deck: CardDeck) => {
 
 	const { data, error } = await deck.cards();
@@ -60,12 +67,15 @@ const unwrapData = async (deck: CardDeck) => {
 	state.data.cards = data;
 	state.data.ready = true;
 
-	state.data.labels = [
-		await deck.collection()
-			.then(data => data.data?.name)
-			.catch(() => null) || '',
-		deck.name,
-	].filter(item => item.length);
+	const collection = await deck.collection();
+
+	if (!collection.data) {
+		state.data.labels = [deck.name];
+		return;
+	}
+
+	state.data.collection = collection.data;
+	state.data.labels = [state.data.collection.name, deck.name];
 };
 
 const loadDeck = async (deck: CardDeck) => {
@@ -108,8 +118,6 @@ const updateGameScore = (delta: number) => {
 	state.game.totalScore += delta;
 };
 
-//	todo: refactor all the shitty loaders
-
 onMounted(async () => {
 
 	const id = route.params['deck_id'];
@@ -144,19 +152,15 @@ const finishDeck = () => {
 	state.game.isFinished = true;
 };
 
-const handleNavigate = (target: 'home' | 'try_again') => {
-	switch (target) {
-		case 'home':
-			//	todo: redirect back to the specific collection
-			router.push('/collections');
-			break;
-		case 'try_again':
-			initGame();
-			break;
-	}
-};
+const exitView = () => {
 
-//	todo: make it look nice
+	if (state.data.collection) {
+		router.push(`/app/collection/${state.data.collection.id}`);
+		return;
+	}
+
+	router.push('/app/collections');
+};	
 
 </script>
 
@@ -164,32 +168,33 @@ const handleNavigate = (target: 'home' | 'try_again') => {
 
 	<template v-if="cards?.length">
 		<CardView v-if="!endgameStats" :labels="state.data.labels" :entries="cards" @score="updateGameScore" @end="finishDeck" />
-		<EndscreenView v-else :stats="endgameStats" @navigate="handleNavigate" />
+		<EndscreenView v-else :stats="endgameStats" @reset="initGame" @finish="exitView" />
 	</template>
 
-	<div class="view-message" v-else>
+	<FullscreenMessage v-else>
 
 		<template v-if="state.data.error">
-			Error: {{ state.data.error }}
+
+			<ErrorMessage v-if="state.data.error">
+	
+				Unable to load deck
+	
+				<template v-slot:details>
+					{{ state.data.error }}
+				</template>
+	
+			</ErrorMessage>
+
+			<Button @click="exitView">
+				Go back
+			</Button>
+
 		</template>
 
-		<template v-else>
+		<LoadingMessage v-else>
 			Loading cards...
-		</template>
+		</LoadingMessage>
 
-	</div>
+	</FullscreenMessage>
 
 </template>
-
-<style lang="scss" scoped>
-	.view-message {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		width: 100%;
-		height: 100%;
-
-		font-size: 0.85rem;
-	}
-</style>

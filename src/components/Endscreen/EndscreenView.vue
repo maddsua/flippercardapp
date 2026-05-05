@@ -18,7 +18,8 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-	(e: 'navigate', target: 'home' | 'try_again'): void;
+	(e: 'reset'): void;
+	(e: 'finish'): void;
 }>();
 
 const scoreRate = computed(() => props.stats.score / props.stats.questions);
@@ -95,11 +96,11 @@ const time = computed(() => {
 				</EndscreenStatTile>
 			</EndscreenStats>
 			<EndscreenActions>
-				<EndscreenButton icon="retry" :filled="true" @click="emit('navigate', 'try_again')">
+				<EndscreenButton icon="retry" :filled="true" @click="emit('reset')">
 					Try again
 				</EndscreenButton>
-				<EndscreenButton icon="home" @click="emit('navigate', 'home')">
-					Home
+				<EndscreenButton icon="finish" @click="emit('finish')">
+					Finish
 				</EndscreenButton>
 			</EndscreenActions>
 		</div>

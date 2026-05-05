@@ -72,7 +72,7 @@ onMounted(async () => {
 		</p>
 
 		<p>
-			<RouterLink to="/collections">
+			<RouterLink to="/app/collections">
 				Back to the list
 			</RouterLink>
 		</p>
@@ -83,7 +83,7 @@ onMounted(async () => {
 
 		<ul v-if="state.decks.entries?.length">
 			<li v-for="item of state.decks.entries">
-				<RouterLink :to="`/play/deck/${item.id}`">
+				<RouterLink :to="`/app/play/deck/${item.id}`">
 					{{ item.name }}
 				</RouterLink>
 			</li>

@@ -51,6 +51,7 @@ const props = defineProps<{
 				mask-repeat: no-repeat;
 				mask-position: center;
 				mask-size: contain;
+				mask-type: alpha;
 				flex-shrink: 0;
 
 				&.prize {

@@ -10,7 +10,7 @@
 		</p>
 
 		<p>
-			<RouterLink to="/collections">
+			<RouterLink to="/app/collections">
 				Show collections
 			</RouterLink>
 		</p>
