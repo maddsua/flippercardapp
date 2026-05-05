@@ -14,7 +14,7 @@ import Button from '../App/Button.vue';
 const router = useRouter();
 const route = useRoute();
 
-interface GameState {
+interface RoundState {
 	startTime: Date;
 	isFinished: boolean;
 	questions: number;
@@ -23,86 +23,39 @@ interface GameState {
 };
 
 const state = reactive({
-	data: {
-		cards: [] as CardNode[],
-		labels: [] as string[],
-		collection: null as CardCollection | null,
-		busy: false,
-		ready: false,
-		error: null as string | null,
-	},
-	game: null as GameState | null,
+	cards: [] as CardNode[],
+	labels: [] as string[],
+	collection: null as CardCollection | null,
+	ready: false,
+	error: null as string | null,
+	round: null as RoundState | null,
 });
 
-const endgameStats = computed(() => state.game?.isFinished ? ({
-	questions: state.game.questions,
-	score: state.game.totalScore,
-	time: state.game.playTime,
+const statsScreen = computed(() => state.round?.isFinished ? ({
+	questions: state.round.questions,
+	score: state.round.totalScore,
+	time: state.round.playTime,
 }) : null);
 
 const cards = computed(() => {
 
-	if (!state.data.ready) {
+	if (!state.ready) {
 		return null;
 	}
 
-	const entries = [...state.data.cards];
+	const entries = [...state.cards];
 	shuffleArray(entries);
 	return entries;
 });
 
-//	todo: refactor all the shitty loaders
+const initRound = () => {
 
-const unwrapData = async (deck: CardDeck) => {
-
-	const { data, error } = await deck.cards();
-	if (!data) {
-		state.data.error = error?.message || 'unable to load cards';
-		return
-	} else if (data.length === 0) {
-		state.data.error = 'Empty deck';
-		return;
-	}
-
-	state.data.cards = data;
-	state.data.ready = true;
-
-	const collection = await deck.collection();
-
-	if (!collection.data) {
-		state.data.labels = [deck.name];
-		return;
-	}
-
-	state.data.collection = collection.data;
-	state.data.labels = [state.data.collection.name, deck.name];
-};
-
-const loadDeck = async (deck: CardDeck) => {
-
-	if (state.data.busy) {
-		return;
-	}
-
-	state.data.busy = true;
-
-	state.data.error = null;
-	state.data.ready = false;
-	state.data.cards = [];
-
-	await unwrapData(deck);
-
-	state.data.busy = false;
-};
-
-const initGame = () => {
-
-	const questions = state.data.cards
+	const questions = state.cards
 		.map(item => [item.back, item.front])
 		.flat()
 		.map(item => item.content.some(item => item.type === 'poll')).length;
 
-	state.game = {
+	state.round = {
 		questions,
 		totalScore: 0,
 		playTime: 0,
@@ -111,51 +64,97 @@ const initGame = () => {
 	};
 };
 
-const updateGameScore = (delta: number) => {
-	if (!state.game) {
+const updateRoundScore = (delta: number) => {
+	if (!state.round) {
 		return;
 	}
-	state.game.totalScore += delta;
+	state.round.totalScore += delta;
 };
 
-onMounted(async () => {
+const loadDeck = async () => {
 
 	const id = route.params['deck_id'];
 	if (!id || typeof id !== 'string') {
-		state.data.error = 'Deck ID required'
-		return;
+		return { error: new Error('Deck ID required') };
 	}
 
 	const { data, error } = await useCollectionProvider().decks(id);
 	if (!data || error) {
-		state.data.error = error?.message || 'Unable to load a deck'
-		return;
+		return { error: error || new Error('Unable to load a deck') };
 	}
 
 	if (data.length === 0) {
-		state.data.error = 'Deck ID not found';
+		return { error: new Error('Deck ID not found') };
+	}
+
+	return { deck: data[0] };
+};
+
+const loadParentCollection = async (deck: CardDeck) => {
+
+	const { data, error } = await deck.collection();
+	if (!data || error) {
+		state.error = error?.message || 'Unable to load parent collection';
+		return new Error(state.error);
+	}
+
+	state.collection = data;
+	state.labels = [data.name, deck.name];
+	return null;
+};
+
+const loadDeckCards = async (deck: CardDeck) => {
+
+	const { data, error } = await deck.cards();
+	if (!data) {
+		state.error = error?.message || 'unable to load cards';
+		return new Error(state.error);
+	}
+
+	if (data.length === 0) {
+		state.error = 'Empty deck';
+		return new Error(state.error);
+	}
+
+	state.cards = data;
+	return null;
+};
+
+onMounted(async () => {
+
+	const { deck, error } = await loadDeck();
+	if (!deck || error) {
+		state.error = error.message;
 		return;
 	}
 
-	await loadDeck(data[0]);
+	if (!!await loadParentCollection(deck)) {
+		return;
+	}
 
-	initGame();
+	if (!!await loadDeckCards(deck)) {
+		return;
+	}
+
+	state.ready = true;
+
+	initRound();
 });
 
 const finishDeck = () => {
 
-	if (!state.game) {
+	if (!state.round) {
 		return;
 	}
 
-	state.game.playTime = Math.floor((new Date().getTime() - state.game.startTime.getTime()) / 1000);
-	state.game.isFinished = true;
+	state.round.playTime = Math.floor((new Date().getTime() - state.round.startTime.getTime()) / 1000);
+	state.round.isFinished = true;
 };
 
 const exitView = () => {
 
-	if (state.data.collection) {
-		router.push(`/app/collection/${state.data.collection.id}`);
+	if (state.collection) {
+		router.push(`/app/collection/${state.collection.id}`);
 		return;
 	}
 
@@ -167,20 +166,20 @@ const exitView = () => {
 <template>
 
 	<template v-if="cards?.length">
-		<CardView v-if="!endgameStats" :labels="state.data.labels" :entries="cards" @score="updateGameScore" @end="finishDeck" />
-		<EndscreenView v-else :stats="endgameStats" @reset="initGame" @finish="exitView" />
+		<CardView v-if="!statsScreen" :labels="state.labels" :entries="cards" @score="updateRoundScore" @end="finishDeck" />
+		<EndscreenView v-else :stats="statsScreen" @reset="initRound" @finish="exitView" />
 	</template>
 
 	<FullscreenMessage v-else>
 
-		<template v-if="state.data.error">
+		<template v-if="state.error">
 
-			<ErrorMessage v-if="state.data.error">
+			<ErrorMessage v-if="state.error">
 	
 				Unable to load deck
 	
 				<template v-slot:details>
-					{{ state.data.error }}
+					{{ state.error }}
 				</template>
 	
 			</ErrorMessage>
