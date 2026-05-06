@@ -12,6 +12,7 @@ import CollectionHeader from './CollectionHeader.vue';
 import CollectionEndlistAction from './CollectionEndlistAction.vue';
 import CollectionBreak from './CollectionBreak.vue';
 import GenericButton from '../App/GenericButton.vue';
+import AppUI from '../App/AppUI.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -83,69 +84,72 @@ const closeDeck = () => {
 </script>
 
 <template>
-	<CollectionContainer>
+	<AppUI>
 
-		<CollectionHeader>
-
-			<template v-slot:title>
-
-				<template v-if="state.collection.entry?.name">
-					{{ state.collection.entry?.name }}
+		<CollectionContainer>
+	
+			<CollectionHeader>
+	
+				<template v-slot:title>
+	
+					<template v-if="state.collection.entry?.name">
+						{{ state.collection.entry?.name }}
+					</template>
+	
+					<template v-else>
+						Unnamed collection
+					</template>
+	
 				</template>
-
-				<template v-else>
-					Unnamed collection
+	
+				<template v-slot:summary>
+	
+					<template v-if="state.collection.entry?.description">
+						{{ state.collection.entry?.description }}
+					</template>
+	
+					<template v-else>
+						No description provided
+					</template>
+	
 				</template>
-
-			</template>
-
-			<template v-slot:summary>
-
-				<template v-if="state.collection.entry?.description">
-					{{ state.collection.entry?.description }}
-				</template>
-
-				<template v-else>
-					No description provided
-				</template>
-
-			</template>
-
-		</CollectionHeader>
-
-		<CollectionList v-if="state.decks.entries?.length">
-			<CollectionListEntry v-for="item of state.decks.entries" :title="item.name" @click="openDeck(item.id)" />
-		</CollectionList>
-
-		<FullscreenMessage v-else>
-
-			<ErrorMessage v-if="stateError">
-
-				<template v-slot:message>
-					Unable to display collection
-				</template>
+	
+			</CollectionHeader>
+	
+			<CollectionList v-if="state.decks.entries?.length">
+				<CollectionListEntry v-for="item of state.decks.entries" :title="item.name" @click="openDeck(item.id)" />
+			</CollectionList>
+	
+			<FullscreenMessage v-else>
+	
+				<ErrorMessage v-if="stateError">
+	
+					<template v-slot:message>
+						Unable to display collection
+					</template>
+					
+					<template v-slot:details>
+						{{ stateError }}
+					</template>
+	
+				</ErrorMessage>
+	
+				<p v-else>
+					This collection doesn't have any cards yet!
+				</p>
 				
-				<template v-slot:details>
-					{{ stateError }}
-				</template>
-
-			</ErrorMessage>
-
-			<p v-else>
-				This collection doesn't have any cards yet!
-			</p>
-			
-		</FullscreenMessage>
-
-		<CollectionBreak />
-
-		<CollectionEndlistAction>
-
-			<GenericButton @click="closeDeck">
-				Back to the collections
-			</GenericButton>
-
-		</CollectionEndlistAction>
-
-	</CollectionContainer>
+			</FullscreenMessage>
+	
+			<CollectionBreak />
+	
+			<CollectionEndlistAction>
+	
+				<GenericButton @click="closeDeck">
+					Back to the collections
+				</GenericButton>
+	
+			</CollectionEndlistAction>
+	
+		</CollectionContainer>
+	</AppUI>
 </template>

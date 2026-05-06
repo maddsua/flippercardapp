@@ -133,6 +133,10 @@ const handleDragDone = (event?: PointerEvent) => {
 		width: 100%;
 		padding-bottom: 150%;
 
+		// use container width as the font reference
+		container-type: inline-size;
+
+		// disable unwanted default interactions
 		user-select: none;
 		touch-action: none;
 

@@ -12,6 +12,7 @@ import CollectionContainer from './CollectionContainer.vue';
 import CollectionBreak from './CollectionBreak.vue';
 import CollectionEndlistAction from './CollectionEndlistAction.vue';
 import GenericButton from '../App/GenericButton.vue';
+import AppUI from '../App/AppUI.vue';
 
 const router = useRouter();
 
@@ -42,53 +43,58 @@ const openExplore = () => {
 </script>
 
 <template>
-	<CollectionContainer>
 
-		<CollectionHeader>
+	<AppUI>
 
-			<template v-slot:title>
-				Collections
-			</template>
-
-			<template v-slot:summary>
-				Your card collections
-			</template>
-
-		</CollectionHeader>
-
-		<CollectionList v-if="state.collections?.length">
-			<CollectionListEntry v-for="item of state.collections" :title="item.name" @click="openCollection(item.id)" />
-		</CollectionList>
-
-		<FullscreenMessage v-else>
-
-			<ErrorMessage v-if="state.error">
-
-				<template v-slot:message>
-					Unable to display collections
+		<CollectionContainer>
+	
+			<CollectionHeader>
+	
+				<template v-slot:title>
+					Collections
 				</template>
+	
+				<template v-slot:summary>
+					Your card collections
+				</template>
+	
+			</CollectionHeader>
+	
+			<CollectionList v-if="state.collections?.length">
+				<CollectionListEntry v-for="item of state.collections" :title="item.name" @click="openCollection(item.id)" />
+			</CollectionList>
+	
+			<FullscreenMessage v-else>
+	
+				<ErrorMessage v-if="state.error">
+	
+					<template v-slot:message>
+						Unable to display collections
+					</template>
+					
+					<template v-slot:details>
+						{{ state.error }}
+					</template>
+	
+				</ErrorMessage>
+	
+				<p v-else>
+					You haven't added any collections yet!
+				</p>
 				
-				<template v-slot:details>
-					{{ state.error }}
-				</template>
+			</FullscreenMessage>
+	
+			<CollectionBreak />
+	
+			<CollectionEndlistAction>
+	
+				<GenericButton theme="orange" @click="openExplore">
+					Explore cards
+				</GenericButton>
+	
+			</CollectionEndlistAction>
+	
+		</CollectionContainer>
+	</AppUI>
 
-			</ErrorMessage>
-
-			<p v-else>
-				You haven't added any collections yet!
-			</p>
-			
-		</FullscreenMessage>
-
-		<CollectionBreak />
-
-		<CollectionEndlistAction>
-
-			<GenericButton theme="orange" @click="openExplore">
-				Explore cards
-			</GenericButton>
-
-		</CollectionEndlistAction>
-
-	</CollectionContainer>
 </template>

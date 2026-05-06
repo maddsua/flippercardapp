@@ -41,8 +41,8 @@ const time = computed(() => {
 </script>
 
 <template>
-	<div class="endscreen-view">
-		<div class="endscreen-card">
+	<div class="endscreen">
+		<div class="content">
 
 			<EndscreenHeader>
 				<template v-slot:summary>
@@ -108,20 +108,21 @@ const time = computed(() => {
 </template>
 
 <style lang="scss" scoped>
-	.endscreen-view {
-		position: relative;
-		width: 100%;
-		height: 100%;
-		overflow: hidden;
+	.endscreen {
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
-	
-		.endscreen-card {
+		align-items: center;
+		padding: 2rem;
+		width: 100%;
+		max-width: 30rem;
+		height: 100%;
+
+		.content {
 			display: flex;
 			flex-direction: column;
-			gap: 1.5rem;
-			padding: 2rem;
+			gap: 2rem;
+			width: 100%;
 		}
 	}
 </style>

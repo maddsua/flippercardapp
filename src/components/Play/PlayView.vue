@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive } from 'vue';
 import type { CardCollection, CardDeck, CardNode } from '../../content';
-import CardView from '../Cards/CardView.vue';
-import EndscreenView from '../Endscreen/EndscreenView.vue';
+import CardWidget from '../Cards/CardWidget.vue';
+import Endscreen from '../Endscreen/Endscreen.vue';
 import FullscreenMessage from '../App/FullscreenMessage.vue';
 import { shuffleArray } from '../../shuffle';
 import { useRoute, useRouter } from 'vue-router';
@@ -159,43 +159,60 @@ const exitView = () => {
 	}
 
 	router.push('/app/collections');
-};	
+};
 
 </script>
 
 <template>
 
-	<template v-if="cards?.length">
-		<CardView v-if="!statsScreen" :labels="state.labels" :entries="cards" @score="updateRoundScore" @finish="finishDeck" @exit="exitView" />
-		<EndscreenView v-else :stats="statsScreen" @reset="initRound" @finish="exitView" />
-	</template>
+	<div class="play-view">
 
-	<FullscreenMessage v-else>
-
-		<template v-if="state.error">
-
-			<ErrorMessage v-if="state.error">
-
-				<template v-slot:message>
-					Unable to load deck
-				</template>
-	
-				<template v-slot:details>
-					{{ state.error }}
-				</template>
-	
-			</ErrorMessage>
-
-			<GenericButton @click="exitView">
-				Go back
-			</GenericButton>
-
+		<template v-if="cards?.length">
+			<CardWidget v-if="!statsScreen" :labels="state.labels" :entries="cards" @score="updateRoundScore" @finish="finishDeck" @exit="exitView" />
+			<Endscreen v-else :stats="statsScreen" @reset="initRound" @finish="exitView" />
 		</template>
+	
+		<FullscreenMessage v-else>
+	
+			<template v-if="state.error">
+	
+				<ErrorMessage v-if="state.error">
+	
+					<template v-slot:message>
+						Unable to load deck
+					</template>
+		
+					<template v-slot:details>
+						{{ state.error }}
+					</template>
+		
+				</ErrorMessage>
+	
+				<GenericButton @click="exitView">
+					Go back
+				</GenericButton>
+	
+			</template>
+	
+			<LoadingMessage v-else>
+				Loading cards...
+			</LoadingMessage>
+	
+		</FullscreenMessage>
 
-		<LoadingMessage v-else>
-			Loading cards...
-		</LoadingMessage>
-
-	</FullscreenMessage>
+	</div>
 
 </template>
+
+<style lang="scss" scoped>
+	.play-view {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		width: 100%;
+		height: 100%;
+		height: 100vh;
+		height: 100svh;
+	}
+</style>

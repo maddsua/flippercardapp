@@ -2,7 +2,7 @@
 import { nextTick, reactive, ref } from 'vue';
 import type { CardNode } from '../../content';
 import Card from './Card.vue';
-import CardNavigation from './CardNavigation.vue';
+import CardControls from './CardControls.vue';
 import CardDeckInfo from './CardDeckInfo.vue';
 
 const props = defineProps<{
@@ -170,25 +170,43 @@ const countScore = (score: number) => {
 </script>
 
 <template>
-	<div class="card-view">
+	<div class="card-widget">
 		<CardDeckInfo :labels="labels" :size="entries.length" :index="activeIdx" />
-		<template v-for="(item,idx) of [pairState.a, pairState.b]" :key="`${idx}:${item?.card.id || 'null'}`">
-			<div class="card-slot" :class="item?.flags">
+		<div class="card-screen-container">
+			<div class="card-transition-slot" v-for="(item,idx) of [pairState.a, pairState.b]" :key="`${idx}:${item?.card.id || 'null'}`" :class="item?.flags">
 				<Card v-if="item" :key="item.card.id" :card="item.card" @score="countScore" @next="nextCard" @prev="prevCard" />
 			</div>
-		</template>
-		<CardNavigation :has_prev="activeIdx > 0" :has_next="activeIdx < entries.length - 1" @prev="prevCard" @next="nextCard" />
+		</div>
+		<CardControls :has_prev="activeIdx > 0" :has_next="activeIdx < entries.length - 1" @prev="prevCard" @next="nextCard" />
 	</div>
 </template>
 
 <style lang="scss" scoped>
-	.card-view {
+	.card-widget {
 		position: relative;
 		width: 100%;
 		height: 100%;
-		overflow: hidden;
+		overflow: visible;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
 
-		.card-slot {
+		@media (orientation: landscape) {
+			max-width: 50rem;
+		}
+
+		.card-screen-container {
+			position: relative;
+			width: 55vh;
+			height: 100%;
+			overflow: visible;
+
+			@media (max-aspect-ratio: 1/1.75) {
+				width: 100vw;
+			}
+		}
+
+		.card-transition-slot {
 			position: absolute;
 			top: 0;
 			left: 0;
@@ -197,7 +215,7 @@ const countScore = (score: number) => {
 			display: flex;
 			flex-direction: column;
 			justify-content: center;
-			overflow: hidden;
+			overflow: visible;
 			
 			&.animate {
 				transition: all 200ms ease;

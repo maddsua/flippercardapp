@@ -40,17 +40,16 @@ const handleSelect = () => {
 	button {
 		display: block;
 		width: 100%;
-		max-width: 25rem;
 		font-weight: 600;
-		font-size: 1.125rem;
+		font-size: 1em;
 		font-weight: 500;
-		border-radius: 0.5rem;
-		padding: 0.6rem 1.2rem;
+		border-radius: 0.5em;
+		padding: 0.6em 1.2em;
 		color: var(--app-theme-snow-white);
 		background-color: var(--app-theme-sky-blue);
-		transition: all 150ms ease;
 		outline: none;
 		border: none;
+		transition: color, background-color, transform 150ms ease;
 
 		&:hover {
 			cursor: pointer;
