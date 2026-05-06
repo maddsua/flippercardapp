@@ -79,6 +79,7 @@ export interface CardNode {
 export interface CardDeck {
 	id: string;
 	name: string;
+	description?: string;
 	size: number;
 	collection: () => Promise<MethodResult<CardCollection>>;
 	cards: (id?: string) => Promise<MethodResult<CardNode[]>>;
@@ -87,7 +88,7 @@ export interface CardDeck {
 export interface CardCollection {
 	id: string;
 	name: string;
+	description?: string;
 	size: number;
 	decks: (id?: string) => Promise<MethodResult<CardDeck[]>>;
 };
-

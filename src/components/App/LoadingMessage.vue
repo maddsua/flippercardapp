@@ -16,6 +16,7 @@
 
 		span {
 			font-size: 0.85rem;
+			color: var(--app-theme-mysterious-white);
 		}
 
 		&::before {

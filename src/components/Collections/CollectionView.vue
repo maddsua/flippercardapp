@@ -1,9 +1,18 @@
 <script setup lang="ts">
-import { onMounted, reactive } from 'vue';
-import { useRoute } from 'vue-router';
+import { computed, onMounted, reactive } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useCollectionProvider } from '../../content.loaders';
 import type { CardCollection, CardDeck } from '../../content';
+import CollectionList from './CollectionList.vue';
+import FullscreenMessage from '../App/FullscreenMessage.vue';
+import ErrorMessage from '../App/ErrorMessage.vue';
+import CollectionListEntry from './CollectionListEntry.vue';
+import CollectionContainer from './CollectionContainer.vue';
+import CollectionHeader from './CollectionHeader.vue';
+import CollectionEndlistAction from './CollectionEndlistAction.vue';
+import CollectionBreak from './CollectionBreak.vue';
 
+const router = useRouter();
 const route = useRoute();
 
 const state = reactive({
@@ -16,6 +25,8 @@ const state = reactive({
 		error: null as string | null,
 	},
 });
+
+const stateError = computed(() => state.collection.error || state.decks.error || null);
 
 const loadCollection = async () => {
 
@@ -60,40 +71,76 @@ onMounted(async () => {
 	
 });
 
-//	todo: make look nice
+const openDeck = (id: string) => {
+	router.push(`/app/play/deck/${id}`);
+};
+
+const closeDeck = () => {
+	router.push('/app/collections');
+};
 
 </script>
 
 <template>
-	<div class="collection-view">
+	<CollectionContainer>
 
-		<p>
-			Decks
-		</p>
+		<CollectionHeader>
 
-		<p>
-			<RouterLink to="/app/collections">
-				Back to the list
-			</RouterLink>
-		</p>
+			<template v-slot:title>
 
-		<p>
-			Collection: {{ state.collection.entry?.name }}
-		</p>
+				<template v-if="state.collection.entry?.name">
+					{{ state.collection.entry?.name }}
+				</template>
 
-		<ul v-if="state.decks.entries?.length">
-			<li v-for="item of state.decks.entries">
-				<RouterLink :to="`/app/play/deck/${item.id}`">
-					{{ item.name }}
-				</RouterLink>
-			</li>
-		</ul>
-		<div v-else class="message">
-			No decks available
-		</div>
-	</div>
+				<template v-else>
+					Unnamed collection
+				</template>
+
+			</template>
+
+			<template v-slot:summary>
+
+				<template v-if="state.collection.entry?.description">
+					{{ state.collection.entry?.description }}
+				</template>
+
+				<template v-else>
+					No description provided
+				</template>
+
+			</template>
+
+		</CollectionHeader>
+
+		<CollectionList v-if="state.decks.entries?.length">
+			<CollectionListEntry v-for="item of state.decks.entries" :title="item.name" @click="openDeck(item.id)" />
+		</CollectionList>
+
+		<FullscreenMessage v-else>
+
+			<ErrorMessage v-if="stateError">
+
+				<template v-slot:message>
+					Unable to display collection
+				</template>
+				
+				<template v-slot:details>
+					{{ stateError }}
+				</template>
+
+			</ErrorMessage>
+
+			<p v-else>
+				This collection doesn't have any cards yet!
+			</p>
+			
+		</FullscreenMessage>
+
+		<CollectionBreak />
+
+		<CollectionEndlistAction @action="closeDeck">
+			Back to the collections
+		</CollectionEndlistAction>
+
+	</CollectionContainer>
 </template>
-
-<style lang="scss" scoped>
-
-</style>

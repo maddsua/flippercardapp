@@ -44,7 +44,6 @@ const props = defineProps<{
 			transform: rotateY(180deg);
 		}
 
-		//	todo: connect
 		&:not(:nth-child(2n))::before {
 			content: "?";
 			display: block;

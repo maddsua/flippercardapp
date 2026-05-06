@@ -2,7 +2,7 @@
 	<div class="error-message">
 		<div class="message">
 			<span>
-				<slot>[Error message]</slot>
+				<slot name="message">[Error message]</slot>
 			</span>
 		</div>
 		<div v-if="$slots.details" class="details">
@@ -27,6 +27,7 @@
 
 			span {
 				font-size: 0.85rem;
+				color: var(--app-theme-snow-white);
 			}
 
 			&::before {
@@ -47,6 +48,7 @@
 			max-height: 10rem;
 			overflow-y: auto;
 			scrollbar-width: thin;
+			color: var(--app-theme-mysterious-white);
 		}
 	}
 </style>

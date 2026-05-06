@@ -175,8 +175,10 @@ const exitView = () => {
 		<template v-if="state.error">
 
 			<ErrorMessage v-if="state.error">
-	
-				Unable to load deck
+
+				<template v-slot:message>
+					Unable to load deck
+				</template>
 	
 				<template v-slot:details>
 					{{ state.error }}
