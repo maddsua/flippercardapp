@@ -11,7 +11,8 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-	(e: 'end'): void;
+	(e: 'finish'): void;
+	(e: 'exit'): void;
 	(e: 'score', score: number): void;
 }>();
 
@@ -140,14 +141,17 @@ const nextCard = () => {
 		return;
 	}
 
-	emit('end');
+	emit('finish');
 };
 
 const prevCard = () => {
 	if (activeIdx.value > 0) {
 		activeIdx.value--
 		switchCards('from-top');
+		return;
 	}
+
+	emit('exit');
 };
 
 const scoreSet = new Set<string>();

@@ -11,6 +11,7 @@ import CollectionContainer from './CollectionContainer.vue';
 import CollectionHeader from './CollectionHeader.vue';
 import CollectionEndlistAction from './CollectionEndlistAction.vue';
 import CollectionBreak from './CollectionBreak.vue';
+import GenericButton from '../App/GenericButton.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -138,8 +139,12 @@ const closeDeck = () => {
 
 		<CollectionBreak />
 
-		<CollectionEndlistAction @action="closeDeck">
-			Back to the collections
+		<CollectionEndlistAction>
+
+			<GenericButton @click="closeDeck">
+				Back to the collections
+			</GenericButton>
+
 		</CollectionEndlistAction>
 
 	</CollectionContainer>

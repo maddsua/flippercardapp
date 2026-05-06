@@ -14,7 +14,7 @@ const emit = defineEmits<{
 
 <template>
 	<div class="card-navigation">
-		<button type="button" class="prev" aria-label="Go to the previous card" :disabled="!has_prev" @click="emit('prev')"></button>
+		<button type="button" class="prev" aria-label="Go to the previous card" :class="{ initial: !has_prev }" @click="emit('prev')"></button>
 		<button type="button" class="next" aria-label="Go to the next card" :class="{ final: !has_next }" @click="emit('next')"></button>
 	</div>
 </template>
@@ -46,15 +46,20 @@ const emit = defineEmits<{
 		&.prev {
 			background-image: url(/src/assets/icons/arrow-right-mask.svg);
 			rotate: 180deg;
+
+			&.initial {
+				background-image: url(/src/assets//icons/cancel-mask.svg);
+				background-size: 1rem;
+			}
 		}
 
 		&.next {
 			background-image: url(/src/assets/icons/arrow-right-mask.svg);
-		}
 
-		&.next.final {
-			background-image: url(/src/assets/icons/check-mask.svg);
-			background-size: 1.75rem;
+			&.final {
+				background-image: url(/src/assets/icons/check-mask.svg);
+				background-size: 1.75rem;
+			}
 		}
 
 		&:disabled {

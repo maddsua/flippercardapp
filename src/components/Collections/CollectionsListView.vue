@@ -11,6 +11,7 @@ import CollectionHeader from './CollectionHeader.vue';
 import CollectionContainer from './CollectionContainer.vue';
 import CollectionBreak from './CollectionBreak.vue';
 import CollectionEndlistAction from './CollectionEndlistAction.vue';
+import GenericButton from '../App/GenericButton.vue';
 
 const router = useRouter();
 
@@ -81,8 +82,12 @@ const openExplore = () => {
 
 		<CollectionBreak />
 
-		<CollectionEndlistAction @action="openExplore">
-			Explore cards
+		<CollectionEndlistAction>
+
+			<GenericButton theme="orange" @click="openExplore">
+				Explore cards
+			</GenericButton>
+
 		</CollectionEndlistAction>
 
 	</CollectionContainer>

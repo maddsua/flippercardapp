@@ -9,7 +9,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useCollectionProvider } from '../../content.loaders';
 import LoadingMessage from '../App/LoadingMessage.vue';
 import ErrorMessage from '../App/ErrorMessage.vue';
-import Button from '../App/Button.vue';
+import GenericButton from '../App/GenericButton.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -166,7 +166,7 @@ const exitView = () => {
 <template>
 
 	<template v-if="cards?.length">
-		<CardView v-if="!statsScreen" :labels="state.labels" :entries="cards" @score="updateRoundScore" @end="finishDeck" />
+		<CardView v-if="!statsScreen" :labels="state.labels" :entries="cards" @score="updateRoundScore" @finish="finishDeck" @exit="exitView" />
 		<EndscreenView v-else :stats="statsScreen" @reset="initRound" @finish="exitView" />
 	</template>
 
@@ -186,9 +186,9 @@ const exitView = () => {
 	
 			</ErrorMessage>
 
-			<Button @click="exitView">
+			<GenericButton @click="exitView">
 				Go back
-			</Button>
+			</GenericButton>
 
 		</template>
 
