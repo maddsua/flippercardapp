@@ -50,13 +50,19 @@ const cards = computed(() => {
 
 const initRound = () => {
 
-	const questions = state.cards
-		.map(item => [item.back, item.front])
-		.flat()
-		.map(item => item.content.some(item => item.type === 'poll')).length;
+	let questionCount = 0;
+
+	for (const item of state.cards) {
+		for (const side of [item.back, item.front]) {
+			if (side.content.some(item => item.type === 'poll')) {
+				questionCount++;
+				break;
+			}
+		}
+	}
 
 	state.round = {
-		questions,
+		questions: questionCount,
 		totalScore: 0,
 		playTime: 0,
 		isFinished: false,
