@@ -134,24 +134,27 @@ const switchCards = (direction?: SlideInDirection) => {
 	}
 };
 
-const nextCard = () => {
+const nextCard = (): boolean => {
+
 	if (activeIdx.value < props.entries.length - 1) {
 		activeIdx.value++
 		switchCards('from-bottom');
-		return;
+		return true;
 	}
 
 	emit('finish');
+	return false;
 };
 
-const prevCard = () => {
+const prevCard = (): boolean => {
+
 	if (activeIdx.value > 0) {
 		activeIdx.value--
 		switchCards('from-top');
-		return;
+		return true;
 	}
 
-	emit('exit');
+	return false
 };
 
 const scoreSet = new Set<string>();
@@ -167,6 +170,15 @@ const countScore = (score: number) => {
 	emit('score', score);
 };
 
+const handleCtrlBack = () => {
+
+	if (!prevCard()) {
+		//	todo: add a prompt
+		emit('exit');
+	}
+
+};
+
 </script>
 
 <template>
@@ -177,7 +189,7 @@ const countScore = (score: number) => {
 				<Card v-if="item" :key="item.card.id" :card="item.card" @score="countScore" @next="nextCard" @prev="prevCard" />
 			</div>
 		</div>
-		<CardControls :has_prev="activeIdx > 0" :has_next="activeIdx < entries.length - 1" @prev="prevCard" @next="nextCard" />
+		<CardControls :has_prev="activeIdx > 0" :has_next="activeIdx < entries.length - 1" @prev="handleCtrlBack" @next="nextCard" />
 	</div>
 </template>
 
