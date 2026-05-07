@@ -88,7 +88,7 @@ const closeDeck = () => {
 
 		<CollectionContainer>
 	
-			<CollectionHeader>
+			<CollectionHeader backHref="/app/collections">
 	
 				<template v-slot:title>
 	
