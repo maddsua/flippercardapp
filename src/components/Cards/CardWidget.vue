@@ -4,6 +4,7 @@ import type { CardNode } from '../../content';
 import Card from './Card.vue';
 import CardControls from './CardControls.vue';
 import CardDeckInfo from './CardDeckInfo.vue';
+import UIPrompt from '../App/UIPrompt.vue';
 
 const props = defineProps<{
 	labels: string[];
@@ -85,7 +86,7 @@ const newAnimatedState = (direction?: SlideInDirection): CardState => {
 	return state;
 }
 
-const pairState = reactive({
+const cardPairs = reactive({
 	a: newAnimatedState(),
 	b: null as CardState | null,
 });
@@ -117,20 +118,24 @@ const ejectAnimatedState = async (state: CardState, direction?: SlideOutDirectio
 	});
 };
 
+const hasSeenOtherCards = ref(false);
+
 const switchCards = (direction?: SlideInDirection) => {
 
-	if (!pairState.b) {
-		ejectAnimatedState(pairState.a, slideOut(direction));
-		pairState.b = newAnimatedState(direction);
+	hasSeenOtherCards.value = true;
+
+	if (!cardPairs.b) {
+		ejectAnimatedState(cardPairs.a, slideOut(direction));
+		cardPairs.b = newAnimatedState(direction);
 		return
 	}
 
-	if (pairState.a.flags.active) {
-		ejectAnimatedState(pairState.a, slideOut(direction));
-		pairState.b = newAnimatedState(direction);
+	if (cardPairs.a.flags.active) {
+		ejectAnimatedState(cardPairs.a, slideOut(direction));
+		cardPairs.b = newAnimatedState(direction);
 	} else {
-		ejectAnimatedState(pairState.b, slideOut(direction));
-		pairState.a = newAnimatedState(direction);
+		ejectAnimatedState(cardPairs.b, slideOut(direction));
+		cardPairs.a = newAnimatedState(direction);
 	}
 };
 
@@ -170,14 +175,29 @@ const countScore = (score: number) => {
 	emit('score', score);
 };
 
+const showExitPrompt = ref(false);
+
 const handleCtrlBack = () => {
 
-	if (!prevCard()) {
-		//	todo: add a prompt
-		emit('exit');
+	if (prevCard()) {
+		return;
 	}
 
+
+	if (hasSeenOtherCards.value) {
+		showExitPrompt.value = true;
+		return
+	}
+
+	emit('exit');
 };
+
+const handleExitPrompt = (confirmed?: boolean) => {
+	if (confirmed) {
+		emit('exit');
+	}
+	showExitPrompt.value = false;
+}
 
 </script>
 
@@ -185,11 +205,14 @@ const handleCtrlBack = () => {
 	<div class="card-widget">
 		<CardDeckInfo :labels="labels" :size="entries.length" :index="activeIdx" />
 		<div class="card-screen-container">
-			<div class="card-transition-slot" v-for="(item,idx) of [pairState.a, pairState.b]" :key="`${idx}:${item?.card.id || 'null'}`" :class="item?.flags">
+			<div class="card-transition-slot" v-for="(item,idx) of [cardPairs.a, cardPairs.b]" :key="`${idx}:${item?.card.id || 'null'}`" :class="item?.flags">
 				<Card v-if="item" :key="item.card.id" :card="item.card" @score="countScore" @next="nextCard" @prev="prevCard" />
 			</div>
 		</div>
 		<CardControls :has_prev="activeIdx > 0" :has_next="activeIdx < entries.length - 1" @prev="handleCtrlBack" @next="nextCard" />
+		<UIPrompt v-if="showExitPrompt" @done="handleExitPrompt">
+			Exit game?
+		</UIPrompt>
 	</div>
 </template>
 
