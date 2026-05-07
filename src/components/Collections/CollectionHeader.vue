@@ -39,7 +39,7 @@ const goBack = () => props.backHref ? router.push(props.backHref) : null;
 		.navigation {
 			position: absolute;
 			top: 0;
-			left: 0;
+			left: 0.5rem;
 
 			.container {
 				position: absolute;
