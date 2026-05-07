@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   aria-hidden="true"
+   role="img"
+   class="iconify iconify--logos"
+   width="31.88"
+   height="32"
+   preserveAspectRatio="xMidYMid meet"
+   viewBox="0 0 256 257"
+   version="1.1"
+   id="svg6"
+   sodipodi:docname="app.svg"
+   inkscape:version="1.4 (e7c3feb100, 2024-10-09)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview6"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050"
+     inkscape:zoom="16.563113"
+     inkscape:cx="11.924087"
+     inkscape:cy="16.874847"
+     inkscape:window-width="1920"
+     inkscape:window-height="1010"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg6" />
+  <defs
+     id="defs5">
+    <linearGradient
+       id="IconifyId1813088fe1fbc01fb466"
+       x1="-.828%"
+       x2="57.636%"
+       y1="7.652%"
+       y2="78.411%">
+      <stop
+         offset="0%"
+         stop-color="#41D1FF"
+         id="stop1" />
+      <stop
+         offset="100%"
+         stop-color="#BD34FE"
+         id="stop2" />
+    </linearGradient>
+    <linearGradient
+       id="IconifyId1813088fe1fbc01fb467"
+       x1="43.376%"
+       x2="50.316%"
+       y1="2.242%"
+       y2="89.03%">
+      <stop
+         offset="0%"
+         stop-color="#FFEA83"
+         id="stop3" />
+      <stop
+         offset="8.333%"
+         stop-color="#FFDD35"
+         id="stop4" />
+      <stop
+         offset="100%"
+         stop-color="#FFA800"
+         id="stop5" />
+    </linearGradient>
+  </defs>
+  <rect
+     style="fill:#fcfcfc;stroke-width:18.2681"
+     id="rect6"
+     width="153.3658"
+     height="218.49812"
+     x="82.051689"
+     y="-20.077549"
+     ry="16.944529"
+     transform="rotate(15)" />
+  <path
+     style="fill:none;stroke:#ff9100;stroke-width:33.33771875;stroke-opacity:1;stroke-dasharray:none"
+     d="M 184.14917,222.66916 C 40.408844,182.2422 73.774345,122.59264 73.774345,122.59264"
+     id="path6"
+     sodipodi:nodetypes="cc" />
+  <path
+     style="fill:#ff9100;fill-opacity:1;stroke:none;stroke-width:41.0381;stroke-opacity:1"
+     d="M 68.830458,68.962103 24.932524,152.76725 119.98425,138.25554 Z"
+     id="path7"
+     sodipodi:nodetypes="cccc" />
+</svg>
