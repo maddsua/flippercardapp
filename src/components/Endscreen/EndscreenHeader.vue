@@ -1,5 +1,6 @@
 <script setup lang="ts">
-
+import { intl, useLanguage } from '../../intl';
+const lang = useLanguage();
 </script>
 
 <template>
@@ -7,7 +8,11 @@
 		<div class="prize-icon"></div>
 		<div class="headline">
 			<h1>
-				Deck complete!
+				{{ intl(lang, {
+					en: 'Deck complete!',
+					de: 'Deck fertig!',
+					uk: 'Фініш!'
+				}) }}
 			</h1>
 			<h2 v-if="$slots.summary">
 				<slot name="summary" />

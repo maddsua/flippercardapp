@@ -13,6 +13,7 @@ import CollectionEndlistAction from './CollectionEndlistAction.vue';
 import CollectionBreak from './CollectionBreak.vue';
 import GenericButton from '../App/GenericButton.vue';
 import AppUI from '../App/AppUI.vue';
+import { intl, useLanguage } from '../../intl';
 
 const router = useRouter();
 const route = useRoute();
@@ -81,6 +82,8 @@ const closeDeck = () => {
 	router.push('/app/collections');
 };
 
+const lang = useLanguage();
+
 </script>
 
 <template>
@@ -97,7 +100,11 @@ const closeDeck = () => {
 					</template>
 	
 					<template v-else>
-						Unnamed collection
+						{{ intl(lang, {
+							en: 'Unnamed collection',
+							de: 'Unbenannte Sammlung',
+							uk: 'Безіменна колекція'
+						}) }}
 					</template>
 	
 				</template>
@@ -109,7 +116,11 @@ const closeDeck = () => {
 					</template>
 	
 					<template v-else>
-						No description provided
+						{{ intl(lang, {
+							en: 'No description provided',
+							de: 'Keine Beschreibung vorhanden',
+							uk: 'Опис не надано'
+						}) }}
 					</template>
 	
 				</template>
@@ -125,7 +136,11 @@ const closeDeck = () => {
 				<ErrorMessage v-if="stateError">
 	
 					<template v-slot:message>
-						Unable to display collection
+						{{ intl(lang, {
+							en: 'Unable to display content',
+							de: 'Inhalt kann nicht angezeigt werden',
+							uk: 'Не вдається відобразити вміст'
+						}) }}
 					</template>
 					
 					<template v-slot:details>
@@ -135,7 +150,11 @@ const closeDeck = () => {
 				</ErrorMessage>
 	
 				<p v-else>
-					This collection doesn't have any cards yet!
+					{{ intl(lang, {
+						en: `This collection doesn't have any cards yet!`,
+						de: 'Diese Sammlung enthält noch keine Karten!',
+						uk: 'У цій колекції ще немає жодної картки!'
+					}) }}
 				</p>
 				
 			</FullscreenMessage>
@@ -145,7 +164,11 @@ const closeDeck = () => {
 			<CollectionEndlistAction>
 	
 				<GenericButton @click="closeDeck">
-					Back to the collections
+					{{ intl(lang, {
+						en: 'Back to the list',
+						de: 'Zurück zur Liste',
+						uk: 'Назад до списку'
+					}) }}
 				</GenericButton>
 	
 			</CollectionEndlistAction>

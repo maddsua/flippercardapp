@@ -1,4 +1,4 @@
-import type { CardNode } from "../../../components/Cards/content";
+import type { CardNode } from "../../../content";
 
 const deck: CardNode[] = [
 	{

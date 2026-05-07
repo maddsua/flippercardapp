@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 import GenericButton from '../App/GenericButton.vue';
+import { intl, useLanguage } from '../../intl';
 
 const router = useRouter();
+const lang = useLanguage();
 
 const openApp = () => {
 	router.push('/app');
@@ -19,9 +21,19 @@ const openApp = () => {
 			<header>
 
 				<h1>
-					Gamify learning experience
-					<br>
-					with UNO-like flashcards
+					<template v-if="lang === 'uk'">
+						Нарешті, щось схоже на справжні флеш-картки
+					</template>
+					<template v-else-if="lang === 'de'">
+						Gamifiziere das Lernerlebnis
+						<br>
+						mit wie-UNO Lernkarten
+					</template>
+					<template v-else>
+						Gamify learning experience
+						<br>
+						with UNO-like flashcards
+					</template>
 				</h1>
 
 			</header>
@@ -32,13 +44,21 @@ const openApp = () => {
 
 			<section>
 				<GenericButton @click="openApp">
-					Experience the App
+					{{ intl(lang, {
+						en: 'Experience the App',
+						de: 'Die App Erfahren',
+						uk: 'До застосунку'
+					}) }}
 				</GenericButton>
 			</section>
 
 			<section>
 				<p>
-					Completely free of charge, no ads, self hostable by design.
+					{{ intl(lang, {
+						en: 'Completely free of charge, no ads, self hostable by design.',
+						de: 'Vollständig kostenlos, werbefrei und von Haus aus selbst hostbar.',
+						uk: 'Абсолютно безкоштовно, без реклами, з можливістю самостійного розміщення.'
+					}) }}
 				</p>
 			</section>
 

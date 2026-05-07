@@ -6,6 +6,7 @@ import EndscreenStatTile from './EndscreenStatTile.vue';
 import EndscreenActions from './EndscreenActions.vue';
 import EndscreenButton from './EndscreenButton.vue';
 import EndscreenHeader from './EndscreenHeader.vue';
+import { intl, useLanguage } from '../../intl';
 
 interface DeckStats {
 	questions: number;
@@ -38,6 +39,8 @@ const time = computed(() => {
 	return `${mins}:${secs.toString().padStart(2, '0')}`;
 });
 
+const lang = useLanguage();
+
 </script>
 
 <template>
@@ -48,23 +51,43 @@ const time = computed(() => {
 				<template v-slot:summary>
 
 					<template v-if="scoreRate > 0.95">
-						You've nailed it!
+						{{ intl(lang, {
+							en: `You've nailed it!`,
+							de: 'Perfekt hingekriegt!',
+							uk: 'Вау, потужно!'
+						}) }}
 					</template>
 
 					<template v-else-if="scoreRate > 0.75">
-						Good job!
+						{{ intl(lang, {
+							en: 'Good job!',
+							de: 'Gute Arbeit!',
+							uk: 'Гарна робота!'
+						}) }}
 					</template>
 
 					<template v-else-if="scoreRate > 0.6">
-						Hey, not bad!
+						{{ intl(lang, {
+							en: 'Hey, not bad!',
+							de: 'Hey, nicht schlecht!',
+							uk: 'Скоріше так ніж ні!'
+						}) }}
 					</template>
 
 					<template v-else-if="scoreRate > 0.3">
-						You could do better!
+						{{ intl(lang, {
+							en: 'You could do better!',
+							de: 'Es könnte besser sein.',
+							uk: 'Могло бути краще.'
+						}) }}
 					</template>
 
 					<template v-else>
-						Better luck next time!
+						{{ intl(lang, {
+							en: 'Better luck next time!',
+							de: 'Viel Glück beim nächsten Mal!',
+							uk: 'Спробуємо знов?'
+						}) }}
 					</template>
 
 				</template>
@@ -74,7 +97,11 @@ const time = computed(() => {
 			<EndscreenStats>
 				<EndscreenStatTile icon="target">
 					<template v-slot:title>
-						Correct
+						{{ intl(lang, {
+							en: 'Correct',
+							de: 'Richtig',
+							uk: 'Вірно'
+						}) }}
 					</template>
 					{{ stats.score }}
 					<template v-slot:after>
@@ -83,13 +110,21 @@ const time = computed(() => {
 				</EndscreenStatTile>
 				<EndscreenStatTile icon="time">
 					<template v-slot:title>
-						Time
+						{{ intl(lang, {
+							en: 'Time',
+							de: 'Zeit',
+							uk: 'Час'
+						}) }}
 					</template>
 					{{ time }}
 				</EndscreenStatTile>
 				<EndscreenStatTile icon="prize">
 					<template v-slot:title>
-						Accuracy
+						{{ intl(lang, {
+							en: 'Accuracy',
+							de: 'Präzision',
+							uk: 'Точність'
+						}) }}
 					</template>
 
 					{{ Math.floor(scoreRate*100) }}%
@@ -97,10 +132,18 @@ const time = computed(() => {
 			</EndscreenStats>
 			<EndscreenActions>
 				<EndscreenButton icon="retry" :filled="true" @click="emit('reset')">
-					Try again
+					{{ intl(lang, {
+						en: 'Try again',
+						de: 'Noch einmal',
+						uk: 'Ще раз'
+					}) }}
 				</EndscreenButton>
 				<EndscreenButton icon="finish" @click="emit('finish')">
-					Finish
+					{{ intl(lang, {
+						en: 'Finish',
+						de: 'Beended',
+						uk: 'Завершити'
+					}) }}
 				</EndscreenButton>
 			</EndscreenActions>
 		</div>

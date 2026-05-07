@@ -13,6 +13,7 @@ import CollectionBreak from './CollectionBreak.vue';
 import CollectionEndlistAction from './CollectionEndlistAction.vue';
 import GenericButton from '../App/GenericButton.vue';
 import AppUI from '../App/AppUI.vue';
+import { intl, useLanguage } from '../../intl';
 
 const router = useRouter();
 
@@ -40,6 +41,8 @@ const openExplore = () => {
 	router.push('/app/explore');
 };
 
+const lang = useLanguage();
+
 </script>
 
 <template>
@@ -51,11 +54,19 @@ const openExplore = () => {
 			<CollectionHeader>
 	
 				<template v-slot:title>
-					Collections
+					{{ intl(lang, {
+						en: `My collections`,
+						de: 'Meine Karten',
+						uk: 'Мої картки'
+					}) }}
 				</template>
 	
 				<template v-slot:summary>
-					Your card collections
+					{{ intl(lang, {
+						en: `Your card collections`,
+						de: 'Ihre Kartensammlungen',
+						uk: 'Ваші колекції карток'
+					}) }}
 				</template>
 	
 			</CollectionHeader>
@@ -69,7 +80,11 @@ const openExplore = () => {
 				<ErrorMessage v-if="state.error">
 	
 					<template v-slot:message>
-						Unable to display collections
+						{{ intl(lang, {
+							en: `Unable to display collections`,
+							de: 'Karten können nicht angezeigt werden',
+							uk: 'Не вдалося відобразити колекції'
+						}) }}
 					</template>
 					
 					<template v-slot:details>
@@ -79,7 +94,11 @@ const openExplore = () => {
 				</ErrorMessage>
 	
 				<p v-else>
-					You haven't added any collections yet!
+					{{ intl(lang, {
+						en: `You haven't added any collections yet!`,
+						de: 'Sie haben noch keine Karten hinzugefügt!',
+						uk: 'Ви ще не додали жодної колекції!'
+					}) }}
 				</p>
 				
 			</FullscreenMessage>
@@ -89,7 +108,11 @@ const openExplore = () => {
 			<CollectionEndlistAction>
 	
 				<GenericButton theme="orange" @click="openExplore">
-					Explore cards
+					{{ intl(lang, {
+						en: 'Explore cards',
+						de: 'Mehr Karten finden',
+						uk: 'Знайти картки'
+					}) }}
 				</GenericButton>
 	
 			</CollectionEndlistAction>
