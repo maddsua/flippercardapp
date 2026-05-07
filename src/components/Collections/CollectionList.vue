@@ -11,6 +11,5 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
-		flex-grow: 1;
 	}
 </style>

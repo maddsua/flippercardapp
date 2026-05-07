@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Transformed by: SVG Repo Mixer Tools -->
+
+<svg
+   width="800px"
+   height="800px"
+   viewBox="0 -0.5 21 21"
+   version="1.1"
+   fill="#ffffff"
+   id="svg1"
+   sodipodi:docname="search-mask.svg"
+   inkscape:version="1.4 (e7c3feb100, 2024-10-09)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs2" />
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050"
+     inkscape:zoom="1.00125"
+     inkscape:cx="400"
+     inkscape:cy="400"
+     inkscape:window-width="1920"
+     inkscape:window-height="1010"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1" />
+  <g
+     id="SVGRepo_bgCarrier"
+     stroke-width="0"
+     transform="matrix(0.83021223,0,0,0.83021223,1.7827715,1.6978777)" />
+  <g
+     id="SVGRepo_tracerCarrier"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     transform="matrix(0.83021223,0,0,0.83021223,1.7827715,1.6978777)" />
+  <g
+     id="SVGRepo_iconCarrier"
+     transform="matrix(0.83021223,0,0,0.83021223,1.7827715,1.6978777)">
+    <title
+       id="title1">search_left [#ffffff]</title>
+    <desc
+       id="desc1">Created with Sketch.</desc>
+    <defs
+       id="defs1" />
+    <g
+       id="Page-1"
+       stroke="none"
+       stroke-width="1"
+       fill="none"
+       fill-rule="evenodd">
+      <g
+         id="Dribbble-Light-Preview"
+         transform="translate(-299,-280)"
+         fill="#ffffff">
+        <g
+           id="icons"
+           transform="translate(56,160)">
+          <path
+             d="m 264,138.586 -1.4847,1.414 -4.45515,-4.242 1.4847,-1.415 z M 251.4,134 c -3.4734,0 -6.3,-2.691 -6.3,-6 0,-3.308 2.8266,-6 6.3,-6 3.4734,0 6.3,2.692 6.3,6 0,3.309 -2.8266,6 -6.3,6 z m 0,-14 c -4.6389,0 -8.4,3.582 -8.4,8 0,4.418 3.7611,8 8.4,8 4.6389,0 8.4,-3.582 8.4,-8 0,-4.418 -3.7611,-8 -8.4,-8 z"
+             id="search_left-[#ffffff]" />
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

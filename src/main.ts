@@ -11,12 +11,39 @@ import './main.scss';
 import './theme.scss';
 
 const routes = [
-	{ path: '/', component: HomeView },
-	{ path: '/app', component: CollectionsListView },
-	{ path: '/app/collections', component: CollectionsListView },
-	{ path: '/app/collection/:collection_id', component: CollectionView },
-	{ path: '/app/play/deck/:deck_id', component: PlayView },
-	{ path: '/:pathMatch(.*)*', component: HomeView },
+	{
+		path: '/',
+		component: HomeView,
+	},
+	{
+		path: '/app',
+		component: CollectionsListView,
+		meta: {
+			app_view: 'home'
+		},
+	},
+	{
+		path: '/app/collections',
+		component: CollectionsListView,
+		meta: {
+			app_view: 'home'
+		},
+	},
+	{
+		path: '/app/collection/:collection_id',
+		component: CollectionView,
+		meta: {
+			app_view: 'home'
+		},
+	},
+	{
+		path: '/app/play/deck/:deck_id',
+		component: PlayView,
+	},
+	{
+		path: '/:pathMatch(.*)*',
+		component: HomeView,
+	},
 ]
 
 const router = createRouter({

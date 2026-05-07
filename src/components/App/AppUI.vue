@@ -1,13 +1,16 @@
 <script setup lang="ts">
-//	todo: add navigation shit
+import AppNavigation from './AppNavigation.vue';
 </script>
 
 <template>
 	<div class="app-ui">
-		<div class="app-content">
-			<slot>
-				[App content]
-			</slot>
+		<div class="app-viewport">
+			<div class="app-content">
+				<slot>
+					[App content]
+				</slot>
+			</div>
+			<AppNavigation />
 		</div>
 	</div>
 </template>
@@ -23,10 +26,19 @@
 		height: 100vh;
 		height: 100dvh;
 
-		.app-content {
+		.app-viewport {
+			display: flex;
+			flex-direction: column;
+			height: 100%;
 			width: 100%;
+
+			@media (orientation: landscape) {
+				max-width: 40rem;
+			}
+		}
+
+		.app-content {
 			flex-grow: 1;
-			max-width: 40rem;
 			overflow: hidden auto;
 		}
 	}
