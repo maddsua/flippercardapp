@@ -6,8 +6,6 @@ import type { CardCollection, CardDeck } from '../../content';
 import CollectionList from './CollectionList.vue';
 import ErrorMessage from '../App/ErrorMessage.vue';
 import CollectionListEntry from './CollectionListEntry.vue';
-import CollectionContainer from './CollectionContainer.vue';
-import CollectionHeader from './CollectionHeader.vue';
 import CollectionEndlistAction from './CollectionEndlistAction.vue';
 import CollectionBreak from './CollectionBreak.vue';
 import GenericButton from '../App/GenericButton.vue';
@@ -16,6 +14,7 @@ import { intl, useLanguage } from '../../intl';
 import CentralMessage from '../App/CentralMessage.vue';
 import LoadingMessage from '../App/LoadingMessage.vue';
 import Skeleton from '../App/Skeleton.vue';
+import AppUiHeader from '../App/AppUiHeader.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -95,106 +94,103 @@ const lang = useLanguage();
 <template>
 	<AppUI>
 
-		<CollectionContainer>
-	
-			<CollectionHeader backHref="/app/collections">
-	
-				<template v-slot:title>
-	
-					<Skeleton v-if="!state.collection.ready">
-						Name placeholder
-					</Skeleton>
+		<AppUiHeader backHref="/app/collections">
 
-					<template v-else-if="state.collection.entry?.name">
-						{{ state.collection.entry?.name }}
-					</template>
-	
-					<template v-else>
-						{{ intl(lang, {
-							en: 'Unnamed collection',
-							de: 'Unbenannte Sammlung',
-							uk: 'Безіменна колекція'
-						}) }}
-					</template>
-	
-				</template>
-	
-				<template v-slot:summary>
-	
-					<Skeleton v-if="!state.collection.ready">
-						Deskcription placeholder
-					</Skeleton>
+			<template v-slot:title>
 
-					<template v-else-if="state.collection.entry?.description">
-						{{ state.collection.entry?.description }}
-					</template>
-	
-					<template v-else>
-						{{ intl(lang, {
-							en: 'No description provided',
-							de: 'Keine Beschreibung vorhanden',
-							uk: 'Опис не надано'
-						}) }}
-					</template>
+				<Skeleton v-if="!state.collection.ready">
+					Name placeholder
+				</Skeleton>
 
+				<template v-else-if="state.collection.entry?.name">
+					{{ state.collection.entry?.name }}
 				</template>
 
-			</CollectionHeader>
-
-			<CollectionList v-if="state.decks.ready && state.decks.entries.length">
-				<CollectionListEntry v-for="item of state.decks.entries" :title="item.name" @click="openDeck(item.id)" />
-			</CollectionList>
-
-			<CentralMessage v-else>
-	
-				<ErrorMessage v-if="stateError">
-	
-					<template v-slot:message>
-						{{ intl(lang, {
-							en: 'Unable to display content',
-							de: 'Inhalt kann nicht angezeigt werden',
-							uk: 'Не вдається відобразити вміст'
-						}) }}
-					</template>
-					
-					<template v-slot:details>
-						{{ stateError }}
-					</template>
-	
-				</ErrorMessage>
-
-				<LoadingMessage v-else-if="!state.decks.ready">
+				<template v-else>
 					{{ intl(lang, {
-						en: 'Loading...',
-						de: 'Lädt...',
-						uk: 'Один момент...'
+						en: 'Unnamed collection',
+						de: 'Unbenannte Sammlung',
+						uk: 'Безіменна колекція'
 					}) }}
-				</LoadingMessage>
-	
-				<p v-else>
+				</template>
+
+			</template>
+
+			<template v-slot:summary>
+
+				<Skeleton v-if="!state.collection.ready">
+					Deskcription placeholder
+				</Skeleton>
+
+				<template v-else-if="state.collection.entry?.description">
+					{{ state.collection.entry?.description }}
+				</template>
+
+				<template v-else>
 					{{ intl(lang, {
-						en: `This collection doesn't have any cards yet!`,
-						de: 'Diese Sammlung enthält noch keine Karten!',
-						uk: 'У цій колекції ще немає жодної картки!'
+						en: 'No description provided',
+						de: 'Keine Beschreibung vorhanden',
+						uk: 'Опис не надано'
 					}) }}
-				</p>
+				</template>
+
+			</template>
+
+		</AppUiHeader>
+
+		<CollectionList v-if="state.decks.ready && state.decks.entries.length">
+			<CollectionListEntry v-for="item of state.decks.entries" :title="item.name" @click="openDeck(item.id)" />
+		</CollectionList>
+
+		<CentralMessage v-else>
+
+			<ErrorMessage v-if="stateError">
+
+				<template v-slot:message>
+					{{ intl(lang, {
+						en: 'Unable to display content',
+						de: 'Inhalt kann nicht angezeigt werden',
+						uk: 'Не вдається відобразити вміст'
+					}) }}
+				</template>
 				
-			</CentralMessage>
+				<template v-slot:details>
+					{{ stateError }}
+				</template>
+
+			</ErrorMessage>
+
+			<LoadingMessage v-else-if="!state.decks.ready">
+				{{ intl(lang, {
+					en: 'Loading...',
+					de: 'Lädt...',
+					uk: 'Один момент...'
+				}) }}
+			</LoadingMessage>
+
+			<p v-else>
+				{{ intl(lang, {
+					en: `This collection doesn't have any cards yet!`,
+					de: 'Diese Sammlung enthält noch keine Karten!',
+					uk: 'У цій колекції ще немає жодної картки!'
+				}) }}
+			</p>
+			
+		</CentralMessage>
+
+		<CollectionBreak />
+
+		<CollectionEndlistAction>
+
+			<GenericButton @click="closeDeck">
+				{{ intl(lang, {
+					en: 'Back to the list',
+					de: 'Zurück zur Liste',
+					uk: 'Назад до списку'
+				}) }}
+			</GenericButton>
+
+		</CollectionEndlistAction>
 	
-			<CollectionBreak />
-	
-			<CollectionEndlistAction>
-	
-				<GenericButton @click="closeDeck">
-					{{ intl(lang, {
-						en: 'Back to the list',
-						de: 'Zurück zur Liste',
-						uk: 'Назад до списку'
-					}) }}
-				</GenericButton>
-	
-			</CollectionEndlistAction>
-	
-		</CollectionContainer>
 	</AppUI>
 </template>

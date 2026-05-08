@@ -5,7 +5,7 @@ import AppNavigation from './AppNavigation.vue';
 <template>
 	<div class="app-ui">
 		<div class="app-viewport">
-			<div class="app-content">
+			<div class="app-container">
 				<slot>
 					[App content]
 				</slot>
@@ -37,9 +37,16 @@ import AppNavigation from './AppNavigation.vue';
 			}
 		}
 
-		.app-content {
-			flex-grow: 1;
+		.app-container {
+			display: flex;
+			flex-direction: column;
+			gap: 2rem;
+			position: relative;
+			min-height: 0;
 			overflow: hidden auto;
+			scrollbar-width: thin;
+			padding: 2rem;
+			flex-grow: 1;
 		}
 	}
 </style>

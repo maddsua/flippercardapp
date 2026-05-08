@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 
-
 const props = defineProps<{
 	backHref?: string;
 }>();
@@ -19,7 +18,7 @@ const goBack = () => props.backHref ? router.push(props.backHref) : null;
 				<button type="button" class="go-back" @click="goBack"></button>
 			</div>
 		</div>
-		<div class="content">
+		<div class="header">
 			<h1>
 				<slot name="title">
 					[Title]
@@ -68,7 +67,7 @@ const goBack = () => props.backHref ? router.push(props.backHref) : null;
 			}
 		}
 
-		.content {
+		.header {
 			display: flex;
 			flex-direction: column;
 			gap: 0.5rem;

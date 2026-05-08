@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import AppUI from '../App/AppUI.vue';
-
-//	todo: reuse list components
+import AppUiHeader from '../App/AppUiHeader.vue';
 </script>
 
 <template>
 	<AppUI>
-		TODO: Implement: 'Discover' view
+		<AppUiHeader>
+			<template v-slot:title>
+				TODO: Implement: 'Discover' view
+			</template>
+		</AppUiHeader>
 	</AppUI>
 </template>
