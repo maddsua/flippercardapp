@@ -1,13 +1,13 @@
 // this is a sample data providerd. it is to be deleted later on during development
 
-import type { MethodResult, CollectionProvider } from "../../content.loaders";
+import type { MethodResult, ContentProvider } from "../../content.loaders";
 import type { CardCollection, CardDeck, CardNode } from "../../content";
 
 import mixed_deck from './decks/mixed_deck';
 
 const wrapResult = <T>(data: T): MethodResult<T> => ({ data, error: null });
 
-class SampleCollectionProvider implements CollectionProvider {
+class SampleCollectionProvider implements ContentProvider {
 
 	readonly entries: SampleCollection[];
 
@@ -16,7 +16,7 @@ class SampleCollectionProvider implements CollectionProvider {
 	}
 
 	collections = async (id?: string) => wrapResult(this.entries.filter(item => item.id === id || !id));
-	decks = async (id?: string) => wrapResult(this.entries.map(item => item.entries).flat().filter(item => item.id === id || !id));
+	starred = async (id?: string) => wrapResult(this.entries.map(item => item.entries).flat().filter(item => item.id === id || !id));
 };
 
 class SampleCollection implements CardCollection {

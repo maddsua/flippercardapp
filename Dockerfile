@@ -1,8 +1,8 @@
-from node:22 as web-builder
+from node:22-alpine3.22 as app-builder
 
-workdir /app/web
+workdir /app
 
-copy ./web .
+copy ./app .
 
 run npm i
 run npm run build
@@ -13,7 +13,11 @@ workdir /app
 
 copy . .
 
-copy --from=web-builder /app/web/dist /app/cmd/web/dist
+copy --from=app-builder /app/dist /app/cmd/web/dist
+
+run apk add --no-cache make build-base
+
+arg CGO_ENABLED=1
 
 run go build -v -ldflags "-s -w" -o service ./cmd
 
@@ -23,6 +27,6 @@ workdir /app
 
 copy --from=svc-builder /app/service /app
 
-run apk add ca-certificates
+run apk add --no-cache ca-certificates
 
 cmd  ["/app/service"]

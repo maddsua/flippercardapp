@@ -1,9 +1,11 @@
 # frontend ignores
-/web/dist
-/web/node_modules
+/app/dist/
+/app/node_modules/
+/app/.vite/
 
 # service ignores
-/cmd/web/dist
+/cmd/web/dist/
+/data/
 
 # env, in cas we have 'em
 .env

@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useCollectionProvider } from '../../content.loaders';
+import { useContent } from '../../content.loaders';
 import type { CardCollection, CardDeck } from '../../content';
 import CollectionList from './CollectionList.vue';
-import FullscreenMessage from '../App/FullscreenMessage.vue';
 import ErrorMessage from '../App/ErrorMessage.vue';
 import CollectionListEntry from './CollectionListEntry.vue';
 import CollectionContainer from './CollectionContainer.vue';
@@ -14,6 +13,9 @@ import CollectionBreak from './CollectionBreak.vue';
 import GenericButton from '../App/GenericButton.vue';
 import AppUI from '../App/AppUI.vue';
 import { intl, useLanguage } from '../../intl';
+import CentralMessage from '../App/CentralMessage.vue';
+import LoadingMessage from '../App/LoadingMessage.vue';
+import Skeleton from '../App/Skeleton.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -21,10 +23,12 @@ const route = useRoute();
 const state = reactive({
 	collection: {
 		entry: null as CardCollection | null,
+		ready: false,
 		error: null as string | null,
 	},
 	decks: {
-		entries: null as CardDeck[] | null,
+		entries: [] as CardDeck[],
+		ready: false,
 		error: null as string | null,
 	},
 });
@@ -39,7 +43,7 @@ const loadCollection = async () => {
 		return;
 	}
 
-	const { data, error } = await useCollectionProvider().collections(id);
+	const { data, error } = await useContent().collections(id);
 	if (!data || error) {
 		state.collection.error = error?.message || 'Unable to load collection data';
 		return;
@@ -51,6 +55,7 @@ const loadCollection = async () => {
 	}
 
 	state.collection.entry = data[0];
+	setTimeout(() => state.collection.ready = true, 250);
 };
 
 const loadDecks = async (collection: CardCollection) => {
@@ -62,6 +67,7 @@ const loadDecks = async (collection: CardCollection) => {
 	}
 
 	state.decks.entries = data;
+	setTimeout(() => state.decks.ready = true, 350);
 };
 
 onMounted(async () => {
@@ -95,7 +101,11 @@ const lang = useLanguage();
 	
 				<template v-slot:title>
 	
-					<template v-if="state.collection.entry?.name">
+					<Skeleton v-if="!state.collection.ready">
+						Name placeholder
+					</Skeleton>
+
+					<template v-else-if="state.collection.entry?.name">
 						{{ state.collection.entry?.name }}
 					</template>
 	
@@ -111,7 +121,11 @@ const lang = useLanguage();
 	
 				<template v-slot:summary>
 	
-					<template v-if="state.collection.entry?.description">
+					<Skeleton v-if="!state.collection.ready">
+						Deskcription placeholder
+					</Skeleton>
+
+					<template v-else-if="state.collection.entry?.description">
 						{{ state.collection.entry?.description }}
 					</template>
 	
@@ -122,16 +136,16 @@ const lang = useLanguage();
 							uk: 'Опис не надано'
 						}) }}
 					</template>
-	
+
 				</template>
-	
+
 			</CollectionHeader>
-	
-			<CollectionList v-if="state.decks.entries?.length">
+
+			<CollectionList v-if="state.decks.ready && state.decks.entries.length">
 				<CollectionListEntry v-for="item of state.decks.entries" :title="item.name" @click="openDeck(item.id)" />
 			</CollectionList>
-	
-			<FullscreenMessage v-else>
+
+			<CentralMessage v-else>
 	
 				<ErrorMessage v-if="stateError">
 	
@@ -148,6 +162,14 @@ const lang = useLanguage();
 					</template>
 	
 				</ErrorMessage>
+
+				<LoadingMessage v-else-if="!state.decks.ready">
+					{{ intl(lang, {
+						en: 'Loading...',
+						de: 'Lädt...',
+						uk: 'Один момент...'
+					}) }}
+				</LoadingMessage>
 	
 				<p v-else>
 					{{ intl(lang, {
@@ -157,7 +179,7 @@ const lang = useLanguage();
 					}) }}
 				</p>
 				
-			</FullscreenMessage>
+			</CentralMessage>
 	
 			<CollectionBreak />
 	

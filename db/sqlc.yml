@@ -1,0 +1,28 @@
+version: "2"
+sql:
+  - engine: "sqlite"
+    queries: "queries"
+    schema: "migrations"
+    gen:
+      go:
+        package: "generated"
+        out: "generated"
+        overrides:
+          - db_type: "uuid"
+            go_type:
+              import: "github.com/google/uuid"
+              type: "UUID"
+          - db_type: "uuid"
+            nullable: true
+            go_type:
+              import: "github.com/google/uuid"
+              type: "NullUUID"
+          - db_type: "time"
+            go_type:
+              import: "github.com/maddsua/flippercardapp/db/types"
+              type: "Time"
+          - db_type: "time"
+            nullable: true
+            go_type:
+              import: "github.com/maddsua/flippercardapp/db/types"
+              type: "NullTime"

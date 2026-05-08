@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { onMounted, reactive } from 'vue';
 import type { CardCollection } from '../../content';
-import { useCollectionProvider } from '../../content.loaders';
+import { useContent } from '../../content.loaders';
 import { useRouter } from 'vue-router';
 import CollectionList from './CollectionList.vue';
 import CollectionListEntry from './CollectionListEntry.vue';
-import FullscreenMessage from '../App/FullscreenMessage.vue';
 import ErrorMessage from '../App/ErrorMessage.vue';
 import CollectionHeader from './CollectionHeader.vue';
 import CollectionContainer from './CollectionContainer.vue';
@@ -14,23 +13,27 @@ import CollectionEndlistAction from './CollectionEndlistAction.vue';
 import GenericButton from '../App/GenericButton.vue';
 import AppUI from '../App/AppUI.vue';
 import { intl, useLanguage } from '../../intl';
+import CentralMessage from '../App/CentralMessage.vue';
+import LoadingMessage from '../App/LoadingMessage.vue';
 
 const router = useRouter();
 
 const state = reactive({
-	collections: null as CardCollection[] | null,
+	collections: [] as CardCollection[],
+	ready: false,
 	error: null as string | null,
 });
 
 onMounted(async () => {
 
-	const { data, error } = await useCollectionProvider().collections();
+	const { data, error } = await useContent().collections();
 	if (!data || error) {
 		state.error = error?.message || 'Unable to load collections';
 		return;
 	}
 
 	state.collections = data;
+	setTimeout(() => state.ready = true, 250);
 });
 
 const openCollection = (id: string) => {
@@ -70,12 +73,12 @@ const lang = useLanguage();
 				</template>
 	
 			</CollectionHeader>
-	
-			<CollectionList v-if="state.collections?.length">
+
+			<CollectionList v-if="state.ready && state.collections.length">
 				<CollectionListEntry v-for="item of state.collections" :title="item.name" @click="openCollection(item.id)" />
 			</CollectionList>
 	
-			<FullscreenMessage v-else>
+			<CentralMessage v-else>
 	
 				<ErrorMessage v-if="state.error">
 	
@@ -92,6 +95,14 @@ const lang = useLanguage();
 					</template>
 	
 				</ErrorMessage>
+
+				<LoadingMessage v-else-if="!state.ready">
+					{{ intl(lang, {
+						en: 'Loading...',
+						de: 'Lädt...',
+						uk: 'Один момент...'
+					}) }}
+				</LoadingMessage>
 	
 				<p v-else>
 					{{ intl(lang, {
@@ -101,7 +112,7 @@ const lang = useLanguage();
 					}) }}
 				</p>
 				
-			</FullscreenMessage>
+			</CentralMessage>
 	
 			<CollectionBreak />
 	

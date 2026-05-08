@@ -6,7 +6,7 @@ import Endscreen from '../Endscreen/Endscreen.vue';
 import FullscreenMessage from '../App/FullscreenMessage.vue';
 import { shuffleArray } from '../../shuffle';
 import { useRoute, useRouter } from 'vue-router';
-import { useCollectionProvider } from '../../content.loaders';
+import { useContent } from '../../content.loaders';
 import LoadingMessage from '../App/LoadingMessage.vue';
 import ErrorMessage from '../App/ErrorMessage.vue';
 import GenericButton from '../App/GenericButton.vue';
@@ -84,7 +84,7 @@ const loadDeck = async () => {
 		return { error: new Error('Deck ID required') };
 	}
 
-	const { data, error } = await useCollectionProvider().decks(id);
+	const { data, error } = await useContent().decks(id);
 	if (!data || error) {
 		return { error: error || new Error('Unable to load a deck') };
 	}

@@ -3,11 +3,11 @@ import CardPoll from './CardPoll.vue';
 import CardTextBox from './CardTextBox.vue';
 import CardTextNode from './CardTextNode.vue';
 import CardTitle from './CardTitle.vue';
-import type { CardSideNode } from '../../content';
+import type { CardFace } from '../../content';
 import { computed } from 'vue';
 
 const props = defineProps<{
-	entry: CardSideNode;
+	entry: CardFace;
 }>();
 
 const emit = defineEmits<{
