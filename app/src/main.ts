@@ -9,6 +9,9 @@ import CollectionView from './components/Collections/CollectionView.vue';
 
 import './main.scss';
 import './theme.scss';
+import DiscoverView from './components/Discover/DiscoverView.vue';
+import StarredView from './components/Starred/StarredView.vue';
+import MenuView from './components/Menu/MenuView.vue';
 
 const routes = [
 	{
@@ -39,6 +42,18 @@ const routes = [
 	{
 		path: '/app/play/deck/:deck_id',
 		component: PlayView,
+	},
+	{
+		path: '/app/discover',
+		component: DiscoverView,
+	},
+	{
+		path: '/app/starred',
+		component: StarredView,
+	},
+	{
+		path: '/app/menu',
+		component: MenuView,
 	},
 	{
 		path: '/:pathMatch(.*)*',
