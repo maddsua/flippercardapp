@@ -53,6 +53,10 @@ func (resp *Response[T]) Write(wrt http.ResponseWriter) {
 
 	wrt.Header().Set("Content-Type", "application/json")
 
+	if resp.Error != nil {
+		wrt.WriteHeader(resp.Error.StatusCode())
+	}
+
 	json.NewEncoder(wrt).Encode(resp)
 }
 
@@ -62,7 +66,8 @@ type APIError struct {
 }
 
 func (err *APIError) StatusCode() int {
-	return err.Code
+	// min-max the error code to avoid whoopsie-daisies with invalid statuses
+	return min(max(http.StatusBadRequest, err.Code), http.StatusNetworkAuthenticationRequired)
 }
 
 func (err *APIError) Error() string {
