@@ -46,14 +46,23 @@ const routes = [
 	{
 		path: '/app/discover',
 		component: DiscoverView,
+		meta: {
+			app_view: 'discover'
+		},
 	},
 	{
 		path: '/app/starred',
 		component: StarredView,
+		meta: {
+			app_view: 'starred'
+		},
 	},
 	{
 		path: '/app/menu',
 		component: MenuView,
+		meta: {
+			app_view: 'menu'
+		},
 	},
 	{
 		path: '/:pathMatch(.*)*',
