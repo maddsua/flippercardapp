@@ -64,7 +64,7 @@ func main() {
 			slog.Info("DB schema updated",
 				slog.Int("version", int(state.Version)))
 		} else {
-			slog.Info("DB schema  up to date")
+			slog.Info("DB schema up to date")
 		}
 	}
 
