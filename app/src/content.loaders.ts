@@ -21,7 +21,7 @@ class ContentProvider {
 
 	collections = async (id?: string): Promise<MethodResult<CardCollection[]>> => {
 
-		const { data, error } = await this.client.listCollections({ id });
+		const { data, error } = await this.client.listCollections({ ids: id ? [id] : null });
 		if (!data || error) {
 			return { data: null, error: error };
 		}
@@ -31,7 +31,7 @@ class ContentProvider {
 
 	decks = async (id?: string) => {
 
-		const { data, error } = await this.client.listDecks({ id });
+		const { data, error } = await this.client.listDecks({ ids: id ? [id] : null });
 		if (!data || error) {
 			return { data: null, error: error };
 		}
@@ -90,7 +90,7 @@ class DeckProvider implements CardDeck {
 
 	collection = async () => {
 
-		const { data, error } = await this.client.listCollections({ id: this.collectionID });
+		const { data, error } = await this.client.listCollections({ ids: [this.collectionID] });
 		if (!data || error) {
 			return { data: null, error: error };
 		}

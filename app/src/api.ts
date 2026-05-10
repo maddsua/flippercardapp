@@ -16,7 +16,51 @@ export interface Pagination {
 	limit?: number;
 };
 
-type MethodParamsInit = URLSearchParams | Record<string, string | number | null | undefined>;
+type OneOrMore<T> = T | T[];
+type ParamValue = OneOrMore<string> | OneOrMore<number>;
+type MethodParamsInit = URLSearchParams | Record<string, ParamValue | null | undefined>;
+
+const unwrapError = (error: any): Error => {
+	return error instanceof Error ? error : new Error(`${error}`);
+};
+
+const serializeQueryParams = (target: URLSearchParams, params?: MethodParamsInit) => {
+
+	if (!params) {
+		return;
+	}
+
+	const entries = unwrapQueryParams(params);
+
+	for (const [name, value] of entries) {
+
+		if (!value) {
+			continue
+		}
+
+		switch (typeof value) {
+			case 'string':
+				target.append(name, value);
+				break;
+			case 'number':
+				target.append(name, value.toString());
+				break;
+			case 'object':
+				serializeArrayQueryParams(target,name, value);
+				break
+			default: break;
+		}
+	}
+};
+
+const serializeArrayQueryParams = (target: URLSearchParams, name: string, value: ParamValue) => {
+	if (!Array.isArray(value) || !value.length) {
+		return
+	}
+	target.append(name, value.join(','));
+};
+
+const unwrapQueryParams = (params: MethodParamsInit) => params instanceof URLSearchParams ? params.entries() : Object.entries(params);
 
 export class ApiClient {
 
@@ -31,29 +75,16 @@ export class ApiClient {
 		}
 	}
 
-	private procedureURL = (method: string, params?: MethodParamsInit) => {
+	private procedureURL = (name: string, params?: MethodParamsInit) => {
 
 		const url = new URL(this.endpoint.href);
 
 		const prefixNormalized = url.pathname.endsWith('/') ? url.pathname.slice(0, -1) : url.pathname;
-		const methodNormalized = method.startsWith('/') ? method.slice(1) : method
+		const methodNormalized = name.startsWith('/') ? name.slice(1) : name
 
 		url.pathname = `${prefixNormalized}/${methodNormalized}`;
 
-		if (params) {
-			const entries = params instanceof URLSearchParams ? params.entries() : Object.entries(params);
-			for (const [name, value] of entries) {
-
-				switch (typeof value) {
-					case 'string':
-						url.searchParams.append(name, value);
-						break;
-					case 'number':
-						url.searchParams.append(name, value.toString());
-						break;
-				}
-			}
-		}
+		serializeQueryParams(url.searchParams, params);
 
 		return url;
 	};
@@ -83,21 +114,18 @@ export class ApiClient {
 		return result;
 	};
 
-	listCollections = async (params?: { id?: string } & Partial<Pagination>) => {
+	listCollections = async (params?: { ids?: string[] | null } & Partial<Pagination>) => {
 		return this.exec<ApiPage<CollectionMetadata>>('GET', '/collections', params);
 	};
 
-	listDecks = async (params?: { id?: string, collection_id?: string } & Partial<Pagination>) => {
+	//	todo: update as well
+	listDecks = async (params?: { ids?: string[] | null, collection_id?: string } & Partial<Pagination>) => {
 		return this.exec<ApiPage<CardDeckMetadata>>('GET','/decks', params);
 	};
 
 	loadDeck = async (id: string) => {
 		return this.exec<CardDeck>('GET',`/decks/${id}`);
 	};
-};
-
-const unwrapError = (error: any): Error => {
-	return error instanceof Error ? error : new Error(`${error}`);
 };
 
 export const useClient = () => new ApiClient('/api');
