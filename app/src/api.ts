@@ -18,7 +18,7 @@ export interface Pagination {
 
 type OneOrMore<T> = T | T[];
 type ParamValue = OneOrMore<string> | OneOrMore<number>;
-type MethodParamsInit = URLSearchParams | Record<string, ParamValue | null | undefined>;
+type MethodParamsInit = Record<string, ParamValue | null | undefined>;
 
 const unwrapError = (error: any): Error => {
 	return error instanceof Error ? error : new Error(`${error}`);
@@ -30,7 +30,7 @@ const serializeQueryParams = (target: URLSearchParams, params?: MethodParamsInit
 		return;
 	}
 
-	const entries = unwrapQueryParams(params);
+	const entries = Object.entries(params);
 
 	for (const [name, value] of entries) {
 
@@ -59,8 +59,6 @@ const serializeArrayQueryParams = (target: URLSearchParams, name: string, value:
 	}
 	target.append(name, value.join(','));
 };
-
-const unwrapQueryParams = (params: MethodParamsInit) => params instanceof URLSearchParams ? params.entries() : Object.entries(params);
 
 export class ApiClient {
 
@@ -122,7 +120,6 @@ export class ApiClient {
 		return this.exec<Collection>('GET', `/collections/${id}`);
 	};
 
-	//	todo: rm i guess
 	listDecks = async (params?: { ids?: string[] | null, collection_id?: string } & Partial<Pagination>) => {
 		return this.exec<Page<CardDeckMetadata>>('GET','/decks', params);
 	};

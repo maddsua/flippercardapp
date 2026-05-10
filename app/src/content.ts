@@ -1,23 +1,3 @@
-import type { MethodResult } from "./content.loaders";
-
-//	todo: rm
-export interface CardCollection {
-	id: string;
-	name: string;
-	description?: string;
-	size: number;
-	decks: () => Promise<MethodResult<CardDeck[]>>;
-};
-
-//	todo: rm
-export interface CardDeck {
-	id: string;
-	name: string;
-	description?: string;
-	size: number;
-	collection: () => Promise<MethodResult<CardCollection>>;
-	cards: () => Promise<MethodResult<CardNode[]>>;
-};
 
 export interface CardNode {
 	id: string;
