@@ -5,11 +5,12 @@ where id = sqlc.arg(id);
 -- name: GetDecksBatch :many
 select
 	distinct decks.*,
-	count(distinct cards.id) as size
+	count(cards.id) as size
 from decks
-	left join cards on cards.deck_id = decks.id
+	inner join cards on cards.deck_id = decks.id
 where (decks.id = sqlc.narg(id) or sqlc.narg(id) is null)
 	and (decks.collection_id = sqlc.narg(collection_id) or sqlc.narg(collection_id) is null)
+group by decks.id
 limit sqlc.arg(limit) offset sqlc.arg(offset);
 
 -- name: GetDeckCards :many
@@ -23,10 +24,11 @@ where id = sqlc.arg(id);
 -- name: GetCollectionBatch :many
 select
 	collections.*,
-	count(distinct decks.id) as size
+	count(decks.id) as size
 from collections
 	left join decks on decks.collection_id = collections.id
-where collections.id = sqlc.narg(id) or sqlc.narg(id) is null
+where (collections.id = sqlc.narg(id) or sqlc.narg(id) is null)
+group by collections.id
 limit sqlc.arg(limit) offset sqlc.arg(offset);
 
 -- name: InsertCollection :one

@@ -16,10 +16,11 @@ import (
 const getCollectionBatch = `-- name: GetCollectionBatch :many
 select
 	collections.id, collections.created_at, collections.updated_at, collections.name, collections.description,
-	count(distinct decks.id) as size
+	count(decks.id) as size
 from collections
 	left join decks on decks.collection_id = collections.id
-where collections.id = ?1 or ?1 is null
+where (collections.id = ?1 or ?1 is null)
+group by collections.id
 limit ?3 offset ?2
 `
 
@@ -142,11 +143,12 @@ func (q *Queries) GetDeckCards(ctx context.Context, deckID uuid.UUID) ([]Card, e
 const getDecksBatch = `-- name: GetDecksBatch :many
 select
 	distinct decks.id, decks.collection_id, decks.created_at, decks.updated_at, decks.name, decks.description,
-	count(distinct cards.id) as size
+	count(cards.id) as size
 from decks
-	left join cards on cards.deck_id = decks.id
+	inner join cards on cards.deck_id = decks.id
 where (decks.id = ?1 or ?1 is null)
 	and (decks.collection_id = ?2 or ?2 is null)
+group by decks.id
 limit ?4 offset ?3
 `
 
