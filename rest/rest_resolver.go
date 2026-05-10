@@ -2,6 +2,7 @@ package rest
 
 import (
 	"context"
+	"math"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -51,7 +52,7 @@ func (rslv *resolver) LoadCardDeck(ctx context.Context, id uuid.UUID) (*model.Ca
 	return &result, nil
 }
 
-func (rslv *resolver) ListCardDeckPage(ctx context.Context, ids UUIDSet, collectionID uuid.NullUUID, page PagePointers) (*Page[model.CardDeckMetadata], error) {
+func (rslv *resolver) ListCardDeckPage(ctx context.Context, ids UUIDSet, page PagePointers) (*Page[model.CardDeckMetadata], error) {
 
 	if !ids.IsEmpty() {
 
@@ -60,9 +61,8 @@ func (rslv *resolver) ListCardDeckPage(ctx context.Context, ids UUIDSet, collect
 		for _, id := range ids.WithPage(page) {
 
 			next, err := rslv.db.GetDecksBatch(ctx, db_gen.GetDecksBatchParams{
-				ID:           types.NewNullUUID(id),
-				CollectionID: collectionID,
-				Limit:        1,
+				ID:    types.NewNullUUID(id),
+				Limit: 1,
 			})
 
 			if err != nil {
@@ -76,9 +76,8 @@ func (rslv *resolver) ListCardDeckPage(ctx context.Context, ids UUIDSet, collect
 	}
 
 	entries, err := rslv.db.GetDecksBatch(ctx, db_gen.GetDecksBatchParams{
-		CollectionID: collectionID,
-		Limit:        page.QueryLimit(),
-		Offset:       page.QueryOffset(),
+		Limit:  page.QueryLimit(),
+		Offset: page.QueryOffset(),
 	})
 
 	if err != nil {
@@ -98,10 +97,8 @@ func (rslv *resolver) LoadCollection(ctx context.Context, id uuid.UUID) (*model.
 	}
 
 	decks, err := rslv.db.GetDecksBatch(ctx, db_gen.GetDecksBatchParams{
-		CollectionID: uuid.NullUUID{
-			UUID:  collection.ID,
-			Valid: true,
-		},
+		CollectionID: types.NewNullUUID(collection.ID),
+		Limit:        math.MaxInt32,
 	})
 
 	if err != nil {

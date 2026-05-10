@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive } from 'vue';
+import { onMounted, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useContent } from '../../content.loaders';
-import type { CardCollection, CardDeck } from '../../content';
 import CollectionList from './CollectionList.vue';
 import ErrorMessage from '../App/ErrorMessage.vue';
 import CollectionListEntry from './CollectionListEntry.vue';
@@ -15,68 +13,33 @@ import CentralMessage from '../App/CentralMessage.vue';
 import LoadingMessage from '../App/LoadingMessage.vue';
 import Skeleton from '../App/Skeleton.vue';
 import AppUiHeader from '../App/AppUiHeader.vue';
+import { useClient } from '../../api';
+import type { Collection } from '../../api_models';
 
 const router = useRouter();
 const route = useRoute();
+const client = useClient();
 
 const state = reactive({
-	collection: {
-		entry: null as CardCollection | null,
-		ready: false,
-		error: null as string | null,
-	},
-	decks: {
-		entries: [] as CardDeck[],
-		ready: false,
-		error: null as string | null,
-	},
+	data: null as Collection | null,
+	error: null as string | null,
 });
-
-const stateError = computed(() => state.collection.error || state.decks.error || null);
-
-const loadCollection = async () => {
-
-	const id = route.params['collection_id'];
-	if (!id || typeof id !== 'string') {
-		state.collection.error = 'Collection ID required'
-		return;
-	}
-
-	const { data, error } = await useContent().collections(id);
-	if (!data || error) {
-		state.collection.error = error?.message || 'Unable to load collection data';
-		return;
-	}
-
-	if (data.length === 0) {
-		state.collection.error = 'Collection not found';
-		return;
-	}
-
-	state.collection.entry = data[0];
-	setTimeout(() => state.collection.ready = true, 250);
-};
-
-const loadDecks = async (collection: CardCollection) => {
-
-	const { data, error } = await collection.decks();
-	if (!data || error) {
-		state.decks.error = error?.message || 'Unable to load decks';
-		return;
-	}
-
-	state.decks.entries = data;
-	setTimeout(() => state.decks.ready = true, 350);
-};
 
 onMounted(async () => {
 
-	await loadCollection();
-
-	if (state.collection.entry) {
-		await loadDecks(state.collection.entry);
+	const id = route.params['collection_id'];
+	if (!id || typeof id !== 'string') {
+		state.error = 'Collection ID required'
+		return;
 	}
-	
+
+	const { data, error } = await client.loadCollection(id);
+	if (!data || error) {
+		state.error = error?.message || 'Unable to load collection data';
+		return;
+	}
+
+	setTimeout(() => state.data = data, 350);
 });
 
 const openDeck = (id: string) => {
@@ -98,12 +61,12 @@ const lang = useLanguage();
 
 			<template v-slot:title>
 
-				<Skeleton v-if="!state.collection.ready">
+				<Skeleton v-if="!state.data">
 					Name placeholder
 				</Skeleton>
 
-				<template v-else-if="state.collection.entry?.name">
-					{{ state.collection.entry?.name }}
+				<template v-else-if="state.data?.name">
+					{{ state.data?.name }}
 				</template>
 
 				<template v-else>
@@ -118,12 +81,12 @@ const lang = useLanguage();
 
 			<template v-slot:summary>
 
-				<Skeleton v-if="!state.collection.ready">
+				<Skeleton v-if="!state.data">
 					Deskcription placeholder
 				</Skeleton>
 
-				<template v-else-if="state.collection.entry?.description">
-					{{ state.collection.entry?.description }}
+				<template v-else-if="state.data?.description">
+					{{ state.data?.description }}
 				</template>
 
 				<template v-else>
@@ -138,13 +101,13 @@ const lang = useLanguage();
 
 		</AppUiHeader>
 
-		<CollectionList v-if="state.decks.ready && state.decks.entries.length">
-			<CollectionListEntry v-for="item of state.decks.entries" :title="item.name" @click="openDeck(item.id)" />
+		<CollectionList v-if="state.data && state.data.decks.length">
+			<CollectionListEntry v-for="item of state.data.decks" :title="item.name" @click="openDeck(item.id)" />
 		</CollectionList>
 
 		<CentralMessage v-else>
 
-			<ErrorMessage v-if="stateError">
+			<ErrorMessage v-if="state.error">
 
 				<template v-slot:message>
 					{{ intl(lang, {
@@ -155,12 +118,12 @@ const lang = useLanguage();
 				</template>
 				
 				<template v-slot:details>
-					{{ stateError }}
+					{{ state.error }}
 				</template>
 
 			</ErrorMessage>
 
-			<LoadingMessage v-else-if="!state.decks.ready">
+			<LoadingMessage v-else-if="!state.data">
 				{{ intl(lang, {
 					en: 'Loading...',
 					de: 'Lädt...',

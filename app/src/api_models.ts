@@ -30,3 +30,7 @@ export interface Card {
 	updated: string;
 	content: Omit<CardNode, 'id'>;
 };
+
+export interface Collection extends CollectionMetadata{
+	decks: CardDeckMetadata[];
+};

@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { onMounted, reactive } from 'vue';
-import type { CardCollection } from '../../content';
-import { useContent } from '../../content.loaders';
 import { useRouter } from 'vue-router';
 import CollectionList from './CollectionList.vue';
 import CollectionListEntry from './CollectionListEntry.vue';
@@ -14,24 +12,27 @@ import { intl, useLanguage } from '../../intl';
 import CentralMessage from '../App/CentralMessage.vue';
 import LoadingMessage from '../App/LoadingMessage.vue';
 import AppUiHeader from '../App/AppUiHeader.vue';
+import { useClient } from '../../api';
+import type { CollectionMetadata } from '../../api_models';
 
 const router = useRouter();
+const client = useClient();
 
 const state = reactive({
-	collections: [] as CardCollection[],
+	collections: [] as CollectionMetadata[],
 	ready: false,
 	error: null as string | null,
 });
 
 onMounted(async () => {
 
-	const { data, error } = await useContent().collections();
+	const { data, error } = await client.listCollections();
 	if (!data || error) {
 		state.error = error?.message || 'Unable to load collections';
 		return;
 	}
 
-	state.collections = data;
+	state.collections = data.entries;
 	setTimeout(() => state.ready = true, 250);
 });
 

@@ -34,7 +34,6 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return rslv.ListCardDeckPage(
 			req.Context(),
 			ParseUUIDSet(req.URL.Query().Get("ids")),
-			ParseNullUUID(req.URL.Query().Get("collection_id")),
 			Pagination(req),
 		)
 	}))

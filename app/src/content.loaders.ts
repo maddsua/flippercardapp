@@ -2,6 +2,8 @@ import { useClient, type ApiClient } from "./api";
 import type { CardDeckMetadata, CollectionMetadata } from "./api_models";
 import type { CardCollection, CardDeck } from "./content";
 
+//	todo: rm all
+
 export interface MethodResult <T> {
 	data: T | null;
 	error: Error | null;

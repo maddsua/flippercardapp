@@ -1,5 +1,6 @@
 import type { MethodResult } from "./content.loaders";
 
+//	todo: rm
 export interface CardCollection {
 	id: string;
 	name: string;
@@ -8,6 +9,7 @@ export interface CardCollection {
 	decks: () => Promise<MethodResult<CardDeck[]>>;
 };
 
+//	todo: rm
 export interface CardDeck {
 	id: string;
 	name: string;

@@ -1,11 +1,11 @@
-import type { CardDeck, CardDeckMetadata, CollectionMetadata } from "./api_models";
+import type { CardDeck, CardDeckMetadata, Collection, CollectionMetadata } from "./api_models";
 
-export interface APIResult <T> {
+export interface Result <T> {
 	data: T | null;
 	error: Error | null;
 };
 
-export interface ApiPage <T> {
+export interface Page <T> {
 	entries: T[];
 	offset: number;
 	limit: number;
@@ -104,7 +104,7 @@ export class ApiClient {
 		}
 
 		const { result, parseError } = await response.json()
-			.then(result => ({ result: result as APIResult<T>, parseError: null }))
+			.then(result => ({ result: result as Result<T>, parseError: null }))
 			.catch(err => ({ result: null, parseError: unwrapError(err)}));
 
 		if (parseError) {
@@ -115,12 +115,16 @@ export class ApiClient {
 	};
 
 	listCollections = async (params?: { ids?: string[] | null } & Partial<Pagination>) => {
-		return this.exec<ApiPage<CollectionMetadata>>('GET', '/collections', params);
+		return this.exec<Page<CollectionMetadata>>('GET', '/collections', params);
 	};
 
-	//	todo: update as well
+	loadCollection = async (id: string) => {
+		return this.exec<Collection>('GET', `/collections/${id}`);
+	};
+
+	//	todo: rm i guess
 	listDecks = async (params?: { ids?: string[] | null, collection_id?: string } & Partial<Pagination>) => {
-		return this.exec<ApiPage<CardDeckMetadata>>('GET','/decks', params);
+		return this.exec<Page<CardDeckMetadata>>('GET','/decks', params);
 	};
 
 	loadDeck = async (id: string) => {
