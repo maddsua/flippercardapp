@@ -16,7 +16,7 @@ type resolver struct {
 	db *db_pkg.Wrapper
 }
 
-func (rslv *resolver) LoadDeck(ctx context.Context, id uuid.UUID) (*model.CardDeck, error) {
+func (rslv *resolver) LoadCardDeck(ctx context.Context, id uuid.UUID) (*model.CardDeck, error) {
 
 	deck, err := rslv.db.GetDeckById(ctx, id)
 	if db_pkg.IsNull(err) {
@@ -32,10 +32,17 @@ func (rslv *resolver) LoadDeck(ctx context.Context, id uuid.UUID) (*model.CardDe
 
 	result := model.CardDeck{
 		CardDeckMetadata: transform.CardDeckMetadataFromRow(deck),
+		Labels:           []string{deck.Name},
 		Cards:            make([]model.Card, len(cards)),
 	}
 
 	result.CardDeckMetadata.Size = len(cards)
+
+	if collection, err := rslv.db.GetCollectionById(ctx, deck.CollectionID); err != nil {
+		return nil, InternalError("sqlc.GetCollectionById", err)
+	} else {
+		result.Labels = append(result.Labels, collection.Name)
+	}
 
 	for idx, val := range cards {
 		result.Cards[idx] = transform.CardFromRow(val)
@@ -44,7 +51,7 @@ func (rslv *resolver) LoadDeck(ctx context.Context, id uuid.UUID) (*model.CardDe
 	return &result, nil
 }
 
-func (rslv *resolver) DecksPage(ctx context.Context, ids UUIDSet, collectionID uuid.NullUUID, page PagePointers) (*Page[model.CardDeckMetadata], error) {
+func (rslv *resolver) ListCardDeckPage(ctx context.Context, ids UUIDSet, collectionID uuid.NullUUID, page PagePointers) (*Page[model.CardDeckMetadata], error) {
 
 	if !ids.IsEmpty() {
 
@@ -115,7 +122,7 @@ func (rslv *resolver) LoadCollection(ctx context.Context, id uuid.UUID) (*model.
 	return &result, nil
 }
 
-func (rslv *resolver) CollectionsPage(ctx context.Context, ids UUIDSet, page PagePointers) (*Page[model.CollectionMetadata], error) {
+func (rslv *resolver) ListCollectionsPage(ctx context.Context, ids UUIDSet, page PagePointers) (*Page[model.CollectionMetadata], error) {
 
 	if !ids.IsEmpty() {
 

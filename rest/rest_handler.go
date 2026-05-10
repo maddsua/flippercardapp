@@ -15,7 +15,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.Handle("GET /collections", MethodHandleFunc(func(req *http.Request) (*Page[model.CollectionMetadata], error) {
-		return rslv.CollectionsPage(
+		return rslv.ListCollectionsPage(
 			req.Context(),
 			ParseUUIDSet(req.URL.Query().Get("ids")),
 			Pagination(req),
@@ -23,7 +23,6 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 	}))
 
 	mux.Handle("GET /collections/{id}", MethodHandleFunc(func(req *http.Request) (*model.Collection, error) {
-		//	todo: refactor
 		collectionID, err := ParseUUID(req.PathValue("id"))
 		if err != nil {
 			return nil, err
@@ -32,7 +31,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 	}))
 
 	mux.Handle("GET /decks", MethodHandleFunc(func(req *http.Request) (*Page[model.CardDeckMetadata], error) {
-		return rslv.DecksPage(
+		return rslv.ListCardDeckPage(
 			req.Context(),
 			ParseUUIDSet(req.URL.Query().Get("ids")),
 			ParseNullUUID(req.URL.Query().Get("collection_id")),
@@ -41,12 +40,11 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 	}))
 
 	mux.Handle("GET /decks/{id}", MethodHandleFunc(func(req *http.Request) (*model.CardDeck, error) {
-		//	todo: refactor
 		deckID, err := ParseUUID(req.PathValue("id"))
 		if err != nil {
 			return nil, err
 		}
-		return rslv.LoadDeck(req.Context(), deckID)
+		return rslv.LoadCardDeck(req.Context(), deckID)
 	}))
 
 	return mux

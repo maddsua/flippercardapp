@@ -33,7 +33,8 @@ type CardDeckMetadata struct {
 
 type CardDeck struct {
 	CardDeckMetadata
-	Cards []Card `json:"cards"`
+	Labels []string `json:"labels"`
+	Cards  []Card   `json:"cards"`
 }
 
 type Card struct {

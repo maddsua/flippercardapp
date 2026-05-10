@@ -20,6 +20,7 @@ export interface CardDeckMetadata {
 };
 
 export interface CardDeck extends CardDeckMetadata {
+	labels: string[];
 	cards: Card[];
 };
 

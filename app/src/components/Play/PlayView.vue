@@ -1,18 +1,19 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive } from 'vue';
-import type { CardCollection, CardDeck, CardNode } from '../../content';
+import type { CardNode } from '../../content';
 import CardWidget from '../Cards/CardWidget.vue';
 import Endscreen from '../Endscreen/Endscreen.vue';
 import FullscreenMessage from '../App/FullscreenMessage.vue';
 import { shuffleArray } from '../../shuffle';
 import { useRoute, useRouter } from 'vue-router';
-import { useContent } from '../../content.loaders';
 import LoadingMessage from '../App/LoadingMessage.vue';
 import ErrorMessage from '../App/ErrorMessage.vue';
 import GenericButton from '../App/GenericButton.vue';
+import { useClient } from '../../api';
 
 const router = useRouter();
 const route = useRoute();
+const client = useClient();
 
 interface RoundState {
 	startTime: Date;
@@ -25,7 +26,7 @@ interface RoundState {
 const state = reactive({
 	cards: [] as CardNode[],
 	labels: [] as string[],
-	collection: null as CardCollection | null,
+	collectionID: null as string | null,
 	ready: false,
 	error: null as string | null,
 	round: null as RoundState | null,
@@ -77,71 +78,23 @@ const updateRoundScore = (delta: number) => {
 	state.round.totalScore += delta;
 };
 
-const loadDeck = async () => {
+onMounted(async () => {
 
 	const id = route.params['deck_id'];
 	if (!id || typeof id !== 'string') {
-		return { error: new Error('Deck ID required') };
+		state.error = 'Deck ID required';
+		return;
 	}
 
-	const { data, error } = await useContent().decks(id);
+	const { data, error } = await client.loadDeck(id);
 	if (!data || error) {
-		return { error: error || new Error('Unable to load a deck') };
-	}
-
-	if (data.length === 0) {
-		return { error: new Error('Deck ID not found') };
-	}
-
-	return { deck: data[0] };
-};
-
-const loadParentCollection = async (deck: CardDeck) => {
-
-	const { data, error } = await deck.collection();
-	if (!data || error) {
-		state.error = error?.message || 'Unable to load parent collection';
-		return new Error(state.error);
-	}
-
-	state.collection = data;
-	state.labels = [data.name, deck.name];
-	return null;
-};
-
-const loadDeckCards = async (deck: CardDeck) => {
-
-	const { data, error } = await deck.cards();
-	if (!data) {
-		state.error = error?.message || 'unable to load cards';
-		return new Error(state.error);
-	}
-
-	if (data.length === 0) {
-		state.error = 'Empty deck';
-		return new Error(state.error);
-	}
-
-	state.cards = data;
-	return null;
-};
-
-onMounted(async () => {
-
-	const { deck, error } = await loadDeck();
-	if (!deck || error) {
-		state.error = error.message;
+		state.error = error?.message || 'Unable to load deck';
 		return;
 	}
 
-	if (!!await loadParentCollection(deck)) {
-		return;
-	}
-
-	if (!!await loadDeckCards(deck)) {
-		return;
-	}
-
+	state.cards = data.cards.map(({ id, content }) => ({ ... content, id }));
+	state.collectionID = data.collection_id;
+	state.labels = data.labels;
 	state.ready = true;
 
 	initRound();
@@ -159,8 +112,8 @@ const finishDeck = () => {
 
 const exitView = () => {
 
-	if (state.collection) {
-		router.push(`/app/collection/${state.collection.id}`);
+	if (state.collectionID) {
+		router.push(`/app/collection/${state.collectionID}`);
 		return;
 	}
 

@@ -39,11 +39,12 @@ func CardFromRow(row db_gen.Card) model.Card {
 
 func CardDeckMetadataFromRow(row db_gen.Deck) model.CardDeckMetadata {
 	return model.CardDeckMetadata{
-		ID:          row.ID,
-		Name:        row.Name,
-		Description: row.Description.String,
-		Created:     row.CreatedAt.Time,
-		Updated:     row.UpdatedAt.Time,
+		ID:           row.ID,
+		CollectionID: row.CollectionID,
+		Name:         row.Name,
+		Description:  row.Description.String,
+		Created:      row.CreatedAt.Time,
+		Updated:      row.UpdatedAt.Time,
 	}
 }
 
