@@ -16,6 +16,11 @@ type CollectionMetadata struct {
 	Size        int       `json:"size"`
 }
 
+type CollectionSearchResult struct {
+	CollectionMetadata
+	Rank int `json:"rank"`
+}
+
 type Collection struct {
 	CollectionMetadata
 	Decks []CardDeckMetadata `json:"decks"`

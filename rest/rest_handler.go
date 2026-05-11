@@ -3,6 +3,7 @@ package rest
 import (
 	"database/sql"
 	"net/http"
+	"strings"
 
 	db_pkg "github.com/maddsua/flippercardapp/db"
 	"github.com/maddsua/flippercardapp/rest/model"
@@ -15,11 +16,19 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 	mux := http.NewServeMux()
 
 	mux.Handle("GET /collections", MethodHandleFunc(func(req *http.Request) (*Page[model.CollectionMetadata], error) {
-		return rslv.ListCollectionsPage(
-			req.Context(),
-			ParseUUIDSet(req.URL.Query().Get("ids")),
-			Pagination(req),
-		)
+		idSet, err := ParseUUIDSet(req.URL.Query().Get("ids"))
+		if err != nil {
+			return nil, err
+		}
+		return rslv.ListCollectionsPage(req.Context(), idSet, Pagination(req))
+	}))
+
+	mux.Handle("GET /collections/search", MethodHandleFunc(func(req *http.Request) (*Page[model.CollectionSearchResult], error) {
+		term := strings.TrimSpace(req.URL.Query().Get("term"))
+		if term == "" {
+			return nil, &APIError{Message: "Search term cannot be empty"}
+		}
+		return rslv.SearchCollections(req.Context(), term, Pagination(req))
 	}))
 
 	mux.Handle("GET /collections/{id}", MethodHandleFunc(func(req *http.Request) (*model.Collection, error) {
@@ -31,11 +40,11 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 	}))
 
 	mux.Handle("GET /decks", MethodHandleFunc(func(req *http.Request) (*Page[model.CardDeckMetadata], error) {
-		return rslv.ListCardDeckPage(
-			req.Context(),
-			ParseUUIDSet(req.URL.Query().Get("ids")),
-			Pagination(req),
-		)
+		idSet, err := ParseUUIDSet(req.URL.Query().Get("ids"))
+		if err != nil {
+			return nil, err
+		}
+		return rslv.ListCardDeckPage(req.Context(), idSet, Pagination(req))
 	}))
 
 	mux.Handle("GET /decks/{id}", MethodHandleFunc(func(req *http.Request) (*model.CardDeck, error) {

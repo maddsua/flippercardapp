@@ -87,6 +87,44 @@ func (q *Queries) GetCollectionById(ctx context.Context, id uuid.UUID) (Collecti
 	return i, err
 }
 
+const getCollectionSearchBatch = `-- name: GetCollectionSearchBatch :many
+select id, name from collections
+limit ?2 offset ?1
+`
+
+type GetCollectionSearchBatchParams struct {
+	Offset int64
+	Limit  int64
+}
+
+type GetCollectionSearchBatchRow struct {
+	ID   uuid.UUID
+	Name string
+}
+
+func (q *Queries) GetCollectionSearchBatch(ctx context.Context, arg GetCollectionSearchBatchParams) ([]GetCollectionSearchBatchRow, error) {
+	rows, err := q.db.QueryContext(ctx, getCollectionSearchBatch, arg.Offset, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetCollectionSearchBatchRow
+	for rows.Next() {
+		var i GetCollectionSearchBatchRow
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getDeckById = `-- name: GetDeckById :one
 select id, collection_id, created_at, updated_at, name, description from decks
 where id = ?1

@@ -82,25 +82,3 @@ func InternalError(op string, err error) error {
 
 	return &APIError{Message: err.Error(), Code: http.StatusInternalServerError}
 }
-
-type Page[T any] struct {
-	PagePointers
-	Entries []T  `json:"entries"`
-	HasNext bool `json:"has_next"`
-}
-
-func Paginate[E any, R any](page PagePointers, entries []E, transformer func(E) R) *Page[R] {
-
-	resultSize := min(len(entries), page.Limit)
-
-	result := make([]R, resultSize)
-	for idx := range resultSize {
-		result[idx] = transformer(entries[idx])
-	}
-
-	return &Page[R]{
-		PagePointers: page,
-		Entries:      result,
-		HasNext:      len(entries) > page.Limit,
-	}
-}

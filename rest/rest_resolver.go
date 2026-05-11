@@ -4,8 +4,11 @@ import (
 	"context"
 	"math"
 	"net/http"
+	"sort"
+	"strings"
 
 	"github.com/google/uuid"
+	"github.com/lithammer/fuzzysearch/fuzzy"
 	db_pkg "github.com/maddsua/flippercardapp/db"
 	db_gen "github.com/maddsua/flippercardapp/db/generated"
 	"github.com/maddsua/flippercardapp/db/types"
@@ -54,11 +57,11 @@ func (rslv *resolver) LoadCardDeck(ctx context.Context, id uuid.UUID) (*model.Ca
 
 func (rslv *resolver) ListCardDeckPage(ctx context.Context, ids UUIDSet, page PagePointers) (*Page[model.CardDeckMetadata], error) {
 
-	if !ids.IsEmpty() {
+	if idList := ids.List(); len(idList) > 0 {
 
-		var entries []db_gen.GetDecksBatchRow
+		var entries []model.CardDeckMetadata
 
-		for _, id := range ids.WithPage(page) {
+		for _, id := range idList.WithPage(page) {
 
 			next, err := rslv.db.GetDecksBatch(ctx, db_gen.GetDecksBatchParams{
 				ID:    types.NewNullUUID(id),
@@ -67,12 +70,14 @@ func (rslv *resolver) ListCardDeckPage(ctx context.Context, ids UUIDSet, page Pa
 
 			if err != nil {
 				return nil, InternalError("sqlc.GetDecksBatch", err)
+			} else if len(next) == 0 {
+				continue
 			}
 
-			entries = append(entries, next...)
+			entries = append(entries, transform.CardDeckMetadataFromBatchRow(next[0]))
 		}
 
-		return Paginate(page, entries, transform.CardDeckMetadataFromBatchRow), nil
+		return WrapPage(page, entries), nil
 	}
 
 	entries, err := rslv.db.GetDecksBatch(ctx, db_gen.GetDecksBatchParams{
@@ -84,7 +89,7 @@ func (rslv *resolver) ListCardDeckPage(ctx context.Context, ids UUIDSet, page Pa
 		return nil, InternalError("sqlc.GetDecksBatch", err)
 	}
 
-	return Paginate(page, entries, transform.CardDeckMetadataFromBatchRow), nil
+	return TransformPage(page, entries, transform.CardDeckMetadataFromBatchRow), nil
 }
 
 func (rslv *resolver) LoadCollection(ctx context.Context, id uuid.UUID) (*model.Collection, error) {
@@ -121,11 +126,11 @@ func (rslv *resolver) LoadCollection(ctx context.Context, id uuid.UUID) (*model.
 
 func (rslv *resolver) ListCollectionsPage(ctx context.Context, ids UUIDSet, page PagePointers) (*Page[model.CollectionMetadata], error) {
 
-	if !ids.IsEmpty() {
+	if idList := ids.List(); len(idList) > 0 {
 
-		var entries []db_gen.GetCollectionBatchRow
+		var entries []model.CollectionMetadata
 
-		for _, id := range ids.WithPage(page) {
+		for _, id := range idList.WithPage(page) {
 
 			next, err := rslv.db.GetCollectionBatch(ctx, db_gen.GetCollectionBatchParams{
 				ID:    types.NewNullUUID(id),
@@ -134,12 +139,14 @@ func (rslv *resolver) ListCollectionsPage(ctx context.Context, ids UUIDSet, page
 
 			if err != nil {
 				return nil, InternalError("sqlc.GetCollectionBatch", err)
+			} else if len(next) == 0 {
+				continue
 			}
 
-			entries = append(entries, next...)
+			entries = append(entries, transform.CollectionMetadataFromBatchRow(next[0]))
 		}
 
-		return Paginate(page, entries, transform.CollectionMetadataFromBatchRow), nil
+		return WrapPage(page, entries), nil
 	}
 
 	entries, err := rslv.db.GetCollectionBatch(ctx, db_gen.GetCollectionBatchParams{
@@ -150,5 +157,97 @@ func (rslv *resolver) ListCollectionsPage(ctx context.Context, ids UUIDSet, page
 		return nil, InternalError("sqlc.GetCollectionBatch", err)
 	}
 
-	return Paginate(page, entries, transform.CollectionMetadataFromBatchRow), nil
+	return TransformPage(page, entries, transform.CollectionMetadataFromBatchRow), nil
+}
+
+func (rslv *resolver) SearchCollections(ctx context.Context, term string, page PagePointers) (*Page[model.CollectionSearchResult], error) {
+
+	matched, err := rslv.matchFuzzyCollections(ctx, term, page)
+	if err != nil {
+		return nil, err
+	}
+
+	var entries []model.CollectionSearchResult
+
+	for _, item := range matched {
+
+		next, err := rslv.db.GetCollectionBatch(ctx, db_gen.GetCollectionBatchParams{
+			ID:    types.NewNullUUID(item.id),
+			Limit: 1,
+		})
+
+		if err != nil {
+			return nil, InternalError("sqlc.GetCollectionBatch", err)
+		} else if len(next) == 0 {
+			continue
+		}
+
+		entries = append(entries, model.CollectionSearchResult{
+			CollectionMetadata: transform.CollectionMetadataFromBatchRow(next[0]),
+			Rank:               item.rank,
+		})
+	}
+
+	return WrapPage(page, entries), nil
+}
+
+func (rslv *resolver) matchFuzzyCollections(ctx context.Context, term string, page PagePointers) ([]rankedSearchEntry, error) {
+
+	if term = strings.ToLower(strings.TrimSpace(term)); len(term) < 2 {
+		return nil, &APIError{Message: "Search term too short"}
+	} else if len(term) > math.MaxUint8 {
+		return nil, &APIError{Message: "Search term too long", Code: http.StatusRequestEntityTooLarge}
+	}
+
+	tx, err := rslv.db.BeginTx(ctx)
+	if err != nil {
+		return nil, InternalError("sqlc.BeginTx", err)
+	}
+	defer tx.Rollback()
+
+	const indexBatchSize = 100
+
+	index := map[uuid.UUID]int{}
+
+	for offset := 0; offset < math.MaxInt; offset += indexBatchSize {
+
+		next, err := tx.GetCollectionSearchBatch(ctx, db_gen.GetCollectionSearchBatchParams{
+			Offset: int64(offset),
+			Limit:  indexBatchSize,
+		})
+
+		if err != nil {
+			return nil, InternalError("sqlc.GetCollectionSearchBatch", err)
+		} else if len(next) == 0 {
+			break
+		}
+
+		for _, item := range next {
+			doc := strings.ToLower(item.Name)
+			if rank := fuzzy.RankMatch(term, doc); rank >= 0 {
+				index[item.ID] = rank
+			}
+		}
+	}
+
+	var indexSlice []rankedSearchEntry
+	for id, rank := range index {
+		indexSlice = append(indexSlice, rankedSearchEntry{id: id, rank: rank})
+	}
+
+	sort.SliceStable(indexSlice, func(i, j int) bool {
+		return indexSlice[i].rank < indexSlice[j].rank
+	})
+
+	priority := make(UUIDList, len(indexSlice))
+	for idx, item := range indexSlice {
+		priority[idx] = item.id
+	}
+
+	return SlicePage(indexSlice, page), nil
+}
+
+type rankedSearchEntry struct {
+	id   uuid.UUID
+	rank int
 }

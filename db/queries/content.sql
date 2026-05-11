@@ -31,6 +31,10 @@ where (collections.id = sqlc.narg(id) or sqlc.narg(id) is null)
 group by collections.id
 limit sqlc.arg(limit) offset sqlc.arg(offset);
 
+-- name: GetCollectionSearchBatch :many
+select id, name from collections
+limit sqlc.arg(limit) offset sqlc.arg(offset);
+
 -- name: InsertCollection :one
 insert into collections (
 	id,
