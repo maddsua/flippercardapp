@@ -130,33 +130,33 @@ const exitView = () => {
 			<CardWidget v-if="!statsScreen" :labels="state.labels" :entries="cards" @score="updateRoundScore" @finish="finishDeck" @exit="exitView" />
 			<Endscreen v-else :stats="statsScreen" @reset="initRound" @finish="exitView" />
 		</template>
-	
+
 		<FullscreenMessage v-else>
-	
+
 			<template v-if="state.error">
-	
+
 				<ErrorMessage v-if="state.error">
-	
+
 					<template v-slot:message>
 						Unable to load deck
 					</template>
-		
+
 					<template v-slot:details>
 						{{ state.error }}
 					</template>
-		
+
 				</ErrorMessage>
-	
+
 				<GenericButton @click="exitView">
 					Go back
 				</GenericButton>
-	
+
 			</template>
-	
+
 			<LoadingMessage v-else>
 				Loading cards...
 			</LoadingMessage>
-	
+
 		</FullscreenMessage>
 
 	</div>

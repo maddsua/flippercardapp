@@ -14,26 +14,32 @@ import LoadingMessage from '../App/LoadingMessage.vue';
 import AppUiHeader from '../App/AppUiHeader.vue';
 import { useClient } from '../../api';
 import type { CollectionMetadata } from '../../api_models';
+import { useStorage } from '../../storage';
 
 const router = useRouter();
 const client = useClient();
+const store = useStorage();
 
 const state = reactive({
-	collections: [] as CollectionMetadata[],
-	ready: false,
+	data: null as CollectionMetadata[] | null,
 	error: null as string | null,
 });
 
 onMounted(async () => {
 
-	const { data, error } = await client.listCollections();
+	const myCollections = await store.collections();
+	if (!myCollections.length) {
+		state.data = [];
+		return;
+	}
+
+	const { data, error } = await client.listCollections({ ids: myCollections });
 	if (!data || error) {
 		state.error = error?.message || 'Unable to load collections';
 		return;
 	}
 
-	state.collections = data.entries;
-	setTimeout(() => state.ready = true, 250);
+	setTimeout(() => state.data = data.entries, 250);
 });
 
 const openCollection = (id: string) => {
@@ -41,7 +47,7 @@ const openCollection = (id: string) => {
 };
 
 const openExplore = () => {
-	router.push('/app/explore');
+	router.push('/app/discover');
 };
 
 const lang = useLanguage();
@@ -72,8 +78,8 @@ const lang = useLanguage();
 
 		</AppUiHeader>
 
-		<CollectionList v-if="state.ready && state.collections.length">
-			<CollectionListEntry v-for="item of state.collections" :title="item.name" @click="openCollection(item.id)" />
+		<CollectionList v-if="state.data !== null && state.data.length">
+			<CollectionListEntry v-for="item of state.data" :title="item.name" @click="openCollection(item.id)" />
 		</CollectionList>
 
 		<CentralMessage v-else>
@@ -94,7 +100,7 @@ const lang = useLanguage();
 
 			</ErrorMessage>
 
-			<LoadingMessage v-else-if="!state.ready">
+			<LoadingMessage v-else-if="state.data === null">
 				{{ intl(lang, {
 					en: 'Loading...',
 					de: 'Lädt...',

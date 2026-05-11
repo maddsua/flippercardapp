@@ -9,6 +9,10 @@ export interface CollectionMetadata {
 	size: number;
 };
 
+export interface CollectionSearchResult extends CollectionMetadata {
+	rank: number;
+};
+
 export interface CardDeckMetadata {
 	id: string;
 	collection_id: string;

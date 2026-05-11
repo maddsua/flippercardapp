@@ -3,6 +3,12 @@ import { useRouter } from 'vue-router';
 
 const props = defineProps<{
 	backHref?: string;
+	starrable?: boolean;
+	starred?: boolean;
+}>();
+
+const emit = defineEmits<{
+	(e: 'toggleStar'): void;
 }>();
 
 const router = useRouter();
@@ -13,11 +19,13 @@ const goBack = () => props.backHref ? router.push(props.backHref) : null;
 
 <template>
 	<header>
+
 		<div v-if="backHref" class="navigation">
 			<div class="container">
 				<button type="button" class="go-back" @click="goBack"></button>
 			</div>
 		</div>
+
 		<div class="header">
 			<h1>
 				<slot name="title">
@@ -28,14 +36,22 @@ const goBack = () => props.backHref ? router.push(props.backHref) : null;
 				<slot name="summary" />
 			</p>
 		</div>
+
+		<div v-if="starrable" class="actions">
+			<button type="button" class="star" :class="{ starred }" @click="emit('toggleStar')"></button>
+		</div>
+
 	</header>
 </template>
 
 <style lang="scss" scoped>
 	header {
 		position: relative;
+		display: flex;
+		flex-flow: row nowrap;
 
 		.navigation {
+			flex-grow: 1;
 			position: absolute;
 			top: 0;
 			left: 0.5rem;
@@ -71,6 +87,7 @@ const goBack = () => props.backHref ? router.push(props.backHref) : null;
 			display: flex;
 			flex-direction: column;
 			gap: 0.5rem;
+			flex-grow: 1;
 
 			h1 {
 				font-size: 2rem;
@@ -86,6 +103,38 @@ const goBack = () => props.backHref ? router.push(props.backHref) : null;
 				margin: 0;
 				color: var(--app-theme-mysterious-white);
 				font-weight: 300;
+			}
+		}
+
+		.actions {
+			display: flex;
+			flex-flow: row nowrap;
+			flex-shrink: 0;
+			display: 0.5rem;
+			align-items: center;
+
+			button {
+				display: block;
+				width: 2rem;
+				height: 2rem;
+				background-color: white;
+				mask-type: alpha;
+				mask-size: contain;
+				mask-repeat: no-repeat;
+				mask-position: center;
+
+				&:hover {
+					cursor: pointer;
+				}
+
+				&.star {
+					
+					mask-image: url(/src/assets/icons/star-mask.svg);
+	
+					&.starred {
+						mask-image: url(/src/assets/icons/star-filled-mask.svg);
+					}
+				}
 			}
 		}
 	}

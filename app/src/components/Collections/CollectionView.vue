@@ -14,14 +14,25 @@ import LoadingMessage from '../App/LoadingMessage.vue';
 import Skeleton from '../App/Skeleton.vue';
 import AppUiHeader from '../App/AppUiHeader.vue';
 import { useClient } from '../../api';
-import type { Collection } from '../../api_models';
+import type { CardDeckMetadata, CollectionMetadata } from '../../api_models';
+import { useStorage } from '../../storage';
 
 const router = useRouter();
 const route = useRoute();
 const client = useClient();
+const store = useStorage();
+
+interface CardDeckMetadataState extends CardDeckMetadata {
+	starred: boolean;
+};
+
+interface CollectionState extends CollectionMetadata{
+	decks: CardDeckMetadataState[];
+};
 
 const state = reactive({
-	data: null as Collection | null,
+	data: null as CollectionState | null,
+	starred: false,
 	error: null as string | null,
 });
 
@@ -39,25 +50,47 @@ onMounted(async () => {
 		return;
 	}
 
-	setTimeout(() => state.data = data, 350);
+	const deckStars = new Set(await store.starred());
+	const decks = data.decks.map(item => ({ ... item, starred: deckStars.has(item.id) }));
+
+	const collectionStarred = new Set(await store.collections()).has(data.id);
+
+	setTimeout(() => {
+		state.data = ({  ... data, decks, });
+		state.starred = collectionStarred;
+	}, 350);
 });
 
 const openDeck = (id: string) => {
 	router.push(`/app/play/deck/${id}`);
 };
 
-const closeDeck = () => {
+const closeCollection = () => {
 	router.push('/app/collections');
 };
 
 const lang = useLanguage();
+
+const toggleStar = async () => {
+
+	state.starred = !state.starred;
+
+	if (state.data) {
+		const { id } = state.data;
+		if (state.starred) {
+			await store.addCollection(id);
+		} else {
+			await store.removeCollection(id);
+		}
+	}
+};
 
 </script>
 
 <template>
 	<AppUI>
 
-		<AppUiHeader backHref="/app/collections">
+		<AppUiHeader backHref="/app/collections" :starrable="true" :starred="state.starred" @toggleStar="toggleStar">
 
 			<template v-slot:title>
 
@@ -145,7 +178,7 @@ const lang = useLanguage();
 
 		<CollectionEndlistAction>
 
-			<GenericButton @click="closeDeck">
+			<GenericButton @click="closeCollection">
 				{{ intl(lang, {
 					en: 'Back to the list',
 					de: 'Zurück zur Liste',

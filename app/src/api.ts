@@ -1,4 +1,4 @@
-import type { CardDeck, CardDeckMetadata, Collection, CollectionMetadata } from "./api_models";
+import type { CardDeck, CardDeckMetadata, Collection, CollectionMetadata, CollectionSearchResult } from "./api_models";
 
 export interface Result <T> {
 	data: T | null;
@@ -115,6 +115,10 @@ export class ApiClient {
 	listCollections = async (params?: { ids?: string[] | null } & Partial<Pagination>) => {
 		return this.exec<Page<CollectionMetadata>>('GET', '/collections', params);
 	};
+
+	searchCollection = async (term: string) => {
+		return this.exec<Page<CollectionSearchResult>>('GET', '/collections/search', { term });
+	}
 
 	loadCollection = async (id: string) => {
 		return this.exec<Collection>('GET', `/collections/${id}`);

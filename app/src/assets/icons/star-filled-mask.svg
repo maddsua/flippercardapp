@@ -8,7 +8,7 @@
    fill="none"
    version="1.1"
    id="svg1"
-   sodipodi:docname="star-mask.svg"
+   sodipodi:docname="star-filled-mask.svg"
    inkscape:version="1.4 (e7c3feb100, 2024-10-09)"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -41,5 +41,5 @@
      stroke-linecap="round"
      stroke-linejoin="round"
      id="path1"
-     style="stroke:#ffffff;stroke-opacity:1" />
+     style="stroke:none;fill:#ffffff;fill-opacity:1" />
 </svg>
