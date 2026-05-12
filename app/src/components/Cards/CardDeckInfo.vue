@@ -4,6 +4,11 @@ const props = defineProps<{
 	labels: string[]
 	size: number;
 	index: number;
+	isMarked?: boolean;
+}>();
+
+const emit = defineEmits<{
+	(e: 'toggleMarked'): void;
 }>();
 
 </script>
@@ -14,7 +19,6 @@ const props = defineProps<{
 			<div v-for="idx of size" class="marker" :class="{ filled: idx <= index + 1 }"></div>
 		</div>
 		<div class="summary">
-
 			<template v-for="(item, idx) of labels">
 				<template v-if="idx > 0">
 					<hr />
@@ -23,6 +27,16 @@ const props = defineProps<{
 					{{ item }}
 				</span>
 			</template>
+		</div>
+		<div class="actions">
+			<button type="button" class="save" :class="{ active: isMarked }" @click="emit('toggleMarked')">
+				<template v-if="isMarked">
+					Unmark
+				</template>
+				<template v-else>
+					Mark
+				</template>
+			</button>
 		</div>
 	</div>
 </template>
@@ -75,6 +89,56 @@ const props = defineProps<{
 				outline: none;
 				margin: 0;
 				padding: 0;
+			}
+		}
+
+		.actions {
+			display: flex;
+			flex-flow: row nowrap;
+			align-items: center;
+			justify-content: end;
+
+			button {
+				display: flex;
+				flex-flow: row nowrap;
+				align-items: center;
+				gap: 0.25rem;
+				color: var(--app-theme-snow-white);
+				font-weight: 600;
+				border: none;
+				outline: none;
+				border-radius: 0.25rem;
+				padding: 0.25rem 0.5rem;
+				font-size: 0.75rem;
+
+				&:hover {
+					cursor: pointer;
+				}
+
+				&.save {
+					background-color: var(--app-theme-irish-green);
+
+					&::before {
+						content: "";
+						display: block;
+						width: 0.85rem;
+						height: 0.85rem;
+						mask-type: alpha;
+						mask-size: contain;
+						mask-position: center;
+						mask-repeat: no-repeat;
+						mask-image: url(/src/assets/icons/star-mask.svg);
+						background-color: var(--app-theme-snow-white);
+					}
+
+					&.active {
+						background-color: var(--app-theme-spooky-orange);
+
+						&::before {
+							mask-image: url(/src/assets/icons/star-filled-mask.svg);
+						}
+					}
+				}
 			}
 		}
 	}

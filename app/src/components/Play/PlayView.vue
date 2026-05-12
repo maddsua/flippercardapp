@@ -10,10 +10,12 @@ import LoadingMessage from '../App/LoadingMessage.vue';
 import ErrorMessage from '../App/ErrorMessage.vue';
 import GenericButton from '../App/GenericButton.vue';
 import { useClient } from '../../api';
+import { useStorage } from '../../storage';
 
 const router = useRouter();
 const route = useRoute();
 const client = useClient();
+const store = useStorage();
 
 interface RoundState {
 	startTime: Date;
@@ -24,10 +26,11 @@ interface RoundState {
 };
 
 const state = reactive({
-	cards: [] as CardNode[],
+	cards: null as CardNode[] | null,
 	labels: [] as string[],
 	collectionID: null as string | null,
-	ready: false,
+	deckID: null as string | null,
+	isMarked: false,
 	error: null as string | null,
 	round: null as RoundState | null,
 });
@@ -40,7 +43,7 @@ const statsScreen = computed(() => state.round?.isFinished ? ({
 
 const cards = computed(() => {
 
-	if (!state.ready) {
+	if (!state.cards) {
 		return null;
 	}
 
@@ -50,6 +53,10 @@ const cards = computed(() => {
 });
 
 const initRound = () => {
+
+	if (!state.cards) {
+		return null;
+	}
 
 	let questionCount = 0;
 
@@ -92,13 +99,29 @@ onMounted(async () => {
 		return;
 	}
 
-	state.cards = data.cards.map(({ id, content }) => ({ ... content, id }));
+	state.deckID = id;
+	state.isMarked = new Set(await store.starred()).has(id);
 	state.collectionID = data.collection_id;
 	state.labels = data.labels;
-	state.ready = true;
+	state.cards = data.cards.map(({ id, content }) => ({ ... content, id }));
 
 	initRound();
 });
+
+const toggleMarked = async () => {
+
+	if (!state.deckID) {
+		return;
+	}
+
+	state.isMarked = !state.isMarked;
+
+	if (state.isMarked) {
+		await store.addStar(state.deckID);
+	} else {
+		await store.removeStar(state.deckID);
+	}
+};
 
 const finishDeck = () => {
 
@@ -127,7 +150,7 @@ const exitView = () => {
 	<div class="play-view">
 
 		<template v-if="cards?.length">
-			<CardWidget v-if="!statsScreen" :labels="state.labels" :entries="cards" @score="updateRoundScore" @finish="finishDeck" @exit="exitView" />
+			<CardWidget v-if="!statsScreen" :labels="state.labels" :entries="cards" :isMarked="state.isMarked" @score="updateRoundScore" @finish="finishDeck" @exit="exitView" @toggleMarked="toggleMarked" />
 			<Endscreen v-else :stats="statsScreen" @reset="initRound" @finish="exitView" />
 		</template>
 

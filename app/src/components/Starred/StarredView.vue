@@ -60,7 +60,7 @@ const openDeck = (id: string) => {
 		</AppUiHeader>
 
 		<CollectionList v-if="state.data && state.data.length">
-			<CollectionListEntry v-for="item of state.data" :title="item.name" @click="openDeck(item.id)" />
+			<CollectionListEntry v-for="item of state.data" :title="item.name" :starred="true" @click="openDeck(item.id)" />
 		</CollectionList>
 
 		<CentralMessage v-else>

@@ -9,12 +9,14 @@ import UIPrompt from '../App/UIPrompt.vue';
 const props = defineProps<{
 	labels: string[];
 	entries: CardNode[];
+	isMarked?: boolean;
 }>();
 
 const emit = defineEmits<{
 	(e: 'finish'): void;
 	(e: 'exit'): void;
 	(e: 'score', score: number): void;
+	(e: 'toggleMarked'): void;
 }>();
 
 const activeIdx = ref(0);
@@ -197,13 +199,13 @@ const handleExitPrompt = (confirmed?: boolean) => {
 		emit('exit');
 	}
 	showExitPrompt.value = false;
-}
+};
 
 </script>
 
 <template>
 	<div class="card-widget">
-		<CardDeckInfo :labels="labels" :size="entries.length" :index="activeIdx" />
+		<CardDeckInfo :labels="labels" :size="entries.length" :index="activeIdx" :isMarked="isMarked" @toggleMarked="emit('toggleMarked')" />
 		<div class="card-screen-container">
 			<div class="card-transition-slot" v-for="(item,idx) of [cardPairs.a, cardPairs.b]" :key="`${idx}:${item?.card.id || 'null'}`" :class="item?.flags">
 				<Card v-if="item" :key="item.card.id" :card="item.card" @score="countScore" @next="nextCard" @prev="prevCard" />
