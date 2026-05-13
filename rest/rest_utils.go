@@ -13,10 +13,13 @@ func MethodHandleFunc[T any](fn func(req *http.Request) (*T, error)) http.Handle
 }
 
 func NewResponse[T any](data *T, err error) *Response[T] {
-
-	if err == nil {
-		return &Response[T]{Data: data}
+	if err != nil {
+		return NewErrorResponseStatus[T](err, http.StatusBadRequest)
 	}
+	return &Response[T]{Data: data}
+}
+
+func NewErrorResponseStatus[T any](err error, code int) *Response[T] {
 
 	if err, ok := err.(*APIError); ok {
 		return &Response[T]{Error: err}
@@ -31,7 +34,7 @@ func NewResponse[T any](data *T, err error) *Response[T] {
 
 	return &Response[T]{Error: &APIError{
 		Message: err.Error(),
-		Code:    http.StatusBadRequest,
+		Code:    code,
 	}}
 }
 

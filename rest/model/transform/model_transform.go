@@ -5,6 +5,10 @@ import (
 	"github.com/maddsua/flippercardapp/rest/model"
 )
 
+func ToPtr[T any](val T) *T {
+	return &val
+}
+
 func CardDeckMetadataFromBatchRow(row db_gen.GetDecksBatchRow) model.CardDeckMetadata {
 	return model.CardDeckMetadata{
 		ID:           row.ID,

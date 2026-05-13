@@ -2,10 +2,12 @@ package rest
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"net/http"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/lithammer/fuzzysearch/fuzzy"
@@ -250,4 +252,294 @@ func (rslv *resolver) matchFuzzyCollections(ctx context.Context, term string, pa
 type rankedSearchEntry struct {
 	id   uuid.UUID
 	rank int
+}
+
+func (rslv *resolver) CreateContentCollection(ctx context.Context, params model.CollectionPatch) (*model.CollectionMetadata, error) {
+
+	tx, err := rslv.db.BeginTx(ctx)
+	if err != nil {
+		return nil, InternalError("sqlc.BeginTx", err)
+	}
+	defer tx.Rollback()
+
+	if err := params.Valid(); err != nil {
+		return nil, &APIError{
+			Message: fmt.Sprintf("Validation error: %v", err),
+			Code:    http.StatusBadRequest,
+		}
+	}
+
+	if exists, err := tx.CollectionNameExists(ctx, params.Name); err != nil {
+		return nil, InternalError("sqlc.CollectionNameExists", err)
+	} else if exists > 0 {
+		return nil, &APIError{
+			Message: "Collection name already exists",
+			Code:    http.StatusConflict,
+		}
+	}
+
+	entry, err := tx.InsertCollection(ctx, db_gen.InsertCollectionParams{
+		ID:          uuid.New(),
+		CreatedAt:   types.NewTime(time.Now()),
+		UpdatedAt:   types.NewTime(time.Now()),
+		Name:        params.Name,
+		Description: types.NewNullString(params.Description),
+	})
+
+	if err != nil {
+		return nil, InternalError("sqlc.InsertCollection", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, InternalError("sqlc.Commit", err)
+	}
+
+	return transform.ToPtr(transform.CollectionMetadataFromRow(entry)), nil
+}
+
+func (rslv *resolver) UpdateContentCollectionMetadata(ctx context.Context, id uuid.UUID, patch model.CollectionPatch) (*model.CollectionMetadata, error) {
+
+	if err := patch.Valid(); err != nil {
+		return nil, &APIError{
+			Message: fmt.Sprintf("Validation error: %v", err),
+			Code:    http.StatusBadRequest,
+		}
+	}
+
+	entry, err := rslv.db.UpdateCollection(ctx, db_gen.UpdateCollectionParams{
+		ID:          id,
+		Name:        patch.Name,
+		Description: types.NewNullString(patch.Description),
+		UpdatedAt:   types.NewTime(time.Now()),
+	})
+	if db_pkg.IsNull(err) {
+		return nil, &APIError{Message: "Collection not found", Code: http.StatusNotFound}
+	} else if err != nil {
+		return nil, InternalError("sqlc.UpdateCollection", err)
+	}
+
+	return transform.ToPtr(transform.CollectionMetadataFromRow(entry)), nil
+}
+
+func (rslv *resolver) DeleteCollection(ctx context.Context, id uuid.UUID) error {
+
+	tx, err := rslv.db.BeginTx(ctx)
+	if err != nil {
+		return InternalError("sqlc.BeginTx", err)
+	}
+	defer tx.Rollback()
+
+	if count, err := tx.CollectionSize(ctx, id); err != nil {
+
+		if db_pkg.IsNull(err) {
+			return &APIError{Message: "Collection not found", Code: http.StatusNotFound}
+		}
+
+		return InternalError("sqlc.CollectionSize", err)
+
+	} else if count > 0 {
+		return &APIError{Message: "Collection is not empty", Code: http.StatusConflict}
+	}
+
+	if count, err := tx.DeleteCollection(ctx, id); err != nil {
+		return InternalError("sqlc.DeleteCollection", err)
+	} else if count == 0 {
+		return &APIError{Message: "Collectcion not found", Code: http.StatusNotFound}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return InternalError("sqlc.Commit", err)
+	}
+
+	return nil
+}
+
+func (rslv *resolver) CreateCardDeck(ctx context.Context, params model.CardDeckPatch) (*model.CardDeckMetadata, error) {
+
+	if len(params.Cards) == 0 {
+		return nil, &APIError{Message: "Deck has no cards in it"}
+	} else if !params.CollectionID.Valid {
+		return nil, &APIError{Message: "Collection ID must be provided"}
+	}
+
+	if err := params.Valid(); err != nil {
+		return nil, &APIError{
+			Message: fmt.Sprintf("Validation error: %v", err),
+			Code:    http.StatusBadRequest,
+		}
+	}
+
+	tx, err := rslv.db.BeginTx(ctx)
+	if err != nil {
+		return nil, InternalError("sqlc.BeginTx", err)
+	}
+	defer tx.Rollback()
+
+	if count, err := tx.CollectionIDExists(ctx, params.CollectionID.UUID); err != nil {
+		return nil, InternalError("sqlc.CollectionIDExists", err)
+	} else if count == 0 {
+		return nil, &APIError{Message: "Collection ID not found", Code: http.StatusNotFound}
+	}
+
+	deck, err := tx.InsertDeck(ctx, db_gen.InsertDeckParams{
+		ID:           uuid.New(),
+		CollectionID: params.CollectionID.UUID,
+		CreatedAt:    types.NewTime(time.Now()),
+		UpdatedAt:    types.NewTime(time.Now()),
+		Name:         params.Name,
+		Description:  types.NewNullString(params.Description),
+	})
+
+	if err != nil {
+		return nil, InternalError("sqlc.InsertDeck", err)
+	}
+
+	for _, card := range params.Cards {
+
+		if len(card.Content) == 0 {
+			return nil, &APIError{Message: "Invalid card content"}
+		}
+
+		if err := tx.InsertCard(ctx, db_gen.InsertCardParams{
+			ID:        uuid.New(),
+			DeckID:    deck.ID,
+			CreatedAt: types.NewTime(time.Now()),
+			UpdatedAt: types.NewTime(time.Now()),
+			Content:   card.Content,
+		}); err != nil {
+			return nil, InternalError("sqlc.InsertDeck", err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, InternalError("sqlc.Commit", err)
+	}
+
+	return transform.ToPtr(transform.CardDeckMetadataFromRow(deck)), nil
+}
+
+func (rslv *resolver) UpdateCardDeckMetadata(ctx context.Context, id uuid.UUID, patch model.CardDeckMetadataPatch) (*model.CardDeckMetadata, error) {
+
+	if err := patch.Valid(); err != nil {
+		return nil, &APIError{
+			Message: fmt.Sprintf("Validation error: %v", err),
+			Code:    http.StatusBadRequest,
+		}
+	}
+
+	tx, err := rslv.db.BeginTx(ctx)
+	if err != nil {
+		return nil, InternalError("sqlc.BeginTx", err)
+	}
+	defer tx.Rollback()
+
+	if patch.CollectionID.Valid {
+		if count, err := tx.CollectionIDExists(ctx, patch.CollectionID.UUID); err != nil {
+			return nil, InternalError("sqlc.CollectionIDExists", err)
+		} else if count == 0 {
+			return nil, &APIError{Message: "Collection ID not found", Code: http.StatusNotFound}
+		}
+	}
+
+	deck, err := rslv.db.UpdateDeckMetadata(ctx, db_gen.UpdateDeckMetadataParams{
+		ID:           id,
+		CollectionID: patch.CollectionID,
+		Name:         patch.Name,
+		Description:  types.NewNullString(patch.Description),
+		UpdatedAt:    types.NewTime(time.Now()),
+	})
+
+	if db_pkg.IsNull(err) {
+		return nil, &APIError{Message: "Deck not found", Code: http.StatusNotFound}
+	} else if err != nil {
+		return nil, InternalError("sqlc.UpdateDeckMetadata", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, InternalError("sqlc.Commit", err)
+	}
+
+	return transform.ToPtr(transform.CardDeckMetadataFromRow(deck)), nil
+}
+
+func (rslv *resolver) UpdateCardDeckContent(ctx context.Context, id uuid.UUID, patch model.CardDeckContentPatch) (*model.CardDeckMetadata, error) {
+
+	if len(patch.Cards) == 0 {
+		return nil, &APIError{Message: "Deck has no cards in it"}
+	}
+
+	tx, err := rslv.db.BeginTx(ctx)
+	if err != nil {
+		return nil, InternalError("sqlc.BeginTx", err)
+	}
+	defer tx.Rollback()
+
+	deck, err := rslv.db.GetDeckById(ctx, id)
+	if db_pkg.IsNull(err) {
+		return nil, &APIError{Message: "Deck not found", Code: http.StatusNotFound}
+	} else if err != nil {
+		return nil, InternalError("sqlc.GetDeckById", err)
+	}
+
+	staleCards := map[uuid.UUID]struct{}{}
+	if cardIds, err := tx.DeckCardSet(ctx, deck.ID); err != nil {
+		return nil, InternalError("sqlc.DeckCardSet", err)
+	} else {
+		for _, id := range cardIds {
+			staleCards[id] = struct{}{}
+		}
+	}
+
+	for _, card := range patch.Cards {
+
+		if card.ID.Valid {
+			if count, err := tx.UpdateCardContent(ctx, db_gen.UpdateCardContentParams{
+				ID:        card.ID.UUID,
+				DeckID:    deck.ID,
+				UpdatedAt: types.NewTime(time.Now()),
+				Content:   card.Content,
+			}); err != nil {
+				return nil, InternalError("sqlc.UpdateCardContent", err)
+			} else if count > 0 {
+				delete(staleCards, card.ID.UUID)
+				continue
+			}
+		}
+
+		if err := tx.InsertCard(ctx, db_gen.InsertCardParams{
+			ID:        uuid.New(),
+			DeckID:    deck.ID,
+			CreatedAt: types.NewTime(time.Now()),
+			UpdatedAt: types.NewTime(time.Now()),
+			Content:   card.Content,
+		}); err != nil {
+			return nil, InternalError("sqlc.InsertCard", err)
+		}
+	}
+
+	for id := range staleCards {
+		if err := tx.DeleteCard(ctx, id); err != nil {
+			return nil, InternalError("sqlc.DeleteCard", err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, InternalError("sqlc.Commit", err)
+	}
+
+	result := transform.CardDeckMetadataFromRow(deck)
+	result.Size = len(patch.Cards)
+
+	return &result, nil
+}
+
+func (rslv *resolver) DeleteDeck(ctx context.Context, id uuid.UUID) error {
+
+	if count, err := rslv.db.DeleteDeck(ctx, id); err != nil {
+		return InternalError("sqlc.DeleteDeck", err)
+	} else if count == 0 {
+		return &APIError{Message: "Deck not found", Code: http.StatusNotFound}
+	}
+
+	return nil
 }

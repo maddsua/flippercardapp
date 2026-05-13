@@ -35,6 +35,18 @@ limit sqlc.arg(limit) offset sqlc.arg(offset);
 select id, name from collections
 limit sqlc.arg(limit) offset sqlc.arg(offset);
 
+-- name: CollectionIDExists :one
+select exists (
+	select 1 from collections
+	where id = sqlc.arg(id)
+);
+
+-- name: CollectionNameExists :one
+select exists (
+	select 1 from collections
+	where name = sqlc.arg(name)
+);
+
 -- name: InsertCollection :one
 insert into collections (
 	id,
@@ -49,3 +61,84 @@ insert into collections (
 	sqlc.arg(name),
 	sqlc.narg(description)
 ) returning *;
+
+-- name: UpdateCollection :one
+update collections
+set
+	updated_at = sqlc.arg(updated_at),
+	name = sqlc.arg(name),
+	description = sqlc.arg(description)
+where id = sqlc.arg(id)
+returning *;
+
+-- name: CollectionSize :one
+select count(decks.id)
+from collections
+	left join decks on decks.collection_id = collections.id
+where collections.id = sqlc.arg(id);
+
+-- name: DeleteCollection :execrows
+delete from collections
+where id = sqlc.arg(id);
+
+-- name: InsertDeck :one
+insert into decks (
+	id,
+	collection_id,
+	created_at,
+	updated_at,
+	name,
+	description
+) values (
+	sqlc.arg(id),
+	sqlc.arg(collection_id),
+	sqlc.arg(created_at),
+	sqlc.arg(updated_at),
+	sqlc.arg(name),
+	sqlc.narg(description)
+) returning *;
+
+-- name: InsertCard :exec
+insert into cards (
+	id,
+	deck_id,
+	created_at,
+	updated_at,
+	content
+) values (
+	sqlc.arg(id),
+	sqlc.arg(deck_id),
+	sqlc.arg(created_at),
+	sqlc.arg(updated_at),
+	sqlc.arg(content)
+);
+
+-- name: UpdateDeckMetadata :one
+update decks
+set
+	updated_at = sqlc.arg(updated_at),
+	collection_id = coalesce(sqlc.narg(collection_id), collection_id),
+	name = sqlc.arg(name),
+	description = sqlc.arg(description)
+where id = sqlc.arg(id)
+returning *;
+
+-- name: DeckCardSet :many
+select id from cards
+where deck_id = sqlc.arg(deck_id);
+
+-- name: UpdateCardContent :execrows
+update cards
+set
+	updated_at = sqlc.arg(updated_at),
+	content = sqlc.arg(content)
+where id = sqlc.arg(id)
+	and deck_id = sqlc.arg(deck_id);
+
+-- name: DeleteCard :exec
+delete from cards
+where id = sqlc.arg(id);
+
+-- name: DeleteDeck :execrows
+delete from decks
+where id = sqlc.arg(id);

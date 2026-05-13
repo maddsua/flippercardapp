@@ -2,6 +2,9 @@ package model
 
 import (
 	"encoding/json"
+	"errors"
+	"math"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -46,5 +49,56 @@ type Card struct {
 	ID      uuid.UUID       `json:"id"`
 	Created time.Time       `json:"created"`
 	Updated time.Time       `json:"updated"`
+	Content json.RawMessage `json:"content"`
+}
+
+type CollectionPatch struct {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+}
+
+func (patch *CollectionPatch) Valid() error {
+
+	if patch.Name = strings.TrimSpace(patch.Name); patch.Name == "" {
+		return errors.New("name field is empty")
+	} else if len(patch.Name) > math.MaxUint8 {
+		return errors.New("'name' field too long")
+	} else if len(patch.Description) > math.MaxUint8 {
+		return errors.New("'description' field too long")
+	}
+
+	return nil
+}
+
+type CardDeckMetadataPatch struct {
+	CollectionID uuid.NullUUID `json:"collection_id"`
+	Name         string        `json:"name"`
+	Description  string        `json:"description,omitempty"`
+}
+
+func (patch *CardDeckMetadataPatch) Valid() error {
+
+	if patch.Name = strings.TrimSpace(patch.Name); patch.Name == "" {
+		return errors.New("name field is empty")
+	} else if len(patch.Name) > math.MaxUint8 {
+		return errors.New("'name' field too long")
+	} else if len(patch.Description) > math.MaxUint8 {
+		return errors.New("'description' field too long")
+	}
+
+	return nil
+}
+
+type CardDeckPatch struct {
+	CardDeckMetadataPatch
+	Cards []CardPatch `json:"cards"`
+}
+
+type CardDeckContentPatch struct {
+	Cards []CardPatch `json:"cards"`
+}
+
+type CardPatch struct {
+	ID      uuid.NullUUID   `json:"id"`
 	Content json.RawMessage `json:"content"`
 }

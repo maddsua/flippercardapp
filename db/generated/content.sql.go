@@ -13,6 +13,112 @@ import (
 	"github.com/maddsua/flippercardapp/db/types"
 )
 
+const collectionIDExists = `-- name: CollectionIDExists :one
+select exists (
+	select 1 from collections
+	where id = ?1
+)
+`
+
+func (q *Queries) CollectionIDExists(ctx context.Context, id uuid.UUID) (int64, error) {
+	row := q.db.QueryRowContext(ctx, collectionIDExists, id)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const collectionNameExists = `-- name: CollectionNameExists :one
+select exists (
+	select 1 from collections
+	where name = ?1
+)
+`
+
+func (q *Queries) CollectionNameExists(ctx context.Context, name string) (int64, error) {
+	row := q.db.QueryRowContext(ctx, collectionNameExists, name)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const collectionSize = `-- name: CollectionSize :one
+select count(decks.id)
+from collections
+	left join decks on decks.collection_id = collections.id
+where collections.id = ?1
+`
+
+func (q *Queries) CollectionSize(ctx context.Context, id uuid.UUID) (int64, error) {
+	row := q.db.QueryRowContext(ctx, collectionSize, id)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const deckCardSet = `-- name: DeckCardSet :many
+select id from cards
+where deck_id = ?1
+`
+
+func (q *Queries) DeckCardSet(ctx context.Context, deckID uuid.UUID) ([]uuid.UUID, error) {
+	rows, err := q.db.QueryContext(ctx, deckCardSet, deckID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []uuid.UUID
+	for rows.Next() {
+		var id uuid.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const deleteCard = `-- name: DeleteCard :exec
+delete from cards
+where id = ?1
+`
+
+func (q *Queries) DeleteCard(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, deleteCard, id)
+	return err
+}
+
+const deleteCollection = `-- name: DeleteCollection :execrows
+delete from collections
+where id = ?1
+`
+
+func (q *Queries) DeleteCollection(ctx context.Context, id uuid.UUID) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deleteCollection, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const deleteDeck = `-- name: DeleteDeck :execrows
+delete from decks
+where id = ?1
+`
+
+func (q *Queries) DeleteDeck(ctx context.Context, id uuid.UUID) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deleteDeck, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const getCollectionBatch = `-- name: GetCollectionBatch :many
 select
 	collections.id, collections.created_at, collections.updated_at, collections.name, collections.description,
@@ -243,6 +349,41 @@ func (q *Queries) GetDecksBatch(ctx context.Context, arg GetDecksBatchParams) ([
 	return items, nil
 }
 
+const insertCard = `-- name: InsertCard :exec
+insert into cards (
+	id,
+	deck_id,
+	created_at,
+	updated_at,
+	content
+) values (
+	?1,
+	?2,
+	?3,
+	?4,
+	?5
+)
+`
+
+type InsertCardParams struct {
+	ID        uuid.UUID
+	DeckID    uuid.UUID
+	CreatedAt types.Time
+	UpdatedAt types.Time
+	Content   []byte
+}
+
+func (q *Queries) InsertCard(ctx context.Context, arg InsertCardParams) error {
+	_, err := q.db.ExecContext(ctx, insertCard,
+		arg.ID,
+		arg.DeckID,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+		arg.Content,
+	)
+	return err
+}
+
 const insertCollection = `-- name: InsertCollection :one
 insert into collections (
 	id,
@@ -278,6 +419,157 @@ func (q *Queries) InsertCollection(ctx context.Context, arg InsertCollectionPara
 	var i Collection
 	err := row.Scan(
 		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Name,
+		&i.Description,
+	)
+	return i, err
+}
+
+const insertDeck = `-- name: InsertDeck :one
+insert into decks (
+	id,
+	collection_id,
+	created_at,
+	updated_at,
+	name,
+	description
+) values (
+	?1,
+	?2,
+	?3,
+	?4,
+	?5,
+	?6
+) returning id, collection_id, created_at, updated_at, name, description
+`
+
+type InsertDeckParams struct {
+	ID           uuid.UUID
+	CollectionID uuid.UUID
+	CreatedAt    types.Time
+	UpdatedAt    types.Time
+	Name         string
+	Description  sql.NullString
+}
+
+func (q *Queries) InsertDeck(ctx context.Context, arg InsertDeckParams) (Deck, error) {
+	row := q.db.QueryRowContext(ctx, insertDeck,
+		arg.ID,
+		arg.CollectionID,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+		arg.Name,
+		arg.Description,
+	)
+	var i Deck
+	err := row.Scan(
+		&i.ID,
+		&i.CollectionID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Name,
+		&i.Description,
+	)
+	return i, err
+}
+
+const updateCardContent = `-- name: UpdateCardContent :execrows
+update cards
+set
+	updated_at = ?1,
+	content = ?2
+where id = ?3
+	and deck_id = ?4
+`
+
+type UpdateCardContentParams struct {
+	UpdatedAt types.Time
+	Content   []byte
+	ID        uuid.UUID
+	DeckID    uuid.UUID
+}
+
+func (q *Queries) UpdateCardContent(ctx context.Context, arg UpdateCardContentParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, updateCardContent,
+		arg.UpdatedAt,
+		arg.Content,
+		arg.ID,
+		arg.DeckID,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const updateCollection = `-- name: UpdateCollection :one
+update collections
+set
+	updated_at = ?1,
+	name = ?2,
+	description = ?3
+where id = ?4
+returning id, created_at, updated_at, name, description
+`
+
+type UpdateCollectionParams struct {
+	UpdatedAt   types.Time
+	Name        string
+	Description sql.NullString
+	ID          uuid.UUID
+}
+
+func (q *Queries) UpdateCollection(ctx context.Context, arg UpdateCollectionParams) (Collection, error) {
+	row := q.db.QueryRowContext(ctx, updateCollection,
+		arg.UpdatedAt,
+		arg.Name,
+		arg.Description,
+		arg.ID,
+	)
+	var i Collection
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Name,
+		&i.Description,
+	)
+	return i, err
+}
+
+const updateDeckMetadata = `-- name: UpdateDeckMetadata :one
+update decks
+set
+	updated_at = ?1,
+	collection_id = coalesce(?2, collection_id),
+	name = ?3,
+	description = ?4
+where id = ?5
+returning id, collection_id, created_at, updated_at, name, description
+`
+
+type UpdateDeckMetadataParams struct {
+	UpdatedAt    types.Time
+	CollectionID uuid.NullUUID
+	Name         string
+	Description  sql.NullString
+	ID           uuid.UUID
+}
+
+func (q *Queries) UpdateDeckMetadata(ctx context.Context, arg UpdateDeckMetadataParams) (Deck, error) {
+	row := q.db.QueryRowContext(ctx, updateDeckMetadata,
+		arg.UpdatedAt,
+		arg.CollectionID,
+		arg.Name,
+		arg.Description,
+		arg.ID,
+	)
+	var i Deck
+	err := row.Scan(
+		&i.ID,
+		&i.CollectionID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Name,

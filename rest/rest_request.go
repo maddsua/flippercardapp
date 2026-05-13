@@ -1,6 +1,9 @@
 package rest
 
 import (
+	"encoding/json"
+	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/google/uuid"
@@ -51,4 +54,32 @@ func ParseUUID(val string) (uuid.UUID, error) {
 		return uuid.UUID{}, &APIError{Message: "Invalid resource ID"}
 	}
 	return id, nil
+}
+
+func ParseGeneric[T any](req *http.Request) (T, error) {
+
+	var result T
+
+	if req.ContentLength == 0 {
+		return result, &APIError{
+			Message: "empty patch",
+			Code:    http.StatusLengthRequired,
+		}
+	}
+
+	if contentType := req.Header.Get("Content-Type"); !strings.EqualFold(contentType, "application/json") {
+		return result, &APIError{
+			Message: fmt.Sprintf("content type '%v' not allowed", contentType),
+			Code:    http.StatusUnprocessableEntity,
+		}
+	}
+
+	if err := json.NewDecoder(req.Body).Decode(&result); err != nil {
+		return result, &APIError{
+			Message: fmt.Sprintf("content decoding error: %v", err),
+			Code:    http.StatusBadRequest,
+		}
+	}
+
+	return result, nil
 }
