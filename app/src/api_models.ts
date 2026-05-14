@@ -38,3 +38,29 @@ export interface Card {
 export interface Collection extends CollectionMetadata{
 	decks: CardDeckMetadata[];
 };
+
+export interface AuthState {
+	actor?: AuthActor | null;
+	session?: AuthSession | null;
+};
+
+export interface AuthActor {
+	id: string;
+	name: string;
+	permissions: UserPermissions;
+};
+
+export interface AuthSession {
+	id: string;
+	expires: string;
+};
+
+export interface UserPermissions {
+	administrative: boolean;
+	content_edit: boolean;
+};
+
+export interface SignInParams {
+	username: string;
+	password: string;
+};

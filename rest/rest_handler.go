@@ -2,16 +2,24 @@ package rest
 
 import (
 	"database/sql"
+	"log/slog"
 	"net/http"
 	"strings"
+	"time"
 
+	"github.com/google/uuid"
 	db_pkg "github.com/maddsua/flippercardapp/db"
+	db_gen "github.com/maddsua/flippercardapp/db/generated"
+	"github.com/maddsua/flippercardapp/db/types"
 	"github.com/maddsua/flippercardapp/rest/model"
+	"github.com/maddsua/flippercardapp/utils"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func NewHandler(dbconn *sql.DB) http.Handler {
 
-	rslv := resolver{db_pkg.NewWrapper(dbconn)}
+	db := db_pkg.NewWrapper(dbconn)
+	rslv := resolver{db: db}
 
 	mux := http.NewServeMux()
 
@@ -55,16 +63,96 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return rslv.LoadCardDeck(req.Context(), deckID)
 	}))
 
-	mux.Handle("GET /whoami", MethodHandleFunc(func(req *http.Request) (*AuthState, error) {
+	mux.Handle("GET /auth/whoami", MethodHandleFunc(func(req *http.Request) (*AuthState, error) {
 		return authStateFor(req.Context()), nil
+	}))
+
+	mux.Handle("POST /auth/signin", MethodHandleFunc(func(req *http.Request) (*AuthState, error) {
+
+		params, err := ParseGeneric[model.SignInParams](req)
+		if err != nil {
+			return nil, err
+		}
+
+		user, err := db.GetUserByName(req.Context(), params.Username)
+		if db_pkg.IsNull(err) {
+			return nil, &APIError{Message: "User not found", Code: http.StatusUnauthorized}
+		} else if err != nil {
+			return nil, InternalError("sqlc.GetUserByName", err)
+		}
+
+		if err := bcrypt.CompareHashAndPassword(user.PasswordHash, []byte(params.Password)); err != nil {
+
+			if err != bcrypt.ErrMismatchedHashAndPassword {
+				slog.Error("REST: bcrypt.CompareHashAndPassword",
+					slog.String("err", err.Error()))
+			}
+
+			return nil, &APIError{Message: "Invalid password", Code: http.StatusUnauthorized}
+		}
+
+		expires := time.Now().Add(SessionTTL)
+
+		sess, err := db.InsertSession(req.Context(), db_gen.InsertSessionParams{
+			ID:        uuid.New(),
+			CreatedAt: types.NewTime(time.Now()),
+			ExpiresAt: types.NewTime(expires.Add(time.Minute)),
+			UserID:    user.ID,
+			Secret:    utils.NewRandomToken(128),
+		})
+
+		if err != nil {
+			return nil, InternalError("sqlc.GetUserByName", err)
+		}
+
+		if sess := authStateFor(req.Context()).Session; sess != nil {
+			if err := db.InvalidateSession(req.Context(), sess.ID); err != nil {
+				slog.Warn("REST Auth: InvalidateSession",
+					slog.String("op", "sqlc.InvalidateSession"),
+					slog.String("err", err.Error()))
+			}
+		}
+
+		state := AuthState{
+			Actor: &Actor{
+				ID:          user.ID,
+				Name:        user.Name,
+				Permissions: user.Permissions.Permissions,
+			},
+			Session: &AuthSession{
+				ID:      sess.ID,
+				Expires: sess.ExpiresAt.Time,
+			},
+		}
+
+		state.CookieJar.SetSession(sess.ID, sess.Secret, expires)
+
+		return &state, nil
+	}))
+
+	mux.Handle("POST /auth/signout", MethodHandleFunc(func(req *http.Request) (*AuthState, error) {
+
+		auth := authStateFor(req.Context())
+		if auth.Session == nil {
+			return auth, nil
+		}
+
+		if err := db.InvalidateSession(req.Context(), auth.Session.ID); err != nil {
+			return nil, InternalError("sqlc.InvalidateSession", err)
+		}
+
+		var state AuthState
+		state.CookieJar.ClearSession()
+
+		return &state, nil
 	}))
 
 	mux.Handle("PUT /manage/content/collection", MethodHandleFunc(func(req *http.Request) (*model.CollectionMetadata, error) {
 
-		if state := authStateFor(req.Context()); state.Actor == nil {
-			return nil, &APIError{Message: "Unauthorized", Code: http.StatusUnauthorized}
-		} else if !state.Permissions.ContentEdit {
-			return nil, &APIError{Message: "ContentEdit permission required", Code: http.StatusForbidden}
+		if perms, err := authStateFor(req.Context()).Permissions(); err != nil {
+			return nil, err
+		} else if err := perms.CanEditContent(); err != nil {
+			return nil, err
 		}
 
 		params, err := ParseGeneric[model.CollectionPatch](req)
@@ -77,10 +165,10 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 
 	mux.Handle("PATCH /manage/content/collection/{id}/metadata", MethodHandleFunc(func(req *http.Request) (*model.CollectionMetadata, error) {
 
-		if state := authStateFor(req.Context()); state.Actor == nil {
-			return nil, &APIError{Message: "Unauthorized", Code: http.StatusUnauthorized}
-		} else if !state.Permissions.ContentEdit {
-			return nil, &APIError{Message: "ContentEdit permission required", Code: http.StatusForbidden}
+		if perms, err := authStateFor(req.Context()).Permissions(); err != nil {
+			return nil, err
+		} else if err := perms.CanEditContent(); err != nil {
+			return nil, err
 		}
 
 		collectionID, err := ParseUUID(req.PathValue("id"))
@@ -98,10 +186,10 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 
 	mux.Handle("DELETE /manage/content/collection/{id}", MethodHandleFunc(func(req *http.Request) (*any, error) {
 
-		if state := authStateFor(req.Context()); state.Actor == nil {
-			return nil, &APIError{Message: "Unauthorized", Code: http.StatusUnauthorized}
-		} else if !state.Permissions.ContentEdit {
-			return nil, &APIError{Message: "ContentEdit permission required", Code: http.StatusForbidden}
+		if perms, err := authStateFor(req.Context()).Permissions(); err != nil {
+			return nil, err
+		} else if err := perms.CanEditContent(); err != nil {
+			return nil, err
 		}
 
 		collectionID, err := ParseUUID(req.PathValue("id"))
@@ -114,10 +202,10 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 
 	mux.Handle("PUT /manage/content/deck", MethodHandleFunc(func(req *http.Request) (*model.CardDeckMetadata, error) {
 
-		if state := authStateFor(req.Context()); state.Actor == nil {
-			return nil, &APIError{Message: "Unauthorized", Code: http.StatusUnauthorized}
-		} else if !state.Permissions.ContentEdit {
-			return nil, &APIError{Message: "ContentEdit permission required", Code: http.StatusForbidden}
+		if perms, err := authStateFor(req.Context()).Permissions(); err != nil {
+			return nil, err
+		} else if err := perms.CanEditContent(); err != nil {
+			return nil, err
 		}
 
 		params, err := ParseGeneric[model.CardDeckPatch](req)
@@ -130,10 +218,10 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 
 	mux.Handle("PATCH /manage/content/deck/{id}/metadata", MethodHandleFunc(func(req *http.Request) (*model.CardDeckMetadata, error) {
 
-		if state := authStateFor(req.Context()); state.Actor == nil {
-			return nil, &APIError{Message: "Unauthorized", Code: http.StatusUnauthorized}
-		} else if !state.Permissions.ContentEdit {
-			return nil, &APIError{Message: "ContentEdit permission required", Code: http.StatusForbidden}
+		if perms, err := authStateFor(req.Context()).Permissions(); err != nil {
+			return nil, err
+		} else if err := perms.CanEditContent(); err != nil {
+			return nil, err
 		}
 
 		deckID, err := ParseUUID(req.PathValue("id"))
@@ -151,10 +239,10 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 
 	mux.Handle("PATCH /manage/content/deck/{id}/content", MethodHandleFunc(func(req *http.Request) (*model.CardDeckMetadata, error) {
 
-		if state := authStateFor(req.Context()); state.Actor == nil {
-			return nil, &APIError{Message: "Unauthorized", Code: http.StatusUnauthorized}
-		} else if !state.Permissions.ContentEdit {
-			return nil, &APIError{Message: "ContentEdit permission required", Code: http.StatusForbidden}
+		if perms, err := authStateFor(req.Context()).Permissions(); err != nil {
+			return nil, err
+		} else if err := perms.CanEditContent(); err != nil {
+			return nil, err
 		}
 
 		deckID, err := ParseUUID(req.PathValue("id"))
@@ -172,10 +260,10 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 
 	mux.Handle("DELETE /manage/content/deck/{id}", MethodHandleFunc(func(req *http.Request) (*any, error) {
 
-		if state := authStateFor(req.Context()); state.Actor == nil {
-			return nil, &APIError{Message: "Unauthorized", Code: http.StatusUnauthorized}
-		} else if !state.Permissions.ContentEdit {
-			return nil, &APIError{Message: "ContentEdit permission required", Code: http.StatusForbidden}
+		if perms, err := authStateFor(req.Context()).Permissions(); err != nil {
+			return nil, err
+		} else if err := perms.CanEditContent(); err != nil {
+			return nil, err
 		}
 
 		deckID, err := ParseUUID(req.PathValue("id"))
@@ -186,5 +274,5 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return nil, rslv.DeleteDeck(req.Context(), deckID)
 	}))
 
-	return authMiddleware(&StaticAuthProvider{}, mux)
+	return authMiddleware(&dbAuthProvider{}, mux)
 }

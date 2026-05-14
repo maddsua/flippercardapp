@@ -102,3 +102,8 @@ type CardPatch struct {
 	ID      uuid.NullUUID   `json:"id"`
 	Content json.RawMessage `json:"content"`
 }
+
+type SignInParams struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}

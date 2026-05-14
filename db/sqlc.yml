@@ -26,3 +26,12 @@ sql:
             go_type:
               import: "github.com/maddsua/flippercardapp/db/types"
               type: "NullTime"
+          - db_type: "user_permissions"
+            go_type:
+              import: "github.com/maddsua/flippercardapp/db/model"
+              type: "UserPermissions"
+          - db_type: "user_permissions"
+            nullable: true
+            go_type:
+              import: "github.com/maddsua/flippercardapp/db/model"
+              type: "NullUserPermissions"

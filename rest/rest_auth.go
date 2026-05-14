@@ -3,26 +3,136 @@ package rest
 import (
 	"context"
 	"crypto/subtle"
+	"encoding/base64"
+	"fmt"
 	"log/slog"
 	"net/http"
-	"os"
 	"strings"
+	"time"
+
+	"github.com/google/uuid"
+	db_pkg "github.com/maddsua/flippercardapp/db"
+	db_model "github.com/maddsua/flippercardapp/db/model"
 )
+
+const SessionTTL = 6 * time.Hour
+const SessionCookieKey = "st"
+
+type AuthCookieJar struct {
+	Values []http.Cookie
+}
+
+func (jar *AuthCookieJar) SetSession(id uuid.UUID, secret []byte, expires time.Time) {
+	token := sessionToken{id: id, secret: secret}
+	jar.Values = append(jar.Values, http.Cookie{
+		Name:     SessionCookieKey,
+		Value:    token.String(),
+		Expires:  expires,
+		Secure:   true,
+		HttpOnly: true,
+	})
+}
+
+func (jar *AuthCookieJar) ClearSession() {
+	jar.Values = append(jar.Values, http.Cookie{
+		Name:     SessionCookieKey,
+		Expires:  time.Time{},
+		Secure:   true,
+		HttpOnly: true,
+	})
+}
+
+func parseSessionToken(val string) (*sessionToken, error) {
+
+	idToken, secretToken, ok := strings.Cut(val, ".")
+	if !ok {
+		return nil, fmt.Errorf("invalid session token format")
+	}
+
+	idBytes, err := base64.RawStdEncoding.DecodeString(idToken)
+	if err != nil {
+		return nil, fmt.Errorf("invalid session token id: %v", err)
+	}
+
+	id, err := uuid.FromBytes(idBytes)
+	if err != nil {
+		return nil, fmt.Errorf("invalid session token id: %v", err)
+	}
+
+	secret, err := base64.RawStdEncoding.DecodeString(secretToken)
+	if err != nil {
+		return nil, fmt.Errorf("invalid session token secret: %v", err)
+	}
+
+	return &sessionToken{id: id, secret: secret}, nil
+}
+
+type sessionToken struct {
+	id     uuid.UUID
+	secret []byte
+}
+
+func (token *sessionToken) String() string {
+	return base64.RawStdEncoding.EncodeToString(token.id[:]) + "." + base64.RawStdEncoding.EncodeToString(token.secret)
+}
 
 type authStateKey struct{}
 
 type AuthState struct {
-	Actor       *Actor           `json:"actor"`
-	Permissions ActorPermissions `json:"permissions"`
+	Actor     *Actor        `json:"actor"`
+	Session   *AuthSession  `json:"session"`
+	CookieJar AuthCookieJar `json:"-"`
 }
 
-type Actor struct {
-	ID string `json:"id"`
+func (state *AuthState) Cookies() []http.Cookie {
+	if state == nil {
+		return nil
+	}
+	return state.CookieJar.Values
+}
+
+func (state *AuthState) Permissions() (*ActorPermissions, error) {
+
+	if state.Actor == nil {
+		return nil, &APIError{Message: "Unauthorized", Code: http.StatusUnauthorized}
+	}
+
+	return &ActorPermissions{UserPermissions: state.Actor.Permissions}, nil
 }
 
 type ActorPermissions struct {
-	Administrative bool `json:"administrative"`
-	ContentEdit    bool `json:"content_edit"`
+	db_model.UserPermissions
+}
+
+func (perms *ActorPermissions) IsAdmin() error {
+	if !perms.UserPermissions.Administrative {
+		return &APIError{Message: "'Administrative' permission required", Code: http.StatusForbidden}
+	}
+	return nil
+}
+
+func (perms *ActorPermissions) CanEditContent() error {
+
+	if err := perms.IsAdmin(); err != nil {
+		return err
+	}
+
+	if !perms.ContentEdit {
+		return &APIError{Message: "'ContentEdit' permission required", Code: http.StatusForbidden}
+	}
+
+	return nil
+}
+
+type AuthSession struct {
+	ID      uuid.UUID `json:"id"`
+	Expires time.Time `json:"expires"`
+}
+
+type Actor struct {
+	ID          uuid.UUID                `json:"id"`
+	Name        string                   `json:"name"`
+	Permissions db_model.UserPermissions `json:"permissions"`
 }
 
 type AuthProvider interface {
@@ -53,39 +163,51 @@ func authStateFor(ctx context.Context) *AuthState {
 	return val.(*AuthState)
 }
 
-type StaticAuthProvider struct {
+type dbAuthProvider struct {
+	db db_pkg.Wrapper
 }
 
-func (auth *StaticAuthProvider) AuthorizeRequest(req *http.Request) (*AuthState, error) {
+func (auth *dbAuthProvider) AuthorizeRequest(req *http.Request) (*AuthState, error) {
 
-	bearer := auth.requestBearerToken(req)
-	if bearer == "" {
+	cookie, _ := req.Cookie(SessionCookieKey)
+	if cookie == nil || cookie.Value == "" {
 		return &AuthState{}, nil
 	}
 
-	if edtorToken := auth.envToken("EDITOR_TOKEN"); edtorToken != "" && subtle.ConstantTimeCompare([]byte(bearer), []byte(edtorToken)) == 1 {
-		return &AuthState{
-			Actor: &Actor{
-				ID: "editor",
-			},
-			Permissions: ActorPermissions{
-				Administrative: true,
-				ContentEdit:    true,
-			},
-		}, nil
+	token, err := parseSessionToken(cookie.Value)
+	if err != nil {
+		return auth.invalidateRequest("Invalid session cookie")
 	}
 
-	return &AuthState{}, &APIError{Message: "Invalid auth token", Code: http.StatusForbidden}
-}
-
-func (auth *StaticAuthProvider) requestBearerToken(req *http.Request) string {
-	token, value, ok := strings.Cut(req.Header.Get("Authorization"), " ")
-	if !ok || !strings.EqualFold(token, "Bearer") {
-		return ""
+	session, err := auth.db.GetSession(req.Context(), token.id)
+	if db_pkg.IsNull(err) || (err == nil && session.ExpiresAt.Before(time.Now())) {
+		return auth.invalidateRequest("Session expired")
+	} else if err != nil {
+		return nil, InternalError("sqlc.GetSession", err)
+	} else if subtle.ConstantTimeCompare(token.secret, session.Secret) != 1 {
+		return auth.invalidateRequest("Invalid session secret")
 	}
-	return strings.TrimSpace(value)
+
+	user, err := auth.db.GetUserByID(req.Context(), session.UserID)
+	if err != nil {
+		return nil, InternalError("sqlc.GetUserByID", err)
+	}
+
+	return &AuthState{
+		Actor: &Actor{
+			ID:          user.ID,
+			Name:        user.Name,
+			Permissions: user.Permissions.Permissions,
+		},
+		Session: &AuthSession{
+			ID:      session.ID,
+			Expires: session.ExpiresAt.Time,
+		},
+	}, nil
 }
 
-func (auth *StaticAuthProvider) envToken(name string) string {
-	return strings.TrimSpace(os.Getenv(name))
+func (auth *dbAuthProvider) invalidateRequest(message string) (*AuthState, error) {
+	var jar AuthCookieJar
+	jar.ClearSession()
+	return nil, &APIError{Message: message, Code: http.StatusUnauthorized, Cookies: jar.Values}
 }

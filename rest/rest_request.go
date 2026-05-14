@@ -62,7 +62,7 @@ func ParseGeneric[T any](req *http.Request) (T, error) {
 
 	if req.ContentLength == 0 {
 		return result, &APIError{
-			Message: "empty patch",
+			Message: "empty json payload",
 			Code:    http.StatusLengthRequired,
 		}
 	}

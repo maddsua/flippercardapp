@@ -1,4 +1,4 @@
-import type { CardDeck, CardDeckMetadata, Collection, CollectionMetadata, CollectionSearchResult } from "./api_models";
+import type { AuthState, CardDeck, CardDeckMetadata, Collection, CollectionMetadata, CollectionSearchResult, SignInParams } from "./api_models";
 
 export interface Result <T> {
 	data: T | null;
@@ -87,13 +87,18 @@ export class ApiClient {
 		return url;
 	};
 
-	private exec = async <T> (method: string, proc: string, params?: MethodParamsInit) => {
+	private exec = async <T, R extends {} = {}> (method: string, proc: string, params?: MethodParamsInit, body?: R | null) => {
+
+		const headers = new Headers({ 'Accept': 'application/json' });
+
+		if (body) {
+			headers.set('Content-Type', 'application/json');
+		}
 
 		const { response, fetchError } = await fetch(this.procedureURL(proc, params), {
-			method: method,
-			headers: {
-				'Accept': 'application/json'
-			}
+			method,
+			headers,
+			body: body ? JSON.stringify(body) : null,
 		}).then(response => ({ response, fetchError: null }))
 			.catch(err => ({ response: null, fetchError: unwrapError(err)}));
 
@@ -130,6 +135,18 @@ export class ApiClient {
 
 	loadDeck = async (id: string) => {
 		return this.exec<CardDeck>('GET',`/decks/${id}`);
+	};
+
+	auth = {
+		whoami: async () => {
+			return this.exec<AuthState>('GET','/auth/whoami');
+		},
+		signin: async (params: SignInParams) => {
+			return this.exec<AuthState>('POST','/auth/signin', {}, params);
+		},
+		signout: async () => {
+			return this.exec<AuthState>('POST','/auth/signout');
+		},
 	};
 };
 

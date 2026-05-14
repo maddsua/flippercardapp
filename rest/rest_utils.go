@@ -42,6 +42,10 @@ type StatusCoder interface {
 	StatusCode() int
 }
 
+type ReadableCookieJar interface {
+	Cookies() []http.Cookie
+}
+
 type Response[T any] struct {
 	Data  *T        `json:"data"`
 	Error *APIError `json:"error"`
@@ -56,16 +60,26 @@ func (resp *Response[T]) Write(wrt http.ResponseWriter) {
 
 	wrt.Header().Set("Content-Type", "application/json")
 
-	if resp.Error != nil {
-		wrt.WriteHeader(resp.Error.StatusCode())
+	if jar, ok := any(resp.Data).(ReadableCookieJar); ok {
+		for _, cookie := range jar.Cookies() {
+			http.SetCookie(wrt, &cookie)
+		}
+	}
+
+	if err := resp.Error; err != nil {
+		for _, cookie := range err.Cookies {
+			http.SetCookie(wrt, &cookie)
+		}
+		wrt.WriteHeader(err.StatusCode())
 	}
 
 	json.NewEncoder(wrt).Encode(resp)
 }
 
 type APIError struct {
-	Message string `json:"message"`
-	Code    int    `json:"-"`
+	Message string        `json:"message"`
+	Code    int           `json:"-"`
+	Cookies []http.Cookie `json:"-"`
 }
 
 func (err *APIError) StatusCode() int {

@@ -5,13 +5,20 @@ import (
 	"database/sql"
 	"embed"
 	"fmt"
+	"log/slog"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
-	"github.com/maddsua/flippercardapp/db/generated"
+	"github.com/google/uuid"
+	db_gen "github.com/maddsua/flippercardapp/db/generated"
+	"github.com/maddsua/flippercardapp/db/model"
+	"github.com/maddsua/flippercardapp/db/types"
+	"github.com/maddsua/flippercardapp/utils"
+	"golang.org/x/crypto/bcrypt"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -92,13 +99,13 @@ func Migrate(db *sql.DB) (*MigrationState, error) {
 
 func NewWrapper(db *sql.DB) *Wrapper {
 	return &Wrapper{
-		Queries: *generated.New(db),
+		Queries: *db_gen.New(db),
 		db:      db,
 	}
 }
 
 type Wrapper struct {
-	generated.Queries
+	db_gen.Queries
 	db *sql.DB
 }
 
@@ -110,13 +117,13 @@ func (db *Wrapper) BeginTx(ctx context.Context) (*TxWrapper, error) {
 	}
 
 	return &TxWrapper{
-		Queries: *generated.New(tx),
+		Queries: *db_gen.New(tx),
 		tx:      tx,
 	}, nil
 }
 
 type TxWrapper struct {
-	generated.Queries
+	db_gen.Queries
 	tx *sql.Tx
 }
 
@@ -134,4 +141,58 @@ func IsNull(err error) bool {
 
 func IsConflict(err error) bool {
 	return err != nil && strings.Contains(strings.ToLower(err.Error()), "unique constraint failed")
+}
+
+type StateInitParams struct {
+	RootUserName     string
+	RootUserPassword string
+}
+
+func InitState(db *sql.DB, params StateInitParams) error {
+
+	tx := NewWrapper(db)
+
+	if initUsername := params.RootUserName; initUsername != "" {
+
+		if count, err := tx.UserCount(context.Background()); err != nil {
+			return fmt.Errorf("sqlc.UserCount: %v", err)
+		} else if count > 0 {
+			return nil
+		}
+
+		initPassword := params.RootUserPassword
+		if initPassword == "" {
+			initPassword = utils.NewRandomBcryptPassword(64)
+		}
+
+		pwHash, err := bcrypt.GenerateFromPassword([]byte(initPassword), bcrypt.DefaultCost)
+		if err != nil {
+			return fmt.Errorf("bcrypt.GenerateFromPassword: %v", err)
+		}
+
+		user, err := tx.InsertUser(context.Background(), db_gen.InsertUserParams{
+			ID:           uuid.New(),
+			CreatedAt:    types.NewTime(time.Now()),
+			Name:         initUsername,
+			PasswordHash: pwHash,
+			Permissions: model.NullUserPermissions{
+				Permissions: model.UserPermissions{
+					Administrative: true,
+					ContentEdit:    true,
+				},
+				Valid: true,
+			},
+		})
+
+		if err != nil {
+			return fmt.Errorf("sqlc.InsertUser: %v", err)
+		}
+
+		slog.Warn("Add a root user",
+			slog.String("id", user.ID.String()),
+			slog.String("username", initUsername),
+			slog.String("password", initPassword))
+	}
+
+	return nil
 }

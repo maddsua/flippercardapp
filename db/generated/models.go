@@ -8,6 +8,7 @@ import (
 	"database/sql"
 
 	"github.com/google/uuid"
+	"github.com/maddsua/flippercardapp/db/model"
 	"github.com/maddsua/flippercardapp/db/types"
 )
 
@@ -34,4 +35,20 @@ type Deck struct {
 	UpdatedAt    types.Time
 	Name         string
 	Description  sql.NullString
+}
+
+type User struct {
+	ID           uuid.UUID
+	CreatedAt    types.Time
+	Name         string
+	PasswordHash []byte
+	Permissions  model.NullUserPermissions
+}
+
+type UserSession struct {
+	ID        uuid.UUID
+	CreatedAt types.Time
+	ExpiresAt types.Time
+	UserID    uuid.UUID
+	Secret    []byte
 }

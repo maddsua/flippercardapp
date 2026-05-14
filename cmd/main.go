@@ -68,6 +68,15 @@ func main() {
 		}
 	}
 
+	if err := db_pkg.InitState(dbconn, db_pkg.StateInitParams{
+		RootUserName:     os.Getenv("INIT_ROOT_USERNAME"),
+		RootUserPassword: os.Getenv("INIT_ROOT_PASSWORD"),
+	}); err != nil {
+		slog.Error("DB state init failed",
+			slog.String("err", err.Error()))
+		os.Exit(1)
+	}
+
 	mux := http.NewServeMux()
 
 	mux.Handle("/api/", http.StripPrefix("/api", rest.NewHandler(dbconn)))
