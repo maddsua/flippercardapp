@@ -1,0 +1,70 @@
+<script setup lang="ts">
+import { reactive } from 'vue';
+import DashboardSessionWidget from './DashboardSessionWidget.vue';
+import type { AuthState } from '../../api_models';
+import DashboardMenuSection from './DashboardMenuSection.vue';
+import GenericButton from '../App/GenericButton.vue';
+import { useRouter } from 'vue-router';
+import AppUiHeader from '../App/AppUiHeader.vue';
+
+const router = useRouter();
+
+const state = reactive({
+	auth: null as  AuthState | null,
+});
+
+</script>
+
+<template>
+
+	<AppUiHeader>
+		<template v-slot:title>
+			Dashboard
+		</template>
+	</AppUiHeader>
+
+	<div class="options-menu" v-if="state.auth?.actor">
+
+		<template v-if="state.auth.actor.permissions.administrative">
+
+			<DashboardMenuSection>
+
+				<template v-slot:title>
+					Content
+				</template>
+
+				<template v-slot:content>
+					<GenericButton variant="wide" @click="router.push('/app/dashboard/content')">
+						Manage content
+					</GenericButton>
+				</template>
+
+			</DashboardMenuSection>
+
+		</template>
+
+		<div v-else class="noop-filler">
+			No settings are available as of now
+		</div>
+
+	</div>
+
+	<DashboardSessionWidget @stateUpdate="val => state.auth = val" />
+
+</template>
+
+<style lang="scss" scoped>
+	.options-menu {
+		display: flex;
+		flex-direction: column;
+		flex-grow: 1;
+		
+		.noop-filler {
+			display: flex;
+			flex-grow: 1;
+			align-items: center;
+			justify-content: center;
+			font-size: 0.75rem;
+		}
+	}
+</style>

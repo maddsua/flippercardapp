@@ -14,6 +14,8 @@ const storeTyped = <T>(key: string, val: T | null) => {
 
 class Storage {
 
+	//	todo: the rest of the nested methods, when moving to indexeddb
+
 	collections = async () => {
 		return loadTyped<string[]>('collections') || [];
 	};
@@ -76,6 +78,11 @@ class Storage {
 
 		storeTyped('starred', newEntries);
 		return true;
+	};
+
+	deckEditor = {
+		loadSnapshot: async () => loadTyped<any>('deck_editor_state_snapshot'),
+		storeSnapshot: async (val: any | null) => storeTyped('deck_editor_state_snapshot', val),
 	};
 }
 

@@ -14,7 +14,7 @@ const appView = computed((): string | null => typeof route.meta.app_view === 'st
 		<AppViewButton href="/app" :active="appView === 'home'" icon="home" />
 		<AppViewButton href="/app/starred" :active="appView === 'starred'" icon="star" />
 		<AppViewButton href="/app/discover" :active="appView === 'discover'" icon="search" />
-		<AppViewButton href="/app/menu" :active="appView === 'menu'" icon="menu" />
+		<AppViewButton href="/app/dashboard" :active="appView === 'menu'" icon="menu" />
 	</div>
 </template>
 

@@ -11,6 +11,7 @@ from decks
 where (decks.id = sqlc.narg(id) or sqlc.narg(id) is null)
 	and (decks.collection_id = sqlc.narg(collection_id) or sqlc.narg(collection_id) is null)
 group by decks.id
+order by decks.created_at desc
 limit sqlc.arg(limit) offset sqlc.arg(offset);
 
 -- name: GetDeckCards :many
@@ -29,6 +30,7 @@ from collections
 	left join decks on decks.collection_id = collections.id
 where (collections.id = sqlc.narg(id) or sqlc.narg(id) is null)
 group by collections.id
+order by collections.created_at desc
 limit sqlc.arg(limit) offset sqlc.arg(offset);
 
 -- name: GetCollectionSearchBatch :many

@@ -8,6 +8,7 @@ import { computed } from 'vue';
 
 const props = defineProps<{
 	entry: CardFace;
+	decoration?: 'question-mark';
 }>();
 
 const emit = defineEmits<{
@@ -21,16 +22,16 @@ const cardTheme = computed(() => props.entry.theme?.card);
 </script>
 
 <template>
-	<div class="card-canvas" :style="{ color: cardTheme?.mask_color }">
-		<div class="card-content" :style="{ backgroundColor: cardTheme?.fill_color, borderColor: cardTheme?.fill_color || cardTheme?.outline_color, color: cardTheme?.mask_color }">
+	<div class="card-canvas" :style="{ color: cardTheme?.mask_color }" :class="{ [`decoration-${decoration}`]: !!decoration }">
+		<div class="card-content" :style="{ backgroundColor: cardTheme?.fill_color, borderColor: cardTheme?.outline_color || cardTheme?.fill_color, color: cardTheme?.mask_color }">
 			<template v-for="node of entry.content">
 				<CardTitle v-if="node.type === 'title'">
-					{{ node.content }}
+					{{ node.content || '[Title]' }}
 				</CardTitle>
 				<CardTextBox v-else-if="node.type === 'textbox'">
 					<template v-for="txtnode of node.content">
 						<CardTextNode v-if="txtnode.type === 'text'" :theme="txtnode.theme">
-							{{ txtnode.content }}
+							{{ txtnode.content || '[Content]' }}
 						</CardTextNode>
 						<br v-else-if="txtnode.type === 'newline'" />
 					</template>
@@ -72,7 +73,7 @@ const cardTheme = computed(() => props.entry.theme?.card);
 			transform: rotateY(180deg);
 		}
 
-		&:not(:nth-child(2n))::before {
+		&.decoration-question-mark::before {
 			content: "?";
 			display: block;
 			font-size: 3.25em;

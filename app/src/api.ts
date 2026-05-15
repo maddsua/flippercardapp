@@ -1,4 +1,4 @@
-import type { AuthState, CardDeck, CardDeckMetadata, Collection, CollectionMetadata, CollectionSearchResult, SignInParams } from "./api_models";
+import type { AuthState, CardDeck, CardDeckContentPatch, CardDeckMetadata, CardDeckMetadataPatch, CardDeckPatch, Collection, CollectionMetadata, CollectionPatch, CollectionSearchResult, SignInParams } from "./api_models";
 
 export interface Result <T> {
 	data: T | null;
@@ -9,6 +9,7 @@ export interface Page <T> {
 	entries: T[];
 	offset: number;
 	limit: number;
+	has_next: boolean;
 };
 
 export interface Pagination {
@@ -87,7 +88,7 @@ export class ApiClient {
 		return url;
 	};
 
-	private exec = async <T, R extends {} = {}> (method: string, proc: string, params?: MethodParamsInit, body?: R | null) => {
+	private exec = async <T, R extends {} = {}> (method: string, proc: string, params?: MethodParamsInit, body?: R | null): Promise<Result<T>> => {
 
 		const headers = new Headers({ 'Accept': 'application/json' });
 
@@ -106,6 +107,10 @@ export class ApiClient {
 			return { data: null, error: new Error(`Fetch API: ${fetchError.message}`) };
 		}
 
+		if (response.status === 204) {
+			return { data: null, error: null };
+		}
+
 		const { result, parseError } = await response.json()
 			.then(result => ({ result: result as Result<T>, parseError: null }))
 			.catch(err => ({ result: null, parseError: unwrapError(err)}));
@@ -117,35 +122,57 @@ export class ApiClient {
 		return result;
 	};
 
-	listCollections = async (params?: { ids?: string[] | null } & Partial<Pagination>) => {
-		return this.exec<Page<CollectionMetadata>>('GET', '/collections', params);
-	};
-
-	searchCollection = async (term: string) => {
-		return this.exec<Page<CollectionSearchResult>>('GET', '/collections/search', { term });
-	}
-
-	loadCollection = async (id: string) => {
-		return this.exec<Collection>('GET', `/collections/${id}`);
-	};
-
-	listDecks = async (params?: { ids?: string[] | null, collection_id?: string } & Partial<Pagination>) => {
-		return this.exec<Page<CardDeckMetadata>>('GET','/decks', params);
-	};
-
-	loadDeck = async (id: string) => {
-		return this.exec<CardDeck>('GET',`/decks/${id}`);
-	};
-
 	auth = {
 		whoami: async () => {
 			return this.exec<AuthState>('GET','/auth/whoami');
 		},
-		signin: async (params: SignInParams) => {
-			return this.exec<AuthState>('POST','/auth/signin', {}, params);
+		signin: async (signin: SignInParams) => {
+			return this.exec<AuthState>('POST','/auth/signin', {}, signin);
 		},
 		signout: async () => {
 			return this.exec<AuthState>('POST','/auth/signout');
+		},
+	};
+
+	collections = {
+		list: async (params?: { ids?: string[] | null } & Partial<Pagination>) => {
+			return this.exec<Page<CollectionMetadata>>('GET', '/collections', params);
+		},
+		search: async (term: string) => {
+			return this.exec<Page<CollectionSearchResult>>('GET', '/collections/search', { term });
+		},
+		load: async (id: string) => {
+			return this.exec<Collection>('GET', `/collections/${id}`);
+		},
+		create: async (patch: CollectionPatch) => {
+			return this.exec<CollectionMetadata>('PUT', '/manage/content/collection', {}, patch);
+		},
+		editMeta: async (id: string, patch: CollectionPatch) => {
+			return this.exec<CollectionMetadata>('PATCH', `/manage/content/collection/${id}/metadata`, {}, patch);
+		},
+		remove: async (id: string) => {
+			return this.exec<null>('DELETE', `/manage/content/collection/${id}`);
+		},
+	};
+
+	decks = {
+		list: async (params?: { ids?: string[] | null, collection_id?: string } & Partial<Pagination>) => {
+			return this.exec<Page<CardDeckMetadata>>('GET','/decks', params);
+		},
+		load: async (id: string) => {
+			return this.exec<CardDeck>('GET',`/decks/${id}`);
+		},
+		add: async (patch: CardDeckPatch) => {
+			return this.exec<CardDeckMetadata>('PUT', '/manage/content/deck', {}, patch);
+		},
+		updateMeta: async (id: string, patch: CardDeckMetadataPatch) => {
+			return this.exec<CardDeckMetadata>('PATCH', `/manage/content/deck/${id}/metadata`, {}, patch);
+		},
+		updateContent: async (id: string, patch: CardDeckContentPatch) => {
+			return this.exec<CardDeckMetadata>('PATCH', `/manage/content/deck/${id}/content`, {}, patch);
+		},
+		remove: async (id: string) => {
+			return this.exec<null>('DELETE', `/manage/content/deck/${id}`);
 		},
 	};
 };

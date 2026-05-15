@@ -127,6 +127,7 @@ from collections
 	left join decks on decks.collection_id = collections.id
 where (collections.id = ?1 or ?1 is null)
 group by collections.id
+order by collections.created_at desc
 limit ?3 offset ?2
 `
 
@@ -293,6 +294,7 @@ from decks
 where (decks.id = ?1 or ?1 is null)
 	and (decks.collection_id = ?2 or ?2 is null)
 group by decks.id
+order by decks.created_at desc
 limit ?4 offset ?3
 `
 

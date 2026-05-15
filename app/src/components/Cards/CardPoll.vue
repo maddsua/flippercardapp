@@ -2,7 +2,7 @@
 import { computed } from 'vue';
 import CardPollOption from './CardPollOption.vue';
 import type { ElementTheme, CardPollNode, PollOption } from '../../content';
-import { shuffleArray } from '../../shuffle';
+import { shuffleArray } from '../../arrays';
 
 const props = defineProps<{
 	entry: CardPollNode;
@@ -53,7 +53,14 @@ const options = computed(() => {
 
 <template>
 	<div class="card-poll" data-interactive="">
-		<CardPollOption v-for="option of options" :entry="option" :is_quiz="props.entry.is_quiz" :theme="theme" @select="handleOptionSelect(option)" />
+		<CardPollOption v-if="options.length" v-for="option of options"
+			:entry="option"
+			:is_quiz="props.entry.is_quiz"
+			:theme="theme"
+			@select="handleOptionSelect(option)" />
+		<template v-else>
+			[Poll options]
+		</template>
 	</div>
 </template>
 

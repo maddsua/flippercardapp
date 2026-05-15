@@ -11,7 +11,7 @@ create table user_sessions (
 	created_at time not null default 0,
 	expires_at time not null default 0,
 	user_id uuid not null,
-	secret blob not null,
+	secret blob,
 
 	foreign key (user_id) references users(id) on update cascade on delete cascade
 );

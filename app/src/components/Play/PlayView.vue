@@ -4,7 +4,7 @@ import type { CardNode } from '../../content';
 import CardWidget from '../Cards/CardWidget.vue';
 import Endscreen from '../Endscreen/Endscreen.vue';
 import FullscreenMessage from '../App/FullscreenMessage.vue';
-import { shuffleArray } from '../../shuffle';
+import { shuffleArray } from '../../arrays';
 import { useRoute, useRouter } from 'vue-router';
 import LoadingMessage from '../App/LoadingMessage.vue';
 import ErrorMessage from '../App/ErrorMessage.vue';
@@ -93,7 +93,7 @@ onMounted(async () => {
 		return;
 	}
 
-	const { data, error } = await client.loadDeck(id);
+	const { data, error } = await client.decks.load(id);
 	if (!data || error) {
 		state.error = error?.message || 'Unable to load deck';
 		return;

@@ -31,7 +31,7 @@ onMounted(async () => {
 		return;
 	}
 
-	const { data, error } = await client.listDecks({ ids: starredIDs });
+	const { data, error } = await client.decks.list({ ids: starredIDs });
 	if (!data || error) {
 		state.error = error?.message || 'Unable to load decks';
 		return;

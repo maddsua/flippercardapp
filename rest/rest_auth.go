@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	db_pkg "github.com/maddsua/flippercardapp/db"
+	db_gen "github.com/maddsua/flippercardapp/db/generated"
 	db_model "github.com/maddsua/flippercardapp/db/model"
 )
 
@@ -27,6 +28,7 @@ func (jar *AuthCookieJar) SetSession(id uuid.UUID, secret []byte, expires time.T
 	jar.Values = append(jar.Values, http.Cookie{
 		Name:     SessionCookieKey,
 		Value:    token.String(),
+		Path:     "/",
 		Expires:  expires,
 		Secure:   true,
 		HttpOnly: true,
@@ -36,7 +38,8 @@ func (jar *AuthCookieJar) SetSession(id uuid.UUID, secret []byte, expires time.T
 func (jar *AuthCookieJar) ClearSession() {
 	jar.Values = append(jar.Values, http.Cookie{
 		Name:     SessionCookieKey,
-		Expires:  time.Time{},
+		Path:     "/",
+		Expires:  time.Unix(0, 0),
 		Secure:   true,
 		HttpOnly: true,
 	})
@@ -163,11 +166,11 @@ func authStateFor(ctx context.Context) *AuthState {
 	return val.(*AuthState)
 }
 
-type dbAuthProvider struct {
-	db db_pkg.Wrapper
+type NativeAuthProvider struct {
+	DB *db_pkg.Wrapper
 }
 
-func (auth *dbAuthProvider) AuthorizeRequest(req *http.Request) (*AuthState, error) {
+func (auth *NativeAuthProvider) AuthorizeRequest(req *http.Request) (*AuthState, error) {
 
 	cookie, _ := req.Cookie(SessionCookieKey)
 	if cookie == nil || cookie.Value == "" {
@@ -179,8 +182,8 @@ func (auth *dbAuthProvider) AuthorizeRequest(req *http.Request) (*AuthState, err
 		return auth.invalidateRequest("Invalid session cookie")
 	}
 
-	session, err := auth.db.GetSession(req.Context(), token.id)
-	if db_pkg.IsNull(err) || (err == nil && session.ExpiresAt.Before(time.Now())) {
+	session, err := auth.DB.GetSession(req.Context(), token.id)
+	if db_pkg.IsNull(err) || (err == nil && !sessionValid(session)) {
 		return auth.invalidateRequest("Session expired")
 	} else if err != nil {
 		return nil, InternalError("sqlc.GetSession", err)
@@ -188,7 +191,7 @@ func (auth *dbAuthProvider) AuthorizeRequest(req *http.Request) (*AuthState, err
 		return auth.invalidateRequest("Invalid session secret")
 	}
 
-	user, err := auth.db.GetUserByID(req.Context(), session.UserID)
+	user, err := auth.DB.GetUserByID(req.Context(), session.UserID)
 	if err != nil {
 		return nil, InternalError("sqlc.GetUserByID", err)
 	}
@@ -206,8 +209,12 @@ func (auth *dbAuthProvider) AuthorizeRequest(req *http.Request) (*AuthState, err
 	}, nil
 }
 
-func (auth *dbAuthProvider) invalidateRequest(message string) (*AuthState, error) {
+func (auth *NativeAuthProvider) invalidateRequest(message string) (*AuthState, error) {
 	var jar AuthCookieJar
 	jar.ClearSession()
 	return nil, &APIError{Message: message, Code: http.StatusUnauthorized, Cookies: jar.Values}
+}
+
+func sessionValid(session db_gen.UserSession) bool {
+	return session.ExpiresAt.After(time.Now()) && len(session.Secret) > 0
 }

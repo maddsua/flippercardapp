@@ -122,7 +122,7 @@ const handleDragDone = (event?: PointerEvent) => {
 
 <template>
 	<div class="card-container" :class="{ flipped, dragging }" :style="transformStyle" @pointerdown="handleDragStart" @pointermove="handleDragUpdate" @pointerup="handleDragDone" @pointercancel="handleDragDone" ref="containerRef">
-		<CardFace :entry="card.front" @flip="flip" @score="(score) => emit('score', score)" @next="emit('next')" />
+		<CardFace :entry="card.front" decoration="question-mark" @flip="flip" @score="(score) => emit('score', score)" @next="emit('next')" />
 		<CardFace :entry="card.back" @flip="flip" @score="(score) => emit('score', score)" @next="emit('next')" />
 	</div>
 </template>

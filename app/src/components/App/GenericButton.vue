@@ -1,12 +1,13 @@
 <script setup lang="ts">
 const props = defineProps<{
-	theme?: 'blue' | 'orange';
-	variant?: 'thick' | 'expanded';
+	theme?: 'blue' | 'orange' | 'green' | 'red';
+	variant?: 'thin' | 'thick' | 'wide';
+	disabled?: boolean;
 }>();
 </script>
 
 <template>
-	<button type="button" :class="[theme, variant]">
+	<button type="button" :class="{ [`variant-${variant}`]: !!variant, [`theme-${theme}`]: !!theme }" :disabled="disabled">
 		<slot>
 			[Button label]
 		</slot>
@@ -26,23 +27,44 @@ const props = defineProps<{
 		border: none;
 		outline: none;
 		transition: all 200ms ease;
+		width: fit-content;
 
 		&:hover {
 			cursor: pointer;
 			background-color: var(--app-theme-deep-lavender);
 		}
 
-		&.orange {
+		&.theme-orange {
 			background-color: var(--app-theme-spooky-orange);
 		}
 
-		&.thick {
+		&.theme-green {
+			background-color: var(--app-theme-irish-green);
+		}
+
+		&.theme-red {
+			background-color: var(--app-theme-blood-red);
+		}
+
+		&.variant-thick {
 			padding: 1rem 2rem;
 			font-size: 0.85rem;
 		}
 
-		&.wide {
-			flex-grow: 1;
+		&.variant-thin {
+			padding: 0.5rem 0.75rem;
+			font-size: 0.65rem;
+			border-radius: 0.5rem;
+		}
+
+		&.variant-wide {
+			width: 100%;
+		}
+
+		&:disabled {
+			pointer-events: none;
+			filter: saturate(0);
+			opacity: 0.75;
 		}
 	}
 </style>

@@ -33,7 +33,7 @@ onMounted(async () => {
 		return;
 	}
 
-	const { data, error } = await client.listCollections({ ids: myCollections });
+	const { data, error } = await client.collections.list({ ids: myCollections });
 	if (!data || error) {
 		state.error = error?.message || 'Unable to load collections';
 		return;

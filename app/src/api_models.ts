@@ -64,3 +64,27 @@ export interface SignInParams {
 	username: string;
 	password: string;
 };
+
+export interface CollectionPatch {
+	name: string;
+	description?: string;
+};
+
+export interface CardDeckMetadataPatch {
+	collection_id?: string | null;
+	name: string;
+	description?: string | null;
+};
+
+export interface CardPatch {
+	id?: string | null;
+	content: Omit<CardNode, 'id'>;
+};
+
+export interface CardDeckPatch extends CardDeckMetadataPatch{
+	cards: CardPatch[];
+};
+
+export interface CardDeckContentPatch {
+	cards: CardPatch[];
+};

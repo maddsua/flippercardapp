@@ -41,7 +41,7 @@ const handleSearch = async (term: string) => {
 	state.error = null;
 	state.data = [];
 
-	const { data, error } = await client.searchCollection(term);
+	const { data, error } = await client.collections.search(term);
 	if (!data || error) {
 		state.busy = false;
 		state.error = error?.message || 'Unabale to run a search';

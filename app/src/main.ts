@@ -11,7 +11,12 @@ import './main.scss';
 import './theme.scss';
 import DiscoverView from './components/Discover/DiscoverView.vue';
 import StarredView from './components/Starred/StarredView.vue';
-import MenuView from './components/Menu/MenuView.vue';
+import DashboardView from './components/Dashboard/DashboardView.vue';
+import DashboardMainScreen from './components/Dashboard/DashboardMainScreen.vue';
+import DashboardContentScreen from './components/Dashboard/Content/DashboardContentScreen.vue';
+import NewCollectionScreen from './components/Dashboard/Content/Collections/NewCollectionScreen.vue';
+import EditCollectionMetadataScreen from './components/Dashboard/Content/Collections/EditCollectionMetadataScreen.vue';
+import DeckEditorView from './components/DeckEditor/DeckEditorView.vue';
 
 const routes = [
 	{
@@ -58,11 +63,25 @@ const routes = [
 		},
 	},
 	{
-		path: '/app/menu',
-		component: MenuView,
+		path: '/app/dashboard',
+		component: DashboardView,
 		meta: {
 			app_view: 'menu'
 		},
+		children: [
+			{ path: '', component: DashboardMainScreen },
+			{ path: 'content', component: DashboardContentScreen },
+			{ path: 'content/collections/new', component: NewCollectionScreen },
+			{ path: 'content/collection/:collection_id/metadata', component: EditCollectionMetadataScreen },
+		],
+	},
+	{
+		path: `/app/editor/deck/:deck_id/editor`,
+		component: DeckEditorView,
+	},
+	{
+		path: `/app/editor/deck/editor`,
+		component: DeckEditorView,
 	},
 	{
 		path: '/:pathMatch(.*)*',

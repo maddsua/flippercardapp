@@ -274,5 +274,5 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return nil, rslv.DeleteDeck(req.Context(), deckID)
 	}))
 
-	return authMiddleware(&dbAuthProvider{}, mux)
+	return authMiddleware(&NativeAuthProvider{DB: db}, mux)
 }
