@@ -27,7 +27,7 @@ const state = reactive({
 
 onMounted(async () => {
 
-	const myCollections = await store.collections();
+	const myCollections = await store.collections.entries();
 	if (!myCollections.length) {
 		state.data = [];
 		return;

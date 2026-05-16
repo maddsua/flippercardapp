@@ -100,7 +100,7 @@ onMounted(async () => {
 	}
 
 	state.deckID = id;
-	state.isMarked = new Set(await store.starred()).has(id);
+	state.isMarked = await store.starredDecks.contains(id);
 	state.collectionID = data.collection_id;
 	state.labels = data.labels;
 	state.cards = data.cards.map(({ id, content }) => ({ ... content, id }));
@@ -117,9 +117,9 @@ const toggleMarked = async () => {
 	state.isMarked = !state.isMarked;
 
 	if (state.isMarked) {
-		await store.addStar(state.deckID);
+		await store.starredDecks.add(state.deckID);
 	} else {
-		await store.removeStar(state.deckID);
+		await store.starredDecks.remove(state.deckID);
 	}
 };
 

@@ -25,7 +25,7 @@ const client = useClient();
 
 onMounted(async () => {
 
-	const starredIDs = await store.starred();
+	const starredIDs = await store.starredDecks.entries();
 	if (!starredIDs.length) {
 		state.data = [];
 		return;

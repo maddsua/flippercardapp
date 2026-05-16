@@ -109,7 +109,7 @@ const publishNewDeck = async () => {
 	state.metadata = { id: data.id, collectionID: null };
 	state.editor = { metaChanged: false, cardsChanged: false, snapshotSaved: false };
 
-	store.deckEditor.storeSnapshot(null);
+	store.deckEditor.store(null);
 };
 
 const patchDeckExisting = async (id: string) => {
@@ -142,7 +142,7 @@ const patchDeckExisting = async (id: string) => {
 		state.editor.cardsChanged = false;
 	}
 	
-	store.deckEditor.storeSnapshot(null);
+	store.deckEditor.store(null);
 };
 
 const handlePublish = async () => {
@@ -170,7 +170,7 @@ const handleDiscard = () => {
 		return;
 	}
 
-	store.deckEditor.storeSnapshot(null);
+	store.deckEditor.store(null);
 	router.push('/app/dashboard/content');
 };
 
@@ -229,7 +229,7 @@ const initAutosave = () => {
 			return;
 		}
 
-		await store.deckEditor.storeSnapshot(state.data);
+		await store.deckEditor.store(state.data);
 		state.editor.snapshotSaved = true;
 
 	}, 1000);
@@ -281,7 +281,7 @@ onMounted(async () => {
 
 	state.metadata.collectionID = collection_id;
 
-	const storedState = await store.deckEditor.loadSnapshot();
+	const storedState = await store.deckEditor.load();
 	if (storedState && typeof storedState === 'object') {
 		state.data = storedState;
 		state.editor = { metaChanged: true, cardsChanged: true, snapshotSaved: false };

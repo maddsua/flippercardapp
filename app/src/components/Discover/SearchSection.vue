@@ -44,9 +44,8 @@ const execSearchQuery = async (term: string) => {
 		return;
 	}
 
-	const starSet = new Set(await store.collections());
-
-	state.data = data.entries.map(item => ({ ... item, starred: starSet.has(item.id) }));
+	const starred = new Set(await store.collections.entries());
+	state.data = data.entries.map(item => ({ ... item, starred: starred.has(item.id) }));
 };
 
 const handleSearchInput = (value?: string) => {
@@ -81,7 +80,7 @@ const handleSearchInput = (value?: string) => {
 };
 
 const handleSelect = async (entry: SearchResultState) => {
-	if (!await store.addCollection(entry.id)) {
+	if (!await store.collections.add(entry.id)) {
 		router.push(`/app/collection/${entry.id}`);
 	}
 	entry.starred = true;

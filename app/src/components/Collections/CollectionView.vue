@@ -50,13 +50,11 @@ onMounted(async () => {
 		return;
 	}
 
-	const deckStars = new Set(await store.starred());
-	const decks = data.decks.map(item => ({ ... item, starred: deckStars.has(item.id) }));
-
-	const collectionStarred = new Set(await store.collections()).has(data.id);
+	const starredDecks = new Set(await store.starredDecks.entries());
+	const decks = data.decks.map(item => ({ ... item, starred: starredDecks.has(item.id) }));
 
 	state.data = ({  ... data, decks, });
-	state.starred = collectionStarred;
+	state.starred = await store.collections.contains(data.id);
 });
 
 const openDeck = (id: string) => {
@@ -76,9 +74,9 @@ const toggleStar = async () => {
 	if (state.data) {
 		const { id } = state.data;
 		if (state.starred) {
-			await store.addCollection(id);
+			await store.collections.add(id);
 		} else {
-			await store.removeCollection(id);
+			await store.collections.remove(id);
 		}
 	}
 };

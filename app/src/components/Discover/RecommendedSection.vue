@@ -26,7 +26,7 @@ const state = reactive({
 });
 
 const handleSelect = async (entry: RecommendedEntry) => {
-	if (!await store.addCollection(entry.id)) {
+	if (!await store.collections.add(entry.id)) {
 		router.push(`/app/collection/${entry.id}`);
 	}
 	entry.starred = true;
@@ -40,9 +40,8 @@ onMounted(async () => {
 		return;
 	}
 
-	const starSet = new Set(await store.collections());
-
-	state.data = data.entries.map(item => ({ ... item, starred: starSet.has(item.id) }));
+	const starred = new Set(await store.collections.entries());
+	state.data = data.entries.map(item => ({ ... item, starred: starred.has(item.id) }));
 });
 
 </script>
