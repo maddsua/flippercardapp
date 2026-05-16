@@ -79,7 +79,7 @@ const lang = useLanguage();
 		</AppUiHeader>
 
 		<CollectionList v-if="state.data !== null && state.data.length">
-			<CollectionListEntry v-for="item of state.data" :title="item.name" @click="openCollection(item.id)" />
+			<CollectionListEntry v-for="item of state.data" :title="item.name" :starred="true" @click="openCollection(item.id)" />
 		</CollectionList>
 
 		<CentralMessage v-else>
