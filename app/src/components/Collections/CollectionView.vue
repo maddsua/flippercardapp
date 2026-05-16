@@ -51,7 +51,10 @@ onMounted(async () => {
 	}
 
 	const starredDecks = new Set(await store.starredDecks.entries());
-	const decks = data.decks.map(item => ({ ... item, starred: starredDecks.has(item.id) }));
+
+	const decks = data.decks
+		.map(item => ({ ... item, starred: starredDecks.has(item.id) }))
+		.sort((a,b) => (b.starred ? 1 : 0) - (a.starred ? 1 : 0));
 
 	state.data = ({  ... data, decks, });
 	state.starred = await store.collections.contains(data.id);
@@ -131,7 +134,10 @@ const toggleStar = async () => {
 		</AppUiHeader>
 
 		<CollectionList v-if="state.data && state.data.decks.length">
-			<CollectionListEntry v-for="item of state.data.decks" :title="item.name" @click="openDeck(item.id)" />
+			<CollectionListEntry v-for="item of state.data.decks"
+				:starred="item.starred"
+				:title="item.name"
+				@click="openDeck(item.id)" />
 		</CollectionList>
 
 		<CentralMessage v-else>
