@@ -14,6 +14,7 @@ import (
 	db_pkg "github.com/maddsua/flippercardapp/db"
 	db_gen "github.com/maddsua/flippercardapp/db/generated"
 	db_model "github.com/maddsua/flippercardapp/db/model"
+	"github.com/maddsua/flippercardapp/db/types"
 )
 
 const SessionTTL = 6 * time.Hour
@@ -157,6 +158,11 @@ func authMiddleware(auth AuthProvider, next http.Handler) http.Handler {
 			return
 		}
 
+		// this path is only used for the session lifetime extension
+		for _, cookie := range state.Cookies() {
+			http.SetCookie(wrt, &cookie)
+		}
+
 		next.ServeHTTP(wrt, req.WithContext(context.WithValue(req.Context(), authStateKey{}, state)))
 	})
 }
@@ -177,18 +183,45 @@ func (auth *NativeAuthProvider) AuthorizeRequest(req *http.Request) (*AuthState,
 		return &AuthState{}, nil
 	}
 
+	var cookies AuthCookieJar
+
+	var invalidateRequest = func(message string) (*AuthState, error) {
+		cookies.ClearSession()
+		return nil, &APIError{Message: message, Code: http.StatusUnauthorized, Cookies: cookies.Values}
+	}
+
 	token, err := parseSessionToken(cookie.Value)
 	if err != nil {
-		return auth.invalidateRequest("Invalid session cookie")
+		return invalidateRequest("Invalid session cookie")
 	}
 
 	session, err := auth.DB.GetSession(req.Context(), token.id)
 	if db_pkg.IsNull(err) || (err == nil && !sessionValid(session)) {
-		return auth.invalidateRequest("Session expired")
+		return invalidateRequest("Session expired")
 	} else if err != nil {
 		return nil, InternalError("sqlc.GetSession", err)
 	} else if subtle.ConstantTimeCompare(token.secret, session.Secret) != 1 {
-		return auth.invalidateRequest("Invalid session secret")
+		return invalidateRequest("Invalid session secret")
+	}
+
+	if thresold := SessionTTL / 10; time.Until(session.ExpiresAt.Time) < thresold {
+
+		newExpiration := session.ExpiresAt.Add(SessionTTL)
+
+		slog.Debug("Extending session lifetime",
+			slog.String("id", session.ID.String()),
+			slog.String("client", req.RemoteAddr),
+			slog.String("from", session.ExpiresAt.String()),
+			slog.String("to", newExpiration.String()))
+
+		if session, err = auth.DB.SetSessionExpirationTime(req.Context(), db_gen.SetSessionExpirationTimeParams{
+			ID:        session.ID,
+			ExpiresAt: types.NewTime(newExpiration),
+		}); err != nil {
+			return nil, InternalError("sqlc.SetSessionExpirationTime", err)
+		}
+
+		cookies.SetSession(session.ID, session.Secret, session.ExpiresAt.Time)
 	}
 
 	user, err := auth.DB.GetUserByID(req.Context(), session.UserID)
@@ -206,13 +239,8 @@ func (auth *NativeAuthProvider) AuthorizeRequest(req *http.Request) (*AuthState,
 			ID:      session.ID,
 			Expires: session.ExpiresAt.Time,
 		},
+		CookieJar: cookies,
 	}, nil
-}
-
-func (auth *NativeAuthProvider) invalidateRequest(message string) (*AuthState, error) {
-	var jar AuthCookieJar
-	jar.ClearSession()
-	return nil, &APIError{Message: message, Code: http.StatusUnauthorized, Cookies: jar.Values}
 }
 
 func sessionValid(session db_gen.UserSession) bool {

@@ -47,3 +47,9 @@ where id = sqlc.arg(id);
 update user_sessions
 set expires_at = 0, secret = null
 where id = sqlc.arg(id);
+
+-- name: SetSessionExpirationTime :one
+update user_sessions
+set expires_at = sqlc.arg(expires_at)
+where id = sqlc.arg(id)
+returning *;

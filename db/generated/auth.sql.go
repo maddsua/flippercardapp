@@ -164,6 +164,31 @@ func (q *Queries) InvalidateSession(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+const setSessionExpirationTime = `-- name: SetSessionExpirationTime :one
+update user_sessions
+set expires_at = ?1
+where id = ?2
+returning id, created_at, expires_at, user_id, secret
+`
+
+type SetSessionExpirationTimeParams struct {
+	ExpiresAt types.Time
+	ID        uuid.UUID
+}
+
+func (q *Queries) SetSessionExpirationTime(ctx context.Context, arg SetSessionExpirationTimeParams) (UserSession, error) {
+	row := q.db.QueryRowContext(ctx, setSessionExpirationTime, arg.ExpiresAt, arg.ID)
+	var i UserSession
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.ExpiresAt,
+		&i.UserID,
+		&i.Secret,
+	)
+	return i, err
+}
+
 const userCount = `-- name: UserCount :one
 select count(1) from users
 `

@@ -26,6 +26,11 @@ func main() {
 
 	godotenv.Load()
 
+	if strings.EqualFold(os.Getenv("DEBUG"), "true") {
+		slog.SetLogLoggerLevel(slog.LevelDebug)
+		slog.Debug("ENABLED")
+	}
+
 	dataDir := "data"
 	if val := os.Getenv("DATA_DIR"); val != "" {
 		dataDir = val
