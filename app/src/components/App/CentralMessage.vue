@@ -10,6 +10,7 @@
 	.central-message {
 		display: flex;
 		justify-content: center;
-		font-size: 0.85rem;
+		font-size: 0.8rem;
+		color: var(--app-theme-mysterious-white);
 	}
 </style>

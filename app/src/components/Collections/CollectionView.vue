@@ -55,10 +55,8 @@ onMounted(async () => {
 
 	const collectionStarred = new Set(await store.collections()).has(data.id);
 
-	setTimeout(() => {
-		state.data = ({  ... data, decks, });
-		state.starred = collectionStarred;
-	}, 350);
+	state.data = ({  ... data, decks, });
+	state.starred = collectionStarred;
 });
 
 const openDeck = (id: string) => {

@@ -16,6 +16,7 @@ class Storage {
 
 	//	todo: the rest of the nested methods, when moving to indexeddb
 
+	//	todo: return as a set when needed
 	collections = async () => {
 		return loadTyped<string[]>('collections') || [];
 	};
