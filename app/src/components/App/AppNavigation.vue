@@ -24,7 +24,7 @@ const appView = computed((): string | null => typeof route.meta.app_view === 'st
 		flex-flow: row nowrap;
 		align-items: center;
 		justify-content: space-between;
-		padding: 1rem;
+		padding: 0.5rem 1rem;
 		width: 100%;
 		flex-shrink: 0;
 		border-radius: 1rem;

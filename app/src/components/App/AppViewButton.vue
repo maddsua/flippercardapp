@@ -31,8 +31,8 @@ const router = useRouter();
 		&::after {
 			content: "";
 			display: block;
-			width: 2rem;
-			height: 2rem;
+			width: 1.5rem;
+			height: 1.5rem;
 			mask-type: alpha;
 			mask-size: contain;
 			mask-repeat: no-repeat;
