@@ -217,6 +217,7 @@ const importContentBundle = async (bundle: ContentBundle | null) => {
 		});
 
 		if (!data || error) {
+			console.error('Import:', error?.message);
 			state.contentIO.warn = error?.message || 'Unable to import deck';
 			continue;
 		}
@@ -231,9 +232,8 @@ const importContentBundle = async (bundle: ContentBundle | null) => {
 
 	if (imported !== decks.length) {
 
-		if (decks.length === 0) {
+		if (imported === 0) {
 			state.contentIO.error = 'Unable to load collection decks';
-			state.contentIO.active = false;
 			return;
 		}
 

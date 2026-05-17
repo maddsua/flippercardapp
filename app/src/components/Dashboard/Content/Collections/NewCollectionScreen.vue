@@ -115,14 +115,14 @@ const importBundledCollection = async (bundle: ContentBundle | null) => {
 
 	if (imported !== decks.length) {
 
-		if (decks.length === 0) {
+		if (imported === 0) {
 			state.importer.error = 'Unable to load collection decks';
 			state.importer.active = false;
 			return;
 		}
 
 		const missingCount = decks.length - imported;
-		state.importer.warn = `Unable to export ${missingCount} decks`;
+		state.importer.warn = `Unable to import ${missingCount} decks`;
 	}
 
 	state.importer.operation = 'Import done';
