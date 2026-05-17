@@ -23,7 +23,6 @@ import AppNavigation from './AppNavigation.vue';
 		align-items: center;
 		width: 100%;
 		height: 100%;
-		height: 100vh;
 		height: 100dvh;
 
 		.app-viewport {
