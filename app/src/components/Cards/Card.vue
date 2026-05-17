@@ -24,6 +24,7 @@ interface DragState {
 	initY: number;
 	x: number;
 	y: number;
+	pointerID: number | null;
 	targetInteractive: boolean;
 };
 
@@ -42,8 +43,29 @@ const transformStyle = computed(() => ({
 	transform: dragDelta.value ? `translateX(${dragDelta.value.x}px) translateY(${dragDelta.value.y}px) rotateY(${flipped.value ? 180 : 0}deg)` : undefined,
 }));
 
-const capturePointer = ({ pointerId }: PointerEvent) => pointerId > 0 ? containerRef.value?.setPointerCapture(pointerId) : undefined;
-const releasePointerCapture = ({ pointerId }: PointerEvent) => pointerId > 0 ? containerRef.value?.releasePointerCapture(pointerId) : undefined;
+const capturePointer = ({ pointerId }: PointerEvent) => {
+
+	if (typeof pointerId !== 'number') {
+		return null;
+	}
+
+	containerRef.value?.setPointerCapture(pointerId);
+
+	return pointerId;
+};
+
+const releasePointerCapture = ({ pointerID: capturedPointerID }: DragState) => {
+
+	if (!capturedPointerID) {
+		return;
+	}
+
+	containerRef.value?.releasePointerCapture(capturedPointerID);
+};
+
+const isCapturedPointer = (state: DragState, event: PointerEvent): boolean => {
+	return state.pointerID === null || state.pointerID === event.pointerId;
+};
 
 const handleDragStart = (event: PointerEvent) => {
 
@@ -52,8 +74,10 @@ const handleDragStart = (event: PointerEvent) => {
 		return;
 	}
 
-	// allegedly, this prevents chrome from breaking the drag logic
-	capturePointer(event);
+	// ignore any other pointers
+	if (dragState.value) {
+		return;
+	}
 
 	const { clientX, clientY } = event;
 	const target = event.target as HTMLElement;
@@ -64,20 +88,20 @@ const handleDragStart = (event: PointerEvent) => {
 		x: clientX,
 		y: clientY,
 		targetInteractive: !!target.closest('button, a, input, textarea, [data-interactive]'),
+	
+		// allegedly, this prevents chrome from breaking the drag logic
+		pointerID: capturePointer(event),
 	};
 };
 
 const handleDragUpdate = (event: PointerEvent) => {
 
-	if (!dragState.value) {
-		releasePointerCapture(event);
+	if (!dragState.value || !isCapturedPointer(dragState.value, event)) {
 		return;
 	}
 
-	const { clientX, clientY } = event;
-
-	dragState.value.x = clientX;
-	dragState.value.y = clientY;
+	dragState.value.x = event.clientX;
+	dragState.value.y = event.clientY;
 };
 
 const handleSwipeGesture = (state: DragState) => {
@@ -85,35 +109,36 @@ const handleSwipeGesture = (state: DragState) => {
 	const dx = dragDelta.value?.x ?? 0;
 	const dy = dragDelta.value?.y ?? 0;
 
+	// if swiped vertically more than the threshold
 	const thresholdY = window.innerHeight * 0.25;
 	if (Math.abs(dy) > thresholdY) {
 		dy > 1 ? emit('prev') : emit('next');
 		return;
 	}
 
+	// if swiped horizontally more than the threshold
 	const thresholdX = window.innerWidth * 0.4;
 	if (Math.abs(dx) > thresholdX) {
 		flip();
 		return;
 	}
 
+	// if we consider this to be a click/tap
 	const delta = Math.abs(dx) + Math.abs(dy);
 	if (delta < 1 && !state.targetInteractive) {
 		flip();
 		return;
 	}
-
 };
 
-const handleDragDone = (event?: PointerEvent) => {
+const handleDragDone = (event: PointerEvent) => {
 
-	if (event) {
-		releasePointerCapture(event);
+	if (!dragState.value || !isCapturedPointer(dragState.value, event)) {
+		return;
 	}
 
-	if (dragState.value) {
-		handleSwipeGesture(dragState.value);
-	}
+	handleSwipeGesture(dragState.value);
+	releasePointerCapture(dragState.value);
 
 	dragState.value = null;
 };
