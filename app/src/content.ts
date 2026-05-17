@@ -39,10 +39,10 @@ export interface CardTitleNode extends BaseContentNode {
 
 export interface CardTextBoxNode extends BaseContentNode {
 	type: 'textbox';
-	content: Array<TextNote | NewlineNode>;
+	content: Array<TextNode | NewlineNode>;
 };
 
-export interface TextNote extends BaseContentNode {
+export interface TextNode extends BaseContentNode {
 	type: 'text';
 	content: string;
 	theme?: TextNodeTheme;
