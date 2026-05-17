@@ -30,18 +30,44 @@ interface DragState {
 
 const dragState = ref<DragState | null>(null);
 
-interface DragDelta {
+interface Delta2D {
 	x: number;
 	y: number;
 };
 
-const dragDelta = computed((): DragDelta | null => dragState.value ? ({ x: dragState.value.x - dragState.value.initX, y: dragState.value.y - dragState.value.initY }) : null);
+const dragDelta = computed((): Delta2D | null => {
+
+	if (!dragState.value) {
+		return null;
+	}
+
+	return {
+		x: dragState.value.x - dragState.value.initX,
+		y: dragState.value.y - dragState.value.initY,
+	};
+});
+
 const dragging = computed(() => dragDelta.value ? Math.abs(dragDelta.value.x) + Math.abs(dragDelta.value.y) > 1 : false);
 
 const transformStyle = computed(() => ({
 	rotate: dragDelta.value && dragging.value ? `${((dragDelta.value.x) / 25).toFixed(1)}deg` : `${randomRotate.value.toFixed(1)}deg`,
 	transform: dragDelta.value ? `translateX(${dragDelta.value.x}px) translateY(${dragDelta.value.y}px) rotateY(${flipped.value ? 180 : 0}deg)` : undefined,
 }));
+
+interface BoxSize {
+	width: number;
+	height: number;
+}
+
+const dragBoundBoxSize = (): BoxSize => {
+
+	if (!containerRef.value) {
+		return { width: window.innerWidth, height: window.innerHeight };
+	}
+
+	const rect = containerRef.value.getBoundingClientRect();
+	return { width: rect.width, height: rect.height };
+};
 
 const capturePointer = ({ pointerId }: PointerEvent) => {
 
@@ -109,16 +135,16 @@ const handleSwipeGesture = (state: DragState) => {
 	const dx = dragDelta.value?.x ?? 0;
 	const dy = dragDelta.value?.y ?? 0;
 
+	const { width, height } = dragBoundBoxSize();
+
 	// if swiped vertically more than the threshold
-	const thresholdY = window.innerHeight * 0.25;
-	if (Math.abs(dy) > thresholdY) {
+	if (Math.abs(dy) > (height * 0.25)) {
 		dy > 1 ? emit('prev') : emit('next');
 		return;
 	}
 
 	// if swiped horizontally more than the threshold
-	const thresholdX = window.innerWidth * 0.4;
-	if (Math.abs(dx) > thresholdX) {
+	if (Math.abs(dx) > (width * 0.4)) {
 		flip();
 		return;
 	}
