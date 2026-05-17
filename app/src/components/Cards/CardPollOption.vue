@@ -17,6 +17,8 @@ const right = ref(false);
 
 const handleSelect = () => {
 
+	console.debug('selected');
+
 	if (props.is_quiz) {
 		if (!props.entry.is_answer) {
 			wrong.value = true;

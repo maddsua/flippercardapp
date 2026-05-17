@@ -25,7 +25,7 @@ interface DragState {
 	x: number;
 	y: number;
 	pointerID: number | null;
-	targetInteractive: boolean;
+	interactiveTarget: HTMLElement | null;
 };
 
 const dragState = ref<DragState | null>(null);
@@ -105,15 +105,15 @@ const handleDragStart = (event: PointerEvent) => {
 		return;
 	}
 
-	const { clientX, clientY } = event;
 	const target = event.target as HTMLElement;
+	const { clientX, clientY } = event;
 
 	dragState.value = {
 		initX: clientX,
 		initY: clientY,
 		x: clientX,
 		y: clientY,
-		targetInteractive: !!target.closest('button, a, input, textarea, [data-interactive]'),
+		interactiveTarget: target.closest('button, a, input, textarea, [data-interactive]'),
 	
 		// allegedly, this prevents chrome from breaking the drag logic
 		pointerID: capturePointer(event),
@@ -150,10 +150,13 @@ const handleSwipeGesture = (state: DragState) => {
 	}
 
 	// if we consider this to be a click/tap
-	const delta = Math.abs(dx) + Math.abs(dy);
-	if (delta < 1 && !state.targetInteractive) {
-		flip();
-		return;
+	const totalDragged = Math.abs(dx) + Math.abs(dy);
+	if (totalDragged < 3) {
+		if (state.interactiveTarget) {
+			state.interactiveTarget.click();
+		} else {
+			flip();
+		}
 	}
 };
 
