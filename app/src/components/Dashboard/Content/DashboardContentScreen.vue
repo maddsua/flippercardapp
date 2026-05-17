@@ -7,7 +7,6 @@ import { genericPageState, pageControls } from '../../../dataloader';
 import AppUiHeader from '../../App/AppUiHeader.vue';
 import LoadingMessage from '../../App/LoadingMessage.vue';
 import ErrorMessage from '../../App/ErrorMessage.vue';
-import CollectionList from './Collections/CollectionList.vue';
 import GenericButton from '../../App/GenericButton.vue';
 import CollectionEntry from './Collections/CollectionEntry.vue';
 
@@ -26,43 +25,12 @@ const { more: loadMore } = pageControls(state, async (pagination: Pagination) =>
 
 onMounted(loadMore);
 
-const openCollectionMetaEdit = (id: string) => {
-	router.push(`/app/dashboard/content/collection/${id}/metadata`);
+const createNewCollection = () => {
+	router.push('/app/dashboard/content/collections/new')
 };
 
-const openDeckEditor = (params: { deckID?: string; collectionID?: string }) => {
-	if (params.deckID) {
-		router.push(`/app/editor/deck/${params.deckID}/editor`);
-	} else if (params.collectionID) {
-		router.push(`/app/editor/deck/editor?collection_id=${params.collectionID}`);
-	}
-};
-
-const loadCollectionDecks = async (entry: LazyLoadedCollection) => {
-
-	const { data, error } = await client.decks.list({ collection_id: entry.id });
-	if (error) {
-		console.error('Unable to load collection decks:', error.message);
-		return;
-	}
-	
-	entry.decks = data?.entries || [];
-};
-
-const deleteCollectionDeck = async (entry: LazyLoadedCollection, deckID: string) => {
-
-	if (!confirm('Delete deck?')) {
-		return;
-	}
-
-	const { error } = await client.decks.remove(deckID);
-	if (error) {
-		console.error('Unable to delete collection deck:', error.message);
-		return;
-	}
-
-	entry.decks = entry.decks?.filter(item => item.id !== deckID);
-	entry.size--;
+const manageCollection = (id: string) => {
+	router.push(`/app/dashboard/content/collection/${id}`);
 };
 
 </script>
@@ -91,31 +59,62 @@ const deleteCollectionDeck = async (entry: LazyLoadedCollection, deckID: string)
 		</template>
 	</ErrorMessage>
 
-	<CollectionList v-else>
+	<div v-else class="collection-list">
 
-		<template v-slot:actions_before>
-			<GenericButton theme="blue" variant="thin" @click="router.push('/app/dashboard/content/collections/new')">
+		<div class="actions">
+			<GenericButton theme="blue" variant="thin" @click="createNewCollection">
 				+ Add collection
 			</GenericButton>
-		</template>
+		</div>
 
-		<CollectionEntry v-for="entry of state.entries" :key="entry.id" :entry="entry"
-			@edit="openCollectionMetaEdit(entry.id)"
-			@showDecks="loadCollectionDecks(entry)"
-			@addDeck="openDeckEditor({ collectionID: entry.id })"
-			@editDeck="deckID => openDeckEditor({ deckID })"
-			@deleteDeck="deckID => deleteCollectionDeck(entry, deckID)" />
+		<div class="entries">
 
-		<template v-if="state.has_next" v-slot:actions_after>
+			<template v-if="state.entries.length">
+				<CollectionEntry v-for="entry of state.entries" :key="entry.id" :entry="entry" @manage="manageCollection(entry.id)" />
+			</template>
+
+			<template v-else>
+				<div class="no-entries-message">
+					No collections
+				</div>
+			</template>
+
+		</div>
+
+		<div v-if="state.has_next" class="actions">
 			<GenericButton theme="green" variant="thin" @click="loadMore">
 				Load more
 			</GenericButton>
-		</template>
+		</div>
 
-	</CollectionList>
+	</div>
 
 </template>
 
 <style lang="scss" scoped>
+	.collection-list {
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
 
+		.actions {
+			display: flex;
+			flex-flow: row nowrap;
+			justify-content: center;
+			align-items: center;
+		}
+
+		.entries {
+			display: flex;
+			flex-direction: column;
+			gap: 1rem;
+
+			.no-entries-message {
+				display: flex;
+				flex-flow: row nowrap;
+				justify-content: center;
+				font-size: 0.75rem;
+			}
+		}
+	}
 </style>

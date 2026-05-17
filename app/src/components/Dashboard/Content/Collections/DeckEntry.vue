@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { CardDeckMetadata } from '../../../../api_models';
+import GenericButton from '../../../App/GenericButton.vue';
 
 const props = defineProps<{
 	entry: CardDeckMetadata;
@@ -25,29 +26,33 @@ const date = computed(() => new Date(props.entry.updated).toLocaleDateString('en
 	<div class="deck">
 
 		<div class="row">
-			<div class="name">
-				{{ entry.name }}
-			</div>
-			<div class="stats">
-				{{ date }}
-			</div>
-			<div class="actions">
-				<button type="button" @click="emit('edit')">
-					Open editor
-				</button>
-				<button type="button" class="danger" @click="emit('delete')">
-					Delete
-				</button>
+			<div class="details">
+				<div class="row">
+					<div class="name">
+						{{ entry.name }}
+					</div>
+					<div class="stats">
+						{{ date }}
+					</div>
+				</div>
+				<div class="description">
+					<template v-if="entry.description">
+						{{ entry.description }}
+					</template>
+					<template v-else>
+						[No description provided]
+					</template>
+				</div>
 			</div>
 		</div>
 
-		<div class="description">
-			<template v-if="entry.description">
-				{{ entry.description }}
-			</template>
-			<template v-else>
-				[No description provided]
-			</template>
+		<div class="actions">
+			<GenericButton variant="thin" @click="emit('edit')">
+				Open editor
+			</GenericButton>
+			<GenericButton variant="thin" theme="red" @click="emit('delete')">
+				Delete
+			</GenericButton>
 		</div>
 	
 	</div>
@@ -56,17 +61,26 @@ const date = computed(() => new Date(props.entry.updated).toLocaleDateString('en
 <style lang="scss" scoped>
 	.deck {
 		display: flex;
-		flex-direction: column;
-		gap: 0.25rem;
+		flex-flow: row nowrap;
+		align-items: center;
+		gap: 2rem;
 		padding: 0.25rem 0.5rem;
 		border-radius: 0.25rem;
 		background-color: var(--app-theme-ghostly-glow);
+
+		.details {
+			display: flex;
+			flex-direction: column;
+			gap: 0.25rem;
+			flex-grow: 1;
+		}
 
 		.row {
 			display: flex;
 			flex-flow: row nowrap;
 			align-items: center;
 			gap: 1rem;
+			flex-grow: 1;
 		}
 
 		.name {
@@ -98,28 +112,7 @@ const date = computed(() => new Date(props.entry.updated).toLocaleDateString('en
 			display: flex;
 			flex-flow: row nowrap;
 			align-items: center;
-			gap: 0.5rem;	
-
-			button {
-				display: block;
-				background-color: unset;
-				border: none;
-				color: var(--app-theme-sky-blue);
-				font-size: 0.75rem;
-
-				&:hover {
-					cursor: pointer;
-					color: var(--app-theme-deep-lavender);
-				}
-
-				&.danger {
-					color: var(--app-theme-blood-red);
-
-					&:hover {
-						color: var(--app-theme-spooky-orange);
-					}
-				}
-			}
+			gap: 0.5rem;
 		}
 	}
 

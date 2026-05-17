@@ -73,4 +73,4 @@ export interface CardPollNode extends BaseContentNode {
 export interface PollOption {
 	value: string;
 	is_answer?: boolean;
-}
+};

@@ -1,4 +1,16 @@
-import type { AuthState, CardDeck, CardDeckContentPatch, CardDeckMetadata, CardDeckMetadataPatch, CardDeckPatch, Collection, CollectionMetadata, CollectionPatch, CollectionSearchResult, SignInParams } from "./api_models";
+import type {
+	AuthState,
+	CardDeck,
+	CardDeckContentPatch,
+	CardDeckMetadata,
+	CardDeckMetadataPatch,
+	CardDeckPatch,
+	Collection,
+	CollectionMetadata,
+	CollectionPatch,
+	CollectionSearchResult,
+	SignInParams,
+} from "./api_models";
 
 export interface Result <T> {
 	data: T | null;
@@ -162,7 +174,7 @@ export class ApiClient {
 		load: async (id: string) => {
 			return this.exec<CardDeck>('GET',`/decks/${id}`);
 		},
-		add: async (patch: CardDeckPatch) => {
+		create: async (patch: CardDeckPatch) => {
 			return this.exec<CardDeckMetadata>('PUT', '/manage/content/deck', {}, patch);
 		},
 		updateMeta: async (id: string, patch: CardDeckMetadataPatch) => {

@@ -20,16 +20,23 @@ const route = useRoute();
 const router = useRouter();
 const client = useClient();
 
-const backHref = '/app/dashboard/content';
 
 const state = reactive({
 	data: null as CollectionMetadata | null,
+	dataValid: false,
 	inputs: {
 		name: '',
 		description: ''
 	},
 	error: null as string | null,
 });
+
+const backHref = computed(() => {
+	if (state.data && state.dataValid) {
+		return `/app/dashboard/content/collection/${state.data.id}`;
+	}
+	return '/app/dashboard/content';
+})
 
 const formValid = computed(() => state.inputs.name.trim().length > 0);
 
@@ -50,6 +57,7 @@ onMounted(async () => {
 	}
 
 	state.data = collection;
+	state.dataValid = true;
 
 	state.inputs = {
 		name: collection.name,
@@ -69,7 +77,7 @@ const updateCollection = async () => {
 		return;
 	}
 
-	router.push(backHref);
+	router.push(backHref.value);
 };
 
 const deleteCollection = async () => {
@@ -88,7 +96,9 @@ const deleteCollection = async () => {
 		return;	
 	}
 
-	router.push(backHref);
+	state.dataValid = false;
+
+	router.push(backHref.value);
 };
 
 </script>
@@ -165,7 +175,7 @@ const deleteCollection = async () => {
 			<GenericButton :disabled="!formValid" @click="updateCollection">
 				Update collection →
 			</GenericButton>
-			<GenericButton theme="orange" :disabled="state.data.size > 0" @click="deleteCollection">
+			<GenericButton theme="red" :disabled="state.data.size > 0" @click="deleteCollection">
 				✗ Delete collection
 			</GenericButton>
 		</InputRow>

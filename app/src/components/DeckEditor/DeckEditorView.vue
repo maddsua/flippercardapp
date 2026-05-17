@@ -14,6 +14,7 @@ import { useClient } from '../../api';
 import FullscreenMessage from '../App/FullscreenMessage.vue';
 import EditorErrorScreen from './EditorErrorScreen.vue';
 import EditorLoadingScreen from './EditorLoadingScreen.vue';
+import { downloadFile, type CollectionBundleDeckContent, type DeckBundle } from '../../content_io';
 
 const route = useRoute();
 const router = useRouter();
@@ -32,7 +33,7 @@ interface ErrorState {
 
 const state = reactive({
 	
-	data: {
+	content: {
 		meta: {
 			name: 'Unnamed deck',
 			description: null as string | null,
@@ -46,7 +47,7 @@ const state = reactive({
 		previewAnimationTurn: false,
 	},
 
-	metadata: {
+	meta: {
 		id: null as string | null,
 		collectionID: null as string | null,
 	},
@@ -63,10 +64,10 @@ const state = reactive({
 });
 
 const isEdited = computed(() => state.editor.cardsChanged || state.editor.metaChanged);
-const isValid = computed(() => !state.error && !state.loading && state.data.cards.length > 0);
+const isValid = computed(() => !state.error && !state.loading && state.content.cards.length > 0);
 
 const activeCardFace = computed((): ActiveFace | null => {
-	const card = state.data.cards[state.view.cardIdx];
+	const card = state.content.cards[state.view.cardIdx];
 	if (!card) {
 		return null;
 	}
@@ -88,14 +89,14 @@ const activeCardFace = computed((): ActiveFace | null => {
 		: makeActive(card.back, `${card.id}-back`);
 });
 
-const wrapCards = () => state.data.cards.map(item => ({ id: item.id || null, content: item }));
+const wrapCards = () => state.content.cards.map(item => ({ id: item.id || null, content: item }));
 
 const publishNewDeck = async () => {
 
-	const { data, error } = await client.decks.add({
-		...state.data.meta,
+	const { data, error } = await client.decks.create({
+		...state.content.meta,
 		cards: wrapCards(),
-		collection_id: state.metadata.collectionID,
+		collection_id: state.meta.collectionID,
 	});
 
 	if (!data || error) {
@@ -106,7 +107,7 @@ const publishNewDeck = async () => {
 		return;
 	}
 
-	state.metadata = { id: data.id, collectionID: null };
+	state.meta = { id: data.id, collectionID: null };
 	state.editor = { metaChanged: false, cardsChanged: false, snapshotSaved: false };
 
 	store.deckEditor.store(null);
@@ -116,7 +117,7 @@ const patchDeckExisting = async (id: string) => {
 
 	if (state.editor.metaChanged) {
 
-		const { data, error } = await client.decks.updateMeta(id, state.data.meta);
+		const { data, error } = await client.decks.updateMeta(id, state.content.meta);
 		if (!data || error) {
 			state.error = {
 				message: 'Failed to update metadata',
@@ -145,7 +146,7 @@ const patchDeckExisting = async (id: string) => {
 	store.deckEditor.store(null);
 };
 
-const handlePublish = async () => {
+const publishChanges = async () => {
 
 	if (state.locked) {
 		return;
@@ -154,8 +155,8 @@ const handlePublish = async () => {
 	state.loading = true;
 	state.locked = true;
 
-	if (state.metadata.id) {
-		await patchDeckExisting(state.metadata.id);
+	if (state.meta.id) {
+		await patchDeckExisting(state.meta.id);
 	} else {
 		await publishNewDeck();
 	}
@@ -164,13 +165,24 @@ const handlePublish = async () => {
 	state.locked = false;
 };
 
-const handleDiscard = () => {
+const discardChanges = () => {
 
 	if (isEdited.value && !confirm('Really discard your changes?')) {
 		return;
 	}
 
+	exitEditor();
+};
+
+const exitEditor = () => {
+
 	store.deckEditor.store(null);
+
+	if (state.meta.collectionID) {
+		router.push(`/app/dashboard/content/collection/${state.meta.collectionID}`);
+		return;
+	}
+
 	router.push('/app/dashboard/content');
 };
 
@@ -188,8 +200,8 @@ const flipCardFace = () => {
 
 const addNewCard = () => {
 	const newFace = () => ({ content: [] });
-	state.data.cards.push({ id: crypto.randomUUID(), front: newFace(), back: newFace() });
-	state.view.cardIdx = state.data.cards.length - 1;
+	state.content.cards.push({ id: crypto.randomUUID(), front: newFace(), back: newFace() });
+	state.view.cardIdx = state.content.cards.length - 1;
 	state.view.frontFace = true;
 };
 
@@ -204,21 +216,21 @@ const removeCard = (idx: number) => {
 		return;
 	}
 
-	state.data.cards.splice(idx, 1);
+	state.content.cards.splice(idx, 1);
 
-	if (state.view.cardIdx >= state.data.cards.length) {
-		state.view.cardIdx = state.data.cards.length - 1;
+	if (state.view.cardIdx >= state.content.cards.length) {
+		state.view.cardIdx = state.content.cards.length - 1;
 	}
 };
 
 const initAutosave = () => {
 
-	watch(() => state.data.meta, () => {
+	watch(() => state.content.meta, () => {
 		state.editor.metaChanged = true;
 		state.editor.snapshotSaved = false;
 	}, { deep: true });
 
-	watch(() => state.data.cards, () => {
+	watch(() => state.content.cards, () => {
 		state.editor.cardsChanged = true;
 		state.editor.snapshotSaved = false;
 	}, { deep: true });
@@ -229,7 +241,7 @@ const initAutosave = () => {
 			return;
 		}
 
-		await store.deckEditor.store(state.data);
+		await store.deckEditor.store(state.content);
 		state.editor.snapshotSaved = true;
 
 	}, 1000);
@@ -246,7 +258,7 @@ const loadDeckState = async (id: string) => {
 		return;
 	}
 
-	state.data = {
+	state.content = {
 		meta: {
 			name: data.name,
 			description: data.description || null,
@@ -254,7 +266,8 @@ const loadDeckState = async (id: string) => {
 		cards: data.cards.map(item => ({ ...item.content, id: item.id })),
 	};
 
-	state.metadata.id = data.id;
+	state.meta.id = data.id;
+	state.meta.collectionID = data.collection_id;
 
 	initAutosave();
 };
@@ -279,16 +292,42 @@ onMounted(async () => {
 		return;
 	}
 
-	state.metadata.collectionID = collection_id;
+	state.meta.collectionID = collection_id;
 
 	const storedState = await store.deckEditor.load();
 	if (storedState && typeof storedState === 'object') {
-		state.data = storedState;
+		state.content = storedState;
 		state.editor = { metaChanged: true, cardsChanged: true, snapshotSaved: false };
 	}
 
 	initAutosave();
 });
+
+const exportContentBundle = async () => {
+
+	const deck: CollectionBundleDeckContent = {
+		meta: {
+			... state.content.meta,
+			name: state.content.meta.name,
+			description: state.content.meta.description || undefined,
+		},
+		cards: state.content.cards.map(item => ({ content: item })),
+	};
+
+	const bundle: DeckBundle = {
+		type: 'deck_bundle',
+		content: [deck]
+	};
+
+	const name = state.content.meta.name.replace(/[^a-z0-9]/gi, '_') || 'Unnamed_deck';
+
+	downloadFile(JSON.stringify(bundle), `${name}-export.json`);
+};
+
+const updateDetails = (val: { name: string, description?: string | null }) => {
+	state.content.meta.name = val.name;
+	state.content.meta.description = val.description || null;
+};
 
 </script>
 
@@ -300,20 +339,21 @@ onMounted(async () => {
 		<EditorErrorScreen v-else-if="state.error" :error="state.error" />
 
 		<DeckEditorStatusBar
-			:meta="state.data.meta"
+			:meta="state.content.meta"
 			:edited="isEdited"
 			:valid="isValid"
-			@editMeta="meta => state.data.meta = meta"
+			@updateDetails="updateDetails"
 			@flip="flipCardFace"
-			@publish="handlePublish"
-			@disacard="handleDiscard" />
+			@publish="publishChanges"
+			@export="exportContentBundle"
+			@disacard="discardChanges" />
 
 		<div class="editor-canvas">
 
 			<div class="canvas-grid">
 
 				<DeckCardList
-					:size="state.data.cards.length"
+					:size="state.content.cards.length"
 					:activeIdx="state.view.cardIdx"
 					@select="selectCard"
 					@add="addNewCard()"

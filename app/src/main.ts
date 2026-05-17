@@ -17,6 +17,7 @@ import DashboardContentScreen from './components/Dashboard/Content/DashboardCont
 import NewCollectionScreen from './components/Dashboard/Content/Collections/NewCollectionScreen.vue';
 import EditCollectionMetadataScreen from './components/Dashboard/Content/Collections/EditCollectionMetadataScreen.vue';
 import DeckEditorView from './components/DeckEditor/DeckEditorView.vue';
+import DashboardCollectionScreen from './components/Dashboard/Content/Collections/DashboardCollectionScreen.vue';
 
 const routes = [
 	{
@@ -73,6 +74,7 @@ const routes = [
 			{ path: 'content', component: DashboardContentScreen },
 			{ path: 'content/collections/new', component: NewCollectionScreen },
 			{ path: 'content/collection/:collection_id/metadata', component: EditCollectionMetadataScreen },
+			{ path: 'content/collection/:collection_id', component: DashboardCollectionScreen },
 		],
 	},
 	{
