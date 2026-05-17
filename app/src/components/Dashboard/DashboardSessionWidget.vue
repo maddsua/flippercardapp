@@ -56,6 +56,9 @@ onMounted(retryCheckAuthState);
 
 const attemptSignin = async (params: SignInParams) => {
 
+	state.error = null;
+	state.data = null;
+
 	const { data, error } = await client.auth.signin(params);
 	if (!data || error) {
 		state.error = error?.message || 'Invalid credentials';
@@ -95,6 +98,7 @@ const handleSignout = async () => {
 
 	state.data = data;
 	state.stage = Stage.Idle;
+	state.error = null;
 
 	emit('stateUpdate', state.data);
 };
