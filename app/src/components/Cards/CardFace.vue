@@ -67,7 +67,7 @@ const cardTheme = computed(() => props.entry.theme?.card);
 
 		// these two somehow prevent jagged edges
 		outline: 1px solid transparent;
-		box-shadow: 1em 0.25rem 0.25rem rgba(0, 0, 0, 0.25);
+		box-shadow: 0.5rem 0.5rem 2rem rgba(0, 0, 0, 0.25);
 
 		&:nth-child(2n) {
 			transform: rotateY(180deg);
@@ -97,6 +97,9 @@ const cardTheme = computed(() => props.entry.theme?.card);
 		padding: 2em;
 		color: var(--app-theme-midnight);
 		overflow: hidden;
+
+		// helps prevent container corners from poking out on some mobile browsers
+		will-change: transform;
 	}
 
 </style>
