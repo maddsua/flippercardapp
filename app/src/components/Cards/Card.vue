@@ -106,6 +106,14 @@ const handleDragStart = (event: PointerEvent) => {
 	}
 
 	const target = event.target as HTMLElement;
+	const interactiveTarget = target.closest('button, a, input, textarea, [data-interactive]');
+
+	//	this is a temporary fix for absolutely rigiculous glitches in poll licks
+	//	todo: place proper click handling that does work with interactive targets on touch screens
+	if (interactiveTarget) {
+		return;
+	}
+
 	const { clientX, clientY } = event;
 
 	dragState.value = {
@@ -113,7 +121,7 @@ const handleDragStart = (event: PointerEvent) => {
 		initY: clientY,
 		x: clientX,
 		y: clientY,
-		interactiveTarget: target.closest('button, a, input, textarea, [data-interactive]'),
+		interactiveTarget,
 	
 		// allegedly, this prevents chrome from breaking the drag logic
 		pointerID: capturePointer(event),
