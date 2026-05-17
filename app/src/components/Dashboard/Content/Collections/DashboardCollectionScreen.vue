@@ -311,6 +311,9 @@ const importContentBundle = async (bundle: ContentBundle | null) => {
 					Collection's decks
 				</div>
 				<div class="actions">
+					<GenericButton variant="thin" :disabled="!state.data" @click="openDeckEditor({ collectionID: state.data.id })">
+						Add deck
+					</GenericButton>
 					<GenericButton variant="thin" theme="green" :disabled="!state.data" @click="importContent">
 						Upload decks
 					</GenericButton>
