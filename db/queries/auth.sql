@@ -1,5 +1,3 @@
--- name: UserCount :one
-select count(1) from users;
 
 -- name: InsertUser :one
 insert into users (
@@ -23,6 +21,12 @@ where id = sqlc.arg(id);
 -- name: GetUserByName :one
 select * from users
 where name = sqlc.arg(name);
+
+-- name: SetUserPassword :one
+update users
+	set password_hash = sqlc.arg(password_hash)
+where id = sqlc.arg(id)
+returning *;
 
 -- name: InsertSession :one
 insert into user_sessions (

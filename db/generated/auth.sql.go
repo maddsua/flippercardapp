@@ -189,13 +189,27 @@ func (q *Queries) SetSessionExpirationTime(ctx context.Context, arg SetSessionEx
 	return i, err
 }
 
-const userCount = `-- name: UserCount :one
-select count(1) from users
+const setUserPassword = `-- name: SetUserPassword :one
+update users
+	set password_hash = ?1
+where id = ?2
+returning id, created_at, name, password_hash, permissions
 `
 
-func (q *Queries) UserCount(ctx context.Context) (int64, error) {
-	row := q.db.QueryRowContext(ctx, userCount)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
+type SetUserPasswordParams struct {
+	PasswordHash []byte
+	ID           uuid.UUID
+}
+
+func (q *Queries) SetUserPassword(ctx context.Context, arg SetUserPasswordParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, setUserPassword, arg.PasswordHash, arg.ID)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.Name,
+		&i.PasswordHash,
+		&i.Permissions,
+	)
+	return i, err
 }
