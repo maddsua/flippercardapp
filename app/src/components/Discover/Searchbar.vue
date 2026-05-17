@@ -11,12 +11,21 @@ const placehoder = computed(() => intl(lang, {
 	de: 'Name, Thema oder ein Schlüsselwort'
 }));
 
+const captureInput = (event: InputEvent) => {
+	const { value } = event.target as HTMLInputElement;
+	model.value = value;
+};
+
+const resetInput = () => {
+	model.value = undefined;
+};
+
 </script>
 
 <template>
 	<div class="searchbar">
-		<input type="text" :placeholder="placehoder" v-model="model" />
-		<button v-if="model?.length" type="reset" @click="model = undefined"></button>
+		<input type="text" :placeholder="placehoder" :value="model" @input="captureInput" />
+		<button v-if="model?.length" type="reset" @click="resetInput"></button>
 	</div>
 </template>
 
