@@ -160,6 +160,8 @@ const handleDragDone = (event: PointerEvent) => {
 
 <style lang="scss" scoped>
 	.card-container {
+
+		// set fixed-ish size
 		position: relative;
 		width: 100%;
 		padding-bottom: 150%;
@@ -171,10 +173,12 @@ const handleDragDone = (event: PointerEvent) => {
 		user-select: none;
 		touch-action: none;
 
-		transition: transform 400ms ease;
+		// make 3d go brrrr
 		transform-style: preserve-3d;
 		perspective: 50cm;
+
 		scale: 0.95;
+		transition: transform 400ms ease;
 
 		&.flipped {
 			transform: rotateY(180deg);
