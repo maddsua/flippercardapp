@@ -91,6 +91,7 @@ const cardTheme = computed(() => props.entry.theme?.card);
 		flex-direction: column;
 		gap: 1.5em;
 		align-items: center;
+		justify-content: center;
 		flex-grow: 1;
 		border: 3px solid var(--app-theme-spooky-orange);
 		border-radius: 1.5em;

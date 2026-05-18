@@ -71,9 +71,5 @@ const options = computed(() => {
 		align-items: center;
 		gap: 0.5em;
 		width: 100%;
-
-		&:last-child {
-			margin-top: auto;
-		}
 	}
 </style>
