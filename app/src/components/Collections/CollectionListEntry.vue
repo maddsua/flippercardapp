@@ -44,11 +44,12 @@ const props = defineProps<{
 		}
 
 		.header {
-			flex-grow: 1;
 			display: flex;
 			flex-direction: column;
 			align-items: start;
 			gap: 0.25rem;
+			flex-grow: 1;
+			min-width: 0;
 
 			.title {
 				font-size: 1rem;
