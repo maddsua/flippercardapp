@@ -26,10 +26,8 @@ const state = reactive({
 });
 
 const handleSelect = async (entry: RecommendedEntry) => {
-	if (!await store.collections.add(entry.id)) {
-		router.push(`/app/collection/${entry.id}`);
-	}
-	entry.starred = true;
+	await store.collections.add(entry.id);
+	router.push(`/app/collection/${entry.id}`);
 };
 
 onMounted(async () => {
@@ -71,7 +69,12 @@ onMounted(async () => {
 		</LoadingMessage>
 
 		<CollectionList v-else-if="state.data.length">
-			<CollectionListEntry v-for="item of state.data" :title="item.name" :summary="item.description" :starrable="true" :starred="item.starred" @click="handleSelect(item)" />
+			<CollectionListEntry v-for="item of state.data"
+				:title="item.name"
+				:summary="item.description"
+				:starrable="true"
+				:starred="item.starred"
+				@click="handleSelect(item)" />
 		</CollectionList>
 
 		<template v-else>

@@ -80,10 +80,8 @@ const handleSearchInput = (value?: string) => {
 };
 
 const handleSelect = async (entry: SearchResultState) => {
-	if (!await store.collections.add(entry.id)) {
-		router.push(`/app/collection/${entry.id}`);
-	}
-	entry.starred = true;
+	await store.collections.add(entry.id)
+	router.push(`/app/collection/${entry.id}`);
 };
 
 </script>
@@ -111,7 +109,12 @@ const handleSelect = async (entry: SearchResultState) => {
 		</LoadingMessage>
 
 		<CollectionList v-else-if="state.data.length">
-			<CollectionListEntry v-for="item of state.data" :title="item.name" :summary="item.description" :starrable="true" :starred="item.starred" @click="handleSelect(item)" />
+			<CollectionListEntry v-for="item of state.data"
+				:title="item.name"
+				:summary="item.description"
+				:starrable="true"
+				:starred="item.starred"
+				@click="handleSelect(item)" />
 		</CollectionList>
 
 		<div v-if="!state.busy" class="searh-summary">
