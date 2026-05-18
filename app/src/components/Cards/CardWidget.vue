@@ -256,8 +256,12 @@ const handleExitPrompt = (confirmed?: boolean) => {
 			height: 100%;
 			overflow: visible;
 
-			@media (max-aspect-ratio: 1/1.75) {
-				width: 100vw;
+			@media (orientation: portrait) {
+				width: 45vh;
+			}
+
+			@media (max-aspect-ratio: 0.55) {
+				width: 100%;
 			}
 		}
 
