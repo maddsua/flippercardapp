@@ -124,11 +124,7 @@ const ejectAnimatedState = async (state: CardState, direction?: SlideOutDirectio
 	});
 };
 
-const hasSeenOtherCards = ref(false);
-
 const switchCards = (direction?: SlideInDirection) => {
-
-	hasSeenOtherCards.value = true;
 
 	if (!cardPairs.b) {
 		ejectAnimatedState(cardPairs.a, slideOut(direction));
@@ -168,17 +164,21 @@ const prevCard = (): boolean => {
 	return false
 };
 
-const scoreSet = new Set<string>();
+const scoreState = reactive({
+	totalAnswers: 0,
+	cardAnswerSet: new Set<string>(),
+});
+
 const countScore = (score: number) => {
 
-	const key = props.entries[activeIdx.value].id;
+	const { id: cardID } = props.entries[activeIdx.value];
 
-	if (scoreSet.has(key)) {
-		return;
+	if (!scoreState.cardAnswerSet.has(cardID)) {
+		scoreState.cardAnswerSet.add(cardID);
+		emit('score', score);
 	}
 
-	scoreSet.add(key);
-	emit('score', score);
+	scoreState.totalAnswers++;
 };
 
 const showExitPrompt = ref(false);
@@ -191,7 +191,7 @@ const handleCtrlBack = () => {
 
 const triggerExit = () => {
 
-	if (hasSeenOtherCards.value) {
+	if (scoreState.totalAnswers > 0) {
 		showExitPrompt.value = true;
 		return
 	}
