@@ -48,8 +48,8 @@ const emit = defineEmits<{
 			rotate: 180deg;
 
 			&.initial {
-				background-image: url(/src/assets//icons/cancel-mask.svg);
-				background-size: 1rem;
+				background-image: url(/src/assets//icons/cross-cut-mask.svg);
+				background-size: 1.5rem;
 			}
 		}
 

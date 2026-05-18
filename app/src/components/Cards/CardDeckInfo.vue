@@ -8,6 +8,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
+	(e: 'exit'): void;
 	(e: 'toggleMarked'): void;
 }>();
 
@@ -22,6 +23,10 @@ const emit = defineEmits<{
 
 		<div class="details-row">
 
+			<div class="actions">
+				<button type="button" class="icon exit" title="Exit game" @click="emit('exit')"></button>
+			</div>
+
 			<div class="summary">
 				<template v-for="(item, idx) of labels">
 					<template v-if="idx > 0">
@@ -34,7 +39,7 @@ const emit = defineEmits<{
 			</div>
 
 			<div class="actions">
-				<button type="button" class="save" :class="{ active: isMarked }" @click="emit('toggleMarked')">
+				<button type="button" class="labeled save" :class="{ active: isMarked }" @click="emit('toggleMarked')">
 					<template v-if="isMarked">
 						Unmark
 					</template>
@@ -59,6 +64,7 @@ const emit = defineEmits<{
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
+		user-select: none;
 
 		.progress {
 			display: flex;
@@ -120,7 +126,7 @@ const emit = defineEmits<{
 			justify-content: end;
 			flex-shrink: 0;
 
-			button {
+			button.labeled {
 				display: flex;
 				flex-flow: row nowrap;
 				align-items: center;
@@ -160,6 +166,23 @@ const emit = defineEmits<{
 							mask-image: url(/src/assets/icons/star-filled-mask.svg);
 						}
 					}
+				}
+			}
+
+			button.icon {
+				display: block;
+				width: 1.25rem;
+				height: 1.25rem;
+				outline: none;
+				border: none;
+				background: none;
+				background-size: contain;
+				background-repeat: no-repeat;
+				background-position: center;
+				background-image: url(/src/assets//icons/cross-cut-mask.svg);
+
+				&:hover {
+					cursor: pointer;
 				}
 			}
 		}

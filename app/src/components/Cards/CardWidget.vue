@@ -184,11 +184,12 @@ const countScore = (score: number) => {
 const showExitPrompt = ref(false);
 
 const handleCtrlBack = () => {
-
-	if (prevCard()) {
-		return;
+	if (!prevCard()) {
+		triggerExit();
 	}
+};
 
+const triggerExit = () => {
 
 	if (hasSeenOtherCards.value) {
 		showExitPrompt.value = true;
@@ -215,7 +216,8 @@ const handleExitPrompt = (confirmed?: boolean) => {
 			:size="entries.length"
 			:index="activeIdx"
 			:isMarked="isMarked"
-			@toggleMarked="emit('toggleMarked')" />
+			@toggleMarked="emit('toggleMarked')"
+			@exit="triggerExit" />
 
 		<div class="card-screen-container">
 			<div class="card-transition-slot" v-for="(item, idx) of cardSlots" :key="cardSlotKey(item, idx)" :class="item?.flags">
