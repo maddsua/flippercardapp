@@ -155,7 +155,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 			return nil, err
 		}
 
-		params, err := ParseGeneric[model.CollectionDetailsPatch](req)
+		params, err := ParseGeneric[model.CollectionPatch](req)
 		if err != nil {
 			return nil, err
 		}
@@ -176,12 +176,12 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 			return nil, err
 		}
 
-		params, err := ParseGeneric[model.CollectionDetailsPatch](req)
+		params, err := ParseGeneric[model.CollectionPatch](req)
 		if err != nil {
 			return nil, err
 		}
 
-		return rslv.UpdateContentCollectionMetadata(req.Context(), collectionID, params)
+		return rslv.UpdateContentCollection(req.Context(), collectionID, params)
 	}))
 
 	mux.Handle("DELETE /manage/content/collection/{id}", MethodHandleFunc(func(req *http.Request) (*any, error) {
@@ -234,7 +234,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 			return nil, err
 		}
 
-		return rslv.PatchCardDeck(req.Context(), deckID, params)
+		return rslv.UpdateCardDeck(req.Context(), deckID, params)
 	}))
 
 	mux.Handle("DELETE /manage/content/deck/{id}", MethodHandleFunc(func(req *http.Request) (*any, error) {

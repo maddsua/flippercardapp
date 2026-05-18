@@ -68,20 +68,21 @@ export interface CollectionPatch {
 	description?: string;
 };
 
-export interface CardDeckMetadataPatch {
+export interface CardDeckPatch {
 	collection_id?: string | null;
+	details?: CardDeckDetailsPatch | null;
+	content?: CardDeckContentPatch | null;
+};
+
+export interface CardDeckDetailsPatch {
 	name: string;
 	description?: string | null;
 };
 
+export interface CardDeckContentPatch  {
+	cards: CardPatch[];
+};
+
 export interface CardPatch extends Omit<CardContentNode, 'id'> {
 	id?: string | null;
-};
-
-export interface CardDeckPatch extends CardDeckMetadataPatch {
-	cards: CardPatch[];
-};
-
-export interface CardDeckContentPatch {
-	cards: CardPatch[];
 };

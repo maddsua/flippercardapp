@@ -71,7 +71,7 @@ const updateCollection = async () => {
 		throw new Error('Invalid condition');
 	}
 
-	const { data, error } = await client.collections.editMeta(state.data.id, state.inputs);
+	const { data, error } = await client.collections.update(state.data.id, state.inputs);
 	if (!data || error) {
 		state.error = error?.message || 'Unable to update collection';
 		return;

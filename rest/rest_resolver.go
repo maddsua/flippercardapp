@@ -254,7 +254,7 @@ type rankedSearchEntry struct {
 	rank int
 }
 
-func (rslv *resolver) CreateContentCollection(ctx context.Context, params model.CollectionDetailsPatch) (*model.CollectionMetadata, error) {
+func (rslv *resolver) CreateContentCollection(ctx context.Context, params model.CollectionPatch) (*model.CollectionMetadata, error) {
 
 	tx, err := rslv.db.BeginTx(ctx)
 	if err != nil {
@@ -294,7 +294,7 @@ func (rslv *resolver) CreateContentCollection(ctx context.Context, params model.
 	return transform.ToPtr(transform.CollectionMetadataFromRow(entry)), nil
 }
 
-func (rslv *resolver) UpdateContentCollectionMetadata(ctx context.Context, id uuid.UUID, patch model.CollectionDetailsPatch) (*model.CollectionMetadata, error) {
+func (rslv *resolver) UpdateContentCollection(ctx context.Context, id uuid.UUID, patch model.CollectionPatch) (*model.CollectionMetadata, error) {
 
 	if err := patch.Valid(); err != nil {
 		return nil, &APIError{Message: fmt.Sprintf("Invalid collection details: %v", err), Code: http.StatusBadRequest}
@@ -407,7 +407,7 @@ func (rslv *resolver) CreateCardDeck(ctx context.Context, params model.CardDeckP
 	return &result, nil
 }
 
-func (rslv *resolver) PatchCardDeck(ctx context.Context, id uuid.UUID, patch model.CardDeckPatch) (*model.CardDeckMetadata, error) {
+func (rslv *resolver) UpdateCardDeck(ctx context.Context, id uuid.UUID, patch model.CardDeckPatch) (*model.CardDeckMetadata, error) {
 
 	tx, err := rslv.db.BeginTx(ctx)
 	if err != nil {
@@ -415,7 +415,11 @@ func (rslv *resolver) PatchCardDeck(ctx context.Context, id uuid.UUID, patch mod
 	}
 	defer tx.Rollback()
 
-	deck, err := tx.GetDeckById(ctx, id)
+	deck, err := tx.SetDeckUpdateTime(ctx, db_gen.SetDeckUpdateTimeParams{
+		ID:        id,
+		UpdatedAt: types.NewTime(time.Now()),
+	})
+
 	if db_pkg.IsNull(err) {
 		return nil, &APIError{Message: "Deck ID not found", Code: http.StatusNotFound}
 	} else if err != nil {
@@ -441,7 +445,6 @@ func (rslv *resolver) PatchCardDeck(ctx context.Context, id uuid.UUID, patch mod
 			CollectionID: patch.CollectionID,
 			Name:         patch.Details.Name,
 			Description:  types.NewNullString(patch.Details.Description),
-			UpdatedAt:    types.NewTime(time.Now()),
 		}); err != nil {
 			return nil, InternalError("sqlc.UpdateDeckMetadata", err)
 		}

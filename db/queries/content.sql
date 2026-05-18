@@ -115,10 +115,15 @@ insert into cards (
 	sqlc.arg(content)
 );
 
+-- name: SetDeckUpdateTime :one
+update decks
+set updated_at = sqlc.arg(updated_at)
+where id = sqlc.arg(id)
+returning *;
+
 -- name: UpdateDeckMetadata :one
 update decks
 set
-	updated_at = sqlc.arg(updated_at),
 	collection_id = coalesce(sqlc.narg(collection_id), collection_id),
 	name = sqlc.arg(name),
 	description = sqlc.arg(description)

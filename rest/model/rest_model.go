@@ -52,12 +52,12 @@ type Card struct {
 	Updated time.Time `json:"updated"`
 }
 
-type CollectionDetailsPatch struct {
+type CollectionPatch struct {
 	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`
 }
 
-func (patch *CollectionDetailsPatch) Valid() error {
+func (patch *CollectionPatch) Valid() error {
 
 	if patch.Name = strings.TrimSpace(patch.Name); patch.Name == "" {
 		return errors.New("name field is empty")

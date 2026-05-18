@@ -1,9 +1,7 @@
 import type {
 	AuthState,
 	CardDeck,
-	CardDeckContentPatch,
 	CardDeckMetadata,
-	CardDeckMetadataPatch,
 	CardDeckPatch,
 	Collection,
 	CollectionMetadata,
@@ -159,7 +157,7 @@ export class ApiClient {
 		create: async (patch: CollectionPatch) => {
 			return this.exec<CollectionMetadata>('PUT', '/manage/content/collection', {}, patch);
 		},
-		editMeta: async (id: string, patch: CollectionPatch) => {
+		update: async (id: string, patch: CollectionPatch) => {
 			return this.exec<CollectionMetadata>('PATCH', `/manage/content/collection/${id}/metadata`, {}, patch);
 		},
 		remove: async (id: string) => {
@@ -177,11 +175,8 @@ export class ApiClient {
 		create: async (patch: CardDeckPatch) => {
 			return this.exec<CardDeckMetadata>('PUT', '/manage/content/deck', {}, patch);
 		},
-		updateMeta: async (id: string, patch: CardDeckMetadataPatch) => {
-			return this.exec<CardDeckMetadata>('PATCH', `/manage/content/deck/${id}/metadata`, {}, patch);
-		},
-		updateContent: async (id: string, patch: CardDeckContentPatch) => {
-			return this.exec<CardDeckMetadata>('PATCH', `/manage/content/deck/${id}/content`, {}, patch);
+		update: async (id: string, patch: CardDeckPatch) => {
+			return this.exec<CardDeckMetadata>('PATCH', `/manage/content/deck/${id}`, {}, patch);
 		},
 		remove: async (id: string) => {
 			return this.exec<null>('DELETE', `/manage/content/deck/${id}`);

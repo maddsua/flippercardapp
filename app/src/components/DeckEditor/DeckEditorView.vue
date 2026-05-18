@@ -34,7 +34,7 @@ interface ErrorState {
 const state = reactive({
 	
 	content: {
-		meta: {
+		details: {
 			name: 'Unnamed deck',
 			description: null as string | null,
 		},
@@ -53,8 +53,8 @@ const state = reactive({
 	},
 
 	editor: {
+		detailsChanged: false,
 		cardsChanged: false,
-		metaChanged: false,
 		snapshotSaved: false,
 	},
 
@@ -63,7 +63,7 @@ const state = reactive({
 	error: null as ErrorState | null,
 });
 
-const isEdited = computed(() => state.editor.cardsChanged || state.editor.metaChanged);
+const isEdited = computed(() => state.editor.cardsChanged || state.editor.detailsChanged);
 const isValid = computed(() => !state.error && !state.loading && state.content.cards.length > 0);
 
 const activeCardFace = computed((): ActiveFace | null => {
@@ -92,8 +92,8 @@ const activeCardFace = computed((): ActiveFace | null => {
 const publishNewDeck = async () => {
 
 	const { data, error } = await client.decks.create({
-		...state.content.meta,
-		cards: state.content.cards,
+		details: state.content.details,
+		content: { cards: state.content.cards },
 		collection_id: state.meta.collectionID,
 	});
 
@@ -106,41 +106,29 @@ const publishNewDeck = async () => {
 	}
 
 	state.meta = { id: data.id, collectionID: null };
-	state.editor = { metaChanged: false, cardsChanged: false, snapshotSaved: false };
+	state.editor = { detailsChanged: false, cardsChanged: false, snapshotSaved: false };
 
 	store.deckEditor.store(null);
 };
 
 const patchDeckExisting = async (id: string) => {
 
-	if (state.editor.metaChanged) {
+	const { data, error } = await client.decks.update(id, {
+		details: state.editor.detailsChanged ? state.content.details : null,
+		content: state.editor.cardsChanged ? { cards: state.content.cards } : null,
+	});
 
-		const { data, error } = await client.decks.updateMeta(id, state.content.meta);
-		if (!data || error) {
-			state.error = {
-				message: 'Failed to update metadata',
-				details: error?.message
-			};
-			return;
-		}
-
-		state.editor.metaChanged = false;
+	if (!data || error) {
+		state.error = {
+			message: 'Failed to update deck',
+			details: error?.message
+		};
+		return;
 	}
 
-	if (state.editor.cardsChanged) {
+	state.editor.detailsChanged = false;
+	state.editor.cardsChanged = false;
 
-		const { data, error } = await client.decks.updateContent(id, { cards: state.content.cards });
-		if (!data || error) {
-			state.error = {
-				message: 'Failed to update content',
-				details: error?.message
-			};
-			return;
-		}
-
-		state.editor.cardsChanged = false;
-	}
-	
 	store.deckEditor.store(null);
 };
 
@@ -223,8 +211,8 @@ const removeCard = (idx: number) => {
 
 const initAutosave = () => {
 
-	watch(() => state.content.meta, () => {
-		state.editor.metaChanged = true;
+	watch(() => state.content.details, () => {
+		state.editor.detailsChanged = true;
 		state.editor.snapshotSaved = false;
 	}, { deep: true });
 
@@ -257,7 +245,7 @@ const loadDeckState = async (id: string) => {
 	}
 
 	state.content = {
-		meta: {
+		details: {
 			name: data.name,
 			description: data.description || null,
 		},
@@ -295,7 +283,7 @@ onMounted(async () => {
 	const storedState = await store.deckEditor.load();
 	if (storedState && typeof storedState === 'object') {
 		state.content = storedState;
-		state.editor = { metaChanged: true, cardsChanged: true, snapshotSaved: false };
+		state.editor = { detailsChanged: true, cardsChanged: true, snapshotSaved: false };
 	}
 
 	initAutosave();
@@ -305,9 +293,9 @@ const exportContentBundle = async () => {
 
 	const deck: CollectionBundleDeckContent = {
 		meta: {
-			... state.content.meta,
-			name: state.content.meta.name,
-			description: state.content.meta.description || undefined,
+			... state.content.details,
+			name: state.content.details.name,
+			description: state.content.details.description || undefined,
 		},
 		cards: state.content.cards,
 	};
@@ -317,14 +305,14 @@ const exportContentBundle = async () => {
 		content: [deck]
 	};
 
-	const name = state.content.meta.name.replace(/[^a-z0-9]/gi, '_') || 'Unnamed_deck';
+	const name = state.content.details.name.replace(/[^a-z0-9]/gi, '_') || 'Unnamed_deck';
 
 	downloadFile(JSON.stringify(bundle), `${name}-export.json`);
 };
 
 const updateDetails = (val: { name: string, description?: string | null }) => {
-	state.content.meta.name = val.name;
-	state.content.meta.description = val.description || null;
+	state.content.details.name = val.name;
+	state.content.details.description = val.description || null;
 };
 
 </script>
@@ -337,7 +325,7 @@ const updateDetails = (val: { name: string, description?: string | null }) => {
 		<EditorErrorScreen v-else-if="state.error" :error="state.error" />
 
 		<DeckEditorStatusBar
-			:meta="state.content.meta"
+			:meta="state.content.details"
 			:edited="isEdited"
 			:valid="isValid"
 			@updateDetails="updateDetails"

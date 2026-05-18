@@ -478,6 +478,32 @@ func (q *Queries) InsertDeck(ctx context.Context, arg InsertDeckParams) (Deck, e
 	return i, err
 }
 
+const setDeckUpdateTime = `-- name: SetDeckUpdateTime :one
+update decks
+set updated_at = ?1
+where id = ?2
+returning id, collection_id, created_at, updated_at, name, description
+`
+
+type SetDeckUpdateTimeParams struct {
+	UpdatedAt types.Time
+	ID        uuid.UUID
+}
+
+func (q *Queries) SetDeckUpdateTime(ctx context.Context, arg SetDeckUpdateTimeParams) (Deck, error) {
+	row := q.db.QueryRowContext(ctx, setDeckUpdateTime, arg.UpdatedAt, arg.ID)
+	var i Deck
+	err := row.Scan(
+		&i.ID,
+		&i.CollectionID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Name,
+		&i.Description,
+	)
+	return i, err
+}
+
 const updateCardContent = `-- name: UpdateCardContent :execrows
 update cards
 set
@@ -545,16 +571,14 @@ func (q *Queries) UpdateCollection(ctx context.Context, arg UpdateCollectionPara
 const updateDeckMetadata = `-- name: UpdateDeckMetadata :one
 update decks
 set
-	updated_at = ?1,
-	collection_id = coalesce(?2, collection_id),
-	name = ?3,
-	description = ?4
-where id = ?5
+	collection_id = coalesce(?1, collection_id),
+	name = ?2,
+	description = ?3
+where id = ?4
 returning id, collection_id, created_at, updated_at, name, description
 `
 
 type UpdateDeckMetadataParams struct {
-	UpdatedAt    types.Time
 	CollectionID uuid.NullUUID
 	Name         string
 	Description  sql.NullString
@@ -563,7 +587,6 @@ type UpdateDeckMetadataParams struct {
 
 func (q *Queries) UpdateDeckMetadata(ctx context.Context, arg UpdateDeckMetadataParams) (Deck, error) {
 	row := q.db.QueryRowContext(ctx, updateDeckMetadata,
-		arg.UpdatedAt,
 		arg.CollectionID,
 		arg.Name,
 		arg.Description,
