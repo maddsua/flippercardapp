@@ -34,10 +34,10 @@ const emit = defineEmits<{
 		display: block;
 		border-radius: 0.5rem;
 		border: 1px solid transparent;
-		width: 5rem;
-		height: 3rem;
+		width: 3.5rem;
+		height: 2.5rem;
 		background-color: var(--app-theme-ghostly-glow);
-		background-size: 2rem;
+		background-size: 1.75rem;
 		background-position: center;
 		background-repeat: no-repeat;
 		cursor: pointer;
@@ -58,7 +58,7 @@ const emit = defineEmits<{
 
 			&.final {
 				background-image: url(/src/assets/icons/check-mask.svg);
-				background-size: 1.75rem;
+				background-size: 1.5rem;
 			}
 		}
 
