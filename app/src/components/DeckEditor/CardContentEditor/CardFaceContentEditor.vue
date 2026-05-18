@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { CardContentNode } from '../../../content';
+import type { CardContentElement } from '../../../content';
 import GenericButton from '../../App/GenericButton.vue';
 import CardTitleNodeEditor from './CardTitleNodeEditor.vue';
 import CardTextNodeEditor from './CardTextNodeEditor.vue';
@@ -10,7 +10,7 @@ const props = defineProps<{
 	isFront?: boolean;
 }>();
 
-const model = defineModel<CardContentNode[]>();
+const model = defineModel<CardContentElement[]>();
 
 type NodeType = 'title' | 'textbox' | 'poll';
 
@@ -26,7 +26,7 @@ const addNode = (type: NodeType) => {
 	const lastTextbox = entries.findLastIndex(item => item.type === 'textbox');
 	const lastPoll = entries.findLastIndex(item => item.type === 'poll');
 
-	const insert = (idx: number, entry: CardContentNode) => {
+	const insert = (idx: number, entry: CardContentElement) => {
 
 		if (!model.value?.length) {
 			model.value?.push(entry);

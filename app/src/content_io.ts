@@ -48,7 +48,7 @@ export interface CollectionBundleContent {
 
 export interface CollectionBundleDeckContent {
 	meta: Omit<CardDeckMetadata, 'id' | 'created' | 'updated' | 'size' | 'collection_id'>;
-	cards: Array<Omit<Card, 'id' | 'created' | 'updated'>>;
+	cards: Array<Omit<Card, 'created' | 'updated'>>;
 };
 
 export interface DeckBundle {

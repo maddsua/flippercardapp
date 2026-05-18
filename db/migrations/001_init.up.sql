@@ -22,7 +22,7 @@ create table cards (
 	deck_id uuid not null,
 	created_at time not null default 0,
 	updated_at time not null default 0,
-	content blob not null,
+	content card_node_content not null,
 
 	foreign key (deck_id) references decks(id) on update cascade on delete cascade
 );

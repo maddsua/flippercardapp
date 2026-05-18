@@ -17,7 +17,7 @@ type Card struct {
 	DeckID    uuid.UUID
 	CreatedAt types.Time
 	UpdatedAt types.Time
-	Content   []byte
+	Content   model.CardNodeContent
 }
 
 type Collection struct {

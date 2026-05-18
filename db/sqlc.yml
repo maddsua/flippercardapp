@@ -35,3 +35,7 @@ sql:
             go_type:
               import: "github.com/maddsua/flippercardapp/db/model"
               type: "NullUserPermissions"
+          - db_type: "card_node_content"
+            go_type:
+              import: "github.com/maddsua/flippercardapp/db/model"
+              type: "CardNodeContent"

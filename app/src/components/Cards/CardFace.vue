@@ -3,11 +3,11 @@ import CardPoll from './CardPoll.vue';
 import CardTextBox from './CardTextBox.vue';
 import CardTextNode from './CardTextNode.vue';
 import CardTitle from './CardTitle.vue';
-import type { CardFace } from '../../content';
+import type { CardContentFace } from '../../content';
 import { computed } from 'vue';
 
 const props = defineProps<{
-	entry: CardFace;
+	entry: CardContentFace;
 	decoration?: 'question-mark';
 }>();
 

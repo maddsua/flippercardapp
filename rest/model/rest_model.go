@@ -1,13 +1,13 @@
 package model
 
 import (
-	"encoding/json"
 	"errors"
 	"math"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
+	db_model "github.com/maddsua/flippercardapp/db/model"
 )
 
 type CollectionMetadata struct {
@@ -46,10 +46,10 @@ type CardDeck struct {
 }
 
 type Card struct {
-	ID      uuid.UUID       `json:"id"`
-	Created time.Time       `json:"created"`
-	Updated time.Time       `json:"updated"`
-	Content json.RawMessage `json:"content"`
+	db_model.CardNodeContent
+	ID      uuid.UUID `json:"id"`
+	Created time.Time `json:"created"`
+	Updated time.Time `json:"updated"`
 }
 
 type CollectionPatch struct {
@@ -99,8 +99,8 @@ type CardDeckContentPatch struct {
 }
 
 type CardPatch struct {
-	ID      uuid.NullUUID   `json:"id"`
-	Content json.RawMessage `json:"content"`
+	db_model.CardNodeContent
+	ID uuid.NullUUID `json:"id"`
 }
 
 type SignInParams struct {

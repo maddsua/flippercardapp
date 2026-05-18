@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import CardPollOption from './CardPollOption.vue';
-import type { ElementTheme, CardPollNode, PollOption } from '../../content';
+import type { CardContentElementTheme, CardPollElement, CardPollElementOptionNode } from '../../content';
 import { shuffleArray } from '../../arrays';
 
 const props = defineProps<{
-	entry: CardPollNode;
-	theme?: ElementTheme;
+	entry: CardPollElement;
+	theme?: CardContentElementTheme;
 }>();
 
 const emit = defineEmits<{
@@ -17,7 +17,7 @@ const emit = defineEmits<{
 
 let wrongQuizTakes = 0;
 
-const handleOptionSelect = (opt: PollOption) => {
+const handleOptionSelect = (opt: CardPollElementOptionNode) => {
 
 	if (!props.entry.is_quiz) {
 		emit('next');

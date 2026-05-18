@@ -3,7 +3,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { computed, onMounted, reactive, watch } from 'vue';
 import DeckEditorStatusBar from './DeckEditorStatusBar.vue';
 import CardFaceComponent from '../Cards/CardFace.vue';
-import type { CardFace, CardNode } from '../../content';
+import type { CardContentFace, CardContentNode } from '../../content';
 import DeckCardFacePreviewSlot from './DeckCardFacePreviewSlot.vue';
 import EditorCanvasColumn from './EditorCanvasColumn.vue';
 import CardFaceContentEditor from './CardContentEditor/CardFaceContentEditor.vue';
@@ -23,7 +23,7 @@ const client = useClient();
 
 interface ActiveFace {
 	id: string;
-	face: CardFace;
+	face: CardContentFace;
 };
 
 interface ErrorState {
@@ -38,7 +38,7 @@ const state = reactive({
 			name: 'Unnamed deck',
 			description: null as string | null,
 		},
-		cards: [] as CardNode[],
+		cards: [] as CardContentNode[],
 	},
 
 	view: {
@@ -72,7 +72,7 @@ const activeCardFace = computed((): ActiveFace | null => {
 		return null;
 	}
 
-	const makeActive = (face: CardFace, id: string) => {
+	const makeActive = (face: CardContentFace, id: string) => {
 
 		// it is a bit of a fucking hack but it's better than putting 100500 nested proxies and/or event handlers
 		if (!face.theme) {
@@ -89,13 +89,11 @@ const activeCardFace = computed((): ActiveFace | null => {
 		: makeActive(card.back, `${card.id}-back`);
 });
 
-const wrapCards = () => state.content.cards.map(item => ({ id: item.id || null, content: item }));
-
 const publishNewDeck = async () => {
 
 	const { data, error } = await client.decks.create({
 		...state.content.meta,
-		cards: wrapCards(),
+		cards: state.content.cards,
 		collection_id: state.meta.collectionID,
 	});
 
@@ -131,7 +129,7 @@ const patchDeckExisting = async (id: string) => {
 
 	if (state.editor.cardsChanged) {
 
-		const { data, error } = await client.decks.updateContent(id, { cards: wrapCards() });
+		const { data, error } = await client.decks.updateContent(id, { cards: state.content.cards });
 		if (!data || error) {
 			state.error = {
 				message: 'Failed to update content',
@@ -263,7 +261,7 @@ const loadDeckState = async (id: string) => {
 			name: data.name,
 			description: data.description || null,
 		},
-		cards: data.cards.map(item => ({ ...item.content, id: item.id })),
+		cards: data.cards,
 	};
 
 	state.meta.id = data.id;
@@ -311,7 +309,7 @@ const exportContentBundle = async () => {
 			name: state.content.meta.name,
 			description: state.content.meta.description || undefined,
 		},
-		cards: state.content.cards.map(item => ({ content: item })),
+		cards: state.content.cards,
 	};
 
 	const bundle: DeckBundle = {

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import type { CardNode } from '../../content';
+import type { CardContentNode } from '../../content';
 import CardFace from './CardFace.vue';
 
 const props = defineProps<{
-	card: CardNode;
+	card: CardContentNode;
 }>();
 
 const emit = defineEmits<{

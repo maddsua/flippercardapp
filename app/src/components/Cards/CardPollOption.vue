@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import type { ElementTheme, PollOption } from '../../content';
+import type { CardContentElementTheme, CardPollElementOptionNode } from '../../content';
 
 const props = defineProps<{
-	entry: PollOption;
+	entry: CardPollElementOptionNode;
 	is_quiz?: boolean;
-	theme?: ElementTheme;
+	theme?: CardContentElementTheme;
 }>();
 
 const emit = defineEmits<{

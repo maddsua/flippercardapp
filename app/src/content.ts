@@ -1,76 +1,78 @@
 
-export interface CardNode {
+export interface CardContentNode {
 	id: string;
-	front: CardFace;
-	back: CardFace;
+	front: CardContentFace;
+	back: CardContentFace;
 };
 
-export interface CardFace {
+export interface CardContentFace {
 	theme?: CardFaceTheme;
-	content: CardContentNode[];
+	content: CardContentElement[];
 };
 
 export interface CardFaceTheme {
-	card: CardCanvasTheme;
-	interactives?: ElementTheme;
-}
+	card?: CardCanvasTheme;
+	interactives?: CardContentElementTheme;
+};
 
-export interface CardCanvasTheme extends ElementTheme {
+export interface CardCanvasTheme extends CardContentElementTheme {
 	outline_color?: string;
 };
 
-export interface ElementTheme {
+export interface CardContentElementTheme {
 	fill_color?: string;
 	mask_color?: string;
 }
 
 //	todo: add images
 
-export type CardContentNode = CardTitleNode | CardTextBoxNode | CardPollNode;
+export type CardContentElement = CardTitleElement | CardTextBoxElement | CardPollElement;
 
-interface BaseContentNode {
+interface BaseCardContentElement {
 	type: string;
 };
 
-export interface CardTitleNode extends BaseContentNode {
+export interface CardTitleElement extends BaseCardContentElement {
 	type: 'title';
 	content: string;
 };
 
-export interface CardTextBoxNode extends BaseContentNode {
+export interface CardTextBoxElement extends BaseCardContentElement {
 	type: 'textbox';
-	content: Array<TextNode | NewlineNode>;
+	content: Array<CardTextboxElementTextNode | CardTextboxElementNewlineNode>;
 };
 
-export interface TextNode extends BaseContentNode {
+export interface BaseCardTextboxElement extends BaseCardContentElement {};
+
+export interface CardTextboxElementTextNode extends BaseCardTextboxElement {
 	type: 'text';
 	content: string;
-	theme?: TextNodeTheme;
+	theme?: CardTextboxElementTextNodeTheme;
 };
 
-export interface TextNodeTheme {
-	highlight?: TextHighlight;
+export interface CardTextboxElementTextNodeTheme {
+	highlight?: CardTextboxElementTextNodeHighlight;
 	bold?: boolean;
 	italic?: boolean;
 	decoration?: 'underline' | 'strikethrough';
 }
 
-export interface TextHighlight {
+export interface CardTextboxElementTextNodeHighlight {
 	text_color: string;
 	fill_color: string;
 }
 
-export interface NewlineNode extends BaseContentNode {
+export interface CardTextboxElementNewlineNode extends BaseCardTextboxElement {
 	type: 'newline';
 };
 
-export interface CardPollNode extends BaseContentNode {
+export interface CardPollElement extends BaseCardContentElement {
 	type: 'poll';
 	is_quiz?: boolean;
-	content: PollOption[];
+	content: CardPollElementOptionNode[];
 };
 
-export interface PollOption {
+export interface CardPollElementOptionNode {
 	value: string;
 	is_answer?: boolean;
 };

@@ -1,4 +1,4 @@
-import type { CardNode } from "./content";
+import type { CardContentNode } from "./content";
 
 export interface CollectionMetadata {
 	id: string;
@@ -28,14 +28,12 @@ export interface CardDeck extends CardDeckMetadata {
 	cards: Card[];
 };
 
-export interface Card {
-	id: string;
+export interface Card extends CardContentNode {
 	created: string;
 	updated: string;
-	content: Omit<CardNode, 'id'>;
 };
 
-export interface Collection extends CollectionMetadata{
+export interface Collection extends CollectionMetadata {
 	decks: CardDeckMetadata[];
 };
 
@@ -76,12 +74,11 @@ export interface CardDeckMetadataPatch {
 	description?: string | null;
 };
 
-export interface CardPatch {
+export interface CardPatch extends Omit<CardContentNode, 'id'> {
 	id?: string | null;
-	content: Omit<CardNode, 'id'>;
 };
 
-export interface CardDeckPatch extends CardDeckMetadataPatch{
+export interface CardDeckPatch extends CardDeckMetadataPatch {
 	cards: CardPatch[];
 };
 

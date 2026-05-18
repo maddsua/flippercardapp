@@ -34,10 +34,10 @@ func CollectionMetadataFromBatchRow(row db_gen.GetCollectionBatchRow) model.Coll
 
 func CardFromRow(row db_gen.Card) model.Card {
 	return model.Card{
-		ID:      row.ID,
-		Created: row.CreatedAt.Time,
-		Updated: row.UpdatedAt.Time,
-		Content: row.Content,
+		CardNodeContent: row.Content,
+		ID:              row.ID,
+		Created:         row.CreatedAt.Time,
+		Updated:         row.UpdatedAt.Time,
 	}
 }
 

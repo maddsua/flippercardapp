@@ -10,6 +10,7 @@ import (
 	"database/sql"
 
 	"github.com/google/uuid"
+	"github.com/maddsua/flippercardapp/db/model"
 	"github.com/maddsua/flippercardapp/db/types"
 )
 
@@ -372,7 +373,7 @@ type InsertCardParams struct {
 	DeckID    uuid.UUID
 	CreatedAt types.Time
 	UpdatedAt types.Time
-	Content   []byte
+	Content   model.CardNodeContent
 }
 
 func (q *Queries) InsertCard(ctx context.Context, arg InsertCardParams) error {
@@ -488,7 +489,7 @@ where id = ?3
 
 type UpdateCardContentParams struct {
 	UpdatedAt types.Time
-	Content   []byte
+	Content   model.CardNodeContent
 	ID        uuid.UUID
 	DeckID    uuid.UUID
 }

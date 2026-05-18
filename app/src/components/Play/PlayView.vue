@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive } from 'vue';
-import type { CardNode } from '../../content';
+import type { CardContentNode } from '../../content';
 import CardWidget from '../Cards/CardWidget.vue';
 import Endscreen from '../Endscreen/Endscreen.vue';
 import FullscreenMessage from '../App/FullscreenMessage.vue';
@@ -26,7 +26,7 @@ interface RoundState {
 };
 
 const state = reactive({
-	cards: null as CardNode[] | null,
+	cards: null as CardContentNode[] | null,
 	labels: [] as string[],
 	collectionID: null as string | null,
 	deckID: null as string | null,
@@ -103,7 +103,7 @@ onMounted(async () => {
 	state.isMarked = await store.starredDecks.contains(id);
 	state.collectionID = data.collection_id;
 	state.labels = data.labels;
-	state.cards = data.cards.map(({ id, content }) => ({ ... content, id }));
+	state.cards = data.cards;
 
 	initRound();
 });

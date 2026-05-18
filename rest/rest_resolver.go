@@ -395,17 +395,12 @@ func (rslv *resolver) CreateCardDeck(ctx context.Context, params model.CardDeckP
 	}
 
 	for _, card := range params.Cards {
-
-		if len(card.Content) == 0 {
-			return nil, &APIError{Message: "Invalid card content"}
-		}
-
 		if err := tx.InsertCard(ctx, db_gen.InsertCardParams{
+			Content:   card.CardNodeContent,
 			ID:        uuid.New(),
 			DeckID:    deck.ID,
 			CreatedAt: types.NewTime(time.Now()),
 			UpdatedAt: types.NewTime(time.Now()),
-			Content:   card.Content,
 		}); err != nil {
 			return nil, InternalError("sqlc.InsertDeck", err)
 		}
@@ -494,10 +489,10 @@ func (rslv *resolver) UpdateCardDeckContent(ctx context.Context, id uuid.UUID, p
 
 		if card.ID.Valid {
 			if count, err := tx.UpdateCardContent(ctx, db_gen.UpdateCardContentParams{
+				Content:   card.CardNodeContent,
 				ID:        card.ID.UUID,
 				DeckID:    deck.ID,
 				UpdatedAt: types.NewTime(time.Now()),
-				Content:   card.Content,
 			}); err != nil {
 				return nil, InternalError("sqlc.UpdateCardContent", err)
 			} else if count > 0 {
@@ -507,11 +502,11 @@ func (rslv *resolver) UpdateCardDeckContent(ctx context.Context, id uuid.UUID, p
 		}
 
 		if err := tx.InsertCard(ctx, db_gen.InsertCardParams{
+			Content:   card.CardNodeContent,
 			ID:        uuid.New(),
 			DeckID:    deck.ID,
 			CreatedAt: types.NewTime(time.Now()),
 			UpdatedAt: types.NewTime(time.Now()),
-			Content:   card.Content,
 		}); err != nil {
 			return nil, InternalError("sqlc.InsertCard", err)
 		}
