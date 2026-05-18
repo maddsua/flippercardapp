@@ -150,8 +150,18 @@ const exitView = () => {
 	<div class="play-view">
 
 		<template v-if="cards?.length">
-			<CardWidget v-if="!statsScreen" :labels="state.labels" :entries="cards" :isMarked="state.isMarked" @score="updateRoundScore" @finish="finishDeck" @exit="exitView" @toggleMarked="toggleMarked" />
+
+			<CardWidget v-if="!statsScreen"
+				:labels="state.labels"
+				:entries="cards"
+				:isMarked="state.isMarked"
+				@score="updateRoundScore"
+				@finish="finishDeck"
+				@exit="exitView"
+				@toggleMarked="toggleMarked" />
+
 			<Endscreen v-else :stats="statsScreen" @reset="initRound" @finish="exitView" />
+
 		</template>
 
 		<FullscreenMessage v-else>

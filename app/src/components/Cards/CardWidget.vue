@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, reactive, ref } from 'vue';
+import { computed, nextTick, reactive, ref } from 'vue';
 import type { CardNode } from '../../content';
 import Card from './Card.vue';
 import CardControls from './CardControls.vue';
@@ -92,6 +92,10 @@ const cardPairs = reactive({
 	a: newAnimatedState(),
 	b: null as CardState | null,
 });
+
+const cardSlots = computed(() => ([cardPairs.a, cardPairs.b]))
+
+const cardSlotKey = (slot: CardState | null, idx: number) => `${idx}:${slot?.card.id || 'null'}`;
 
 const ejectAnimatedState = async (state: CardState, direction?: SlideOutDirection) => {
 
@@ -205,16 +209,30 @@ const handleExitPrompt = (confirmed?: boolean) => {
 
 <template>
 	<div class="card-widget">
-		<CardDeckInfo :labels="labels" :size="entries.length" :index="activeIdx" :isMarked="isMarked" @toggleMarked="emit('toggleMarked')" />
+
+		<CardDeckInfo
+			:labels="labels"
+			:size="entries.length"
+			:index="activeIdx"
+			:isMarked="isMarked"
+			@toggleMarked="emit('toggleMarked')" />
+
 		<div class="card-screen-container">
-			<div class="card-transition-slot" v-for="(item,idx) of [cardPairs.a, cardPairs.b]" :key="`${idx}:${item?.card.id || 'null'}`" :class="item?.flags">
+			<div class="card-transition-slot" v-for="(item, idx) of cardSlots" :key="cardSlotKey(item, idx)" :class="item?.flags">
 				<Card v-if="item" :key="item.card.id" :card="item.card" @score="countScore" @next="nextCard" @prev="prevCard" />
 			</div>
 		</div>
-		<CardControls :has_prev="activeIdx > 0" :has_next="activeIdx < entries.length - 1" @prev="handleCtrlBack" @next="nextCard" />
+
+		<CardControls
+			:has_prev="activeIdx > 0"
+			:has_next="activeIdx < entries.length - 1"
+			@prev="handleCtrlBack"
+			@next="nextCard" />
+
 		<UIPrompt v-if="showExitPrompt" @done="handleExitPrompt">
 			Exit game?
 		</UIPrompt>
+
 	</div>
 </template>
 

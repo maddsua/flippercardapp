@@ -15,29 +15,37 @@ const emit = defineEmits<{
 
 <template>
 	<div class="deck-info">
+
 		<div class="progress">
 			<div v-for="idx of size" class="marker" :class="{ filled: idx <= index + 1 }"></div>
 		</div>
-		<div class="summary">
-			<template v-for="(item, idx) of labels">
-				<template v-if="idx > 0">
-					<hr />
+
+		<div class="details-row">
+
+			<div class="summary">
+				<template v-for="(item, idx) of labels">
+					<template v-if="idx > 0">
+						<hr />
+					</template>
+					<span>
+						{{ item }}
+					</span>
 				</template>
-				<span>
-					{{ item }}
-				</span>
-			</template>
+			</div>
+
+			<div class="actions">
+				<button type="button" class="save" :class="{ active: isMarked }" @click="emit('toggleMarked')">
+					<template v-if="isMarked">
+						Unmark
+					</template>
+					<template v-else>
+						Mark
+					</template>
+				</button>
+			</div>
+
 		</div>
-		<div class="actions">
-			<button type="button" class="save" :class="{ active: isMarked }" @click="emit('toggleMarked')">
-				<template v-if="isMarked">
-					Unmark
-				</template>
-				<template v-else>
-					Mark
-				</template>
-			</button>
-		</div>
+
 	</div>
 </template>
 
@@ -68,15 +76,27 @@ const emit = defineEmits<{
 			}
 		}
 
+		.details-row {
+			display: flex;
+			flex-flow: row nowrap;
+			gap: 1rem;
+			padding: 0 0.5rem;
+			align-items: center;
+			justify-content: space-between;
+		}
+
 		.summary {
 			display: flex;
 			flex-flow: row nowrap;
 			align-items: center;
 			gap: 0.5rem;
-			padding: 0 1rem;
+			min-width: 0;
+			overflow: hidden;
 
 			span {
-				font-size: 0.9rem;
+				display: block;
+				font-size: 0.85rem;
+				white-space: nowrap;
 			}
 
 			hr {
@@ -89,6 +109,7 @@ const emit = defineEmits<{
 				outline: none;
 				margin: 0;
 				padding: 0;
+				flex-shrink: 0;
 			}
 		}
 
@@ -97,6 +118,7 @@ const emit = defineEmits<{
 			flex-flow: row nowrap;
 			align-items: center;
 			justify-content: end;
+			flex-shrink: 0;
 
 			button {
 				display: flex;
