@@ -254,7 +254,7 @@ type rankedSearchEntry struct {
 	rank int
 }
 
-func (rslv *resolver) CreateContentCollection(ctx context.Context, params model.CollectionPatch) (*model.CollectionMetadata, error) {
+func (rslv *resolver) CreateContentCollection(ctx context.Context, params model.CollectionDetailsPatch) (*model.CollectionMetadata, error) {
 
 	tx, err := rslv.db.BeginTx(ctx)
 	if err != nil {
@@ -263,10 +263,7 @@ func (rslv *resolver) CreateContentCollection(ctx context.Context, params model.
 	defer tx.Rollback()
 
 	if err := params.Valid(); err != nil {
-		return nil, &APIError{
-			Message: fmt.Sprintf("Validation error: %v", err),
-			Code:    http.StatusBadRequest,
-		}
+		return nil, &APIError{Message: fmt.Sprintf("Invalid collection details: %v", err), Code: http.StatusBadRequest}
 	}
 
 	if exists, err := tx.CollectionNameExists(ctx, params.Name); err != nil {
@@ -297,13 +294,10 @@ func (rslv *resolver) CreateContentCollection(ctx context.Context, params model.
 	return transform.ToPtr(transform.CollectionMetadataFromRow(entry)), nil
 }
 
-func (rslv *resolver) UpdateContentCollectionMetadata(ctx context.Context, id uuid.UUID, patch model.CollectionPatch) (*model.CollectionMetadata, error) {
+func (rslv *resolver) UpdateContentCollectionMetadata(ctx context.Context, id uuid.UUID, patch model.CollectionDetailsPatch) (*model.CollectionMetadata, error) {
 
 	if err := patch.Valid(); err != nil {
-		return nil, &APIError{
-			Message: fmt.Sprintf("Validation error: %v", err),
-			Code:    http.StatusBadRequest,
-		}
+		return nil, &APIError{Message: fmt.Sprintf("Invalid collection details: %v", err), Code: http.StatusBadRequest}
 	}
 
 	entry, err := rslv.db.UpdateCollection(ctx, db_gen.UpdateCollectionParams{
@@ -356,17 +350,14 @@ func (rslv *resolver) DeleteCollection(ctx context.Context, id uuid.UUID) error 
 
 func (rslv *resolver) CreateCardDeck(ctx context.Context, params model.CardDeckPatch) (*model.CardDeckMetadata, error) {
 
-	if len(params.Cards) == 0 {
+	if params.Details == nil {
+		return nil, &APIError{Message: "Deck details must be provided"}
+	} else if err := params.Details.Valid(); err != nil {
+		return nil, &APIError{Message: fmt.Sprintf("Invalid deck details: %v", err), Code: http.StatusBadRequest}
+	} else if params.Content == nil || len(params.Content.Cards) == 0 {
 		return nil, &APIError{Message: "Deck has no cards in it"}
 	} else if !params.CollectionID.Valid {
 		return nil, &APIError{Message: "Collection ID must be provided"}
-	}
-
-	if err := params.Valid(); err != nil {
-		return nil, &APIError{
-			Message: fmt.Sprintf("Validation error: %v", err),
-			Code:    http.StatusBadRequest,
-		}
 	}
 
 	tx, err := rslv.db.BeginTx(ctx)
@@ -386,15 +377,15 @@ func (rslv *resolver) CreateCardDeck(ctx context.Context, params model.CardDeckP
 		CollectionID: params.CollectionID.UUID,
 		CreatedAt:    types.NewTime(time.Now()),
 		UpdatedAt:    types.NewTime(time.Now()),
-		Name:         params.Name,
-		Description:  types.NewNullString(params.Description),
+		Name:         params.Details.Name,
+		Description:  types.NewNullString(params.Details.Description),
 	})
 
 	if err != nil {
 		return nil, InternalError("sqlc.InsertDeck", err)
 	}
 
-	for _, card := range params.Cards {
+	for _, card := range params.Content.Cards {
 		if err := tx.InsertCard(ctx, db_gen.InsertCardParams{
 			Content:   card.CardNodeContent,
 			ID:        uuid.New(),
@@ -410,23 +401,26 @@ func (rslv *resolver) CreateCardDeck(ctx context.Context, params model.CardDeckP
 		return nil, InternalError("sqlc.Commit", err)
 	}
 
-	return transform.ToPtr(transform.CardDeckMetadataFromRow(deck)), nil
+	result := transform.CardDeckMetadataFromRow(deck)
+	result.Size = len(params.Content.Cards)
+
+	return &result, nil
 }
 
-func (rslv *resolver) UpdateCardDeckMetadata(ctx context.Context, id uuid.UUID, patch model.CardDeckMetadataPatch) (*model.CardDeckMetadata, error) {
-
-	if err := patch.Valid(); err != nil {
-		return nil, &APIError{
-			Message: fmt.Sprintf("Validation error: %v", err),
-			Code:    http.StatusBadRequest,
-		}
-	}
+func (rslv *resolver) PatchCardDeck(ctx context.Context, id uuid.UUID, patch model.CardDeckPatch) (*model.CardDeckMetadata, error) {
 
 	tx, err := rslv.db.BeginTx(ctx)
 	if err != nil {
 		return nil, InternalError("sqlc.BeginTx", err)
 	}
 	defer tx.Rollback()
+
+	deck, err := tx.GetDeckById(ctx, id)
+	if db_pkg.IsNull(err) {
+		return nil, &APIError{Message: "Deck ID not found", Code: http.StatusNotFound}
+	} else if err != nil {
+		return nil, InternalError("sqlc.GetDeckById", err)
+	}
 
 	if patch.CollectionID.Valid {
 		if count, err := tx.CollectionIDExists(ctx, patch.CollectionID.UUID); err != nil {
@@ -436,94 +430,75 @@ func (rslv *resolver) UpdateCardDeckMetadata(ctx context.Context, id uuid.UUID, 
 		}
 	}
 
-	deck, err := rslv.db.UpdateDeckMetadata(ctx, db_gen.UpdateDeckMetadataParams{
-		ID:           id,
-		CollectionID: patch.CollectionID,
-		Name:         patch.Name,
-		Description:  types.NewNullString(patch.Description),
-		UpdatedAt:    types.NewTime(time.Now()),
-	})
+	if patch.Details != nil {
 
-	if db_pkg.IsNull(err) {
-		return nil, &APIError{Message: "Deck not found", Code: http.StatusNotFound}
-	} else if err != nil {
-		return nil, InternalError("sqlc.UpdateDeckMetadata", err)
-	}
-
-	if err := tx.Commit(); err != nil {
-		return nil, InternalError("sqlc.Commit", err)
-	}
-
-	return transform.ToPtr(transform.CardDeckMetadataFromRow(deck)), nil
-}
-
-func (rslv *resolver) UpdateCardDeckContent(ctx context.Context, id uuid.UUID, patch model.CardDeckContentPatch) (*model.CardDeckMetadata, error) {
-
-	if len(patch.Cards) == 0 {
-		return nil, &APIError{Message: "Deck has no cards in it"}
-	}
-
-	tx, err := rslv.db.BeginTx(ctx)
-	if err != nil {
-		return nil, InternalError("sqlc.BeginTx", err)
-	}
-	defer tx.Rollback()
-
-	deck, err := rslv.db.GetDeckById(ctx, id)
-	if db_pkg.IsNull(err) {
-		return nil, &APIError{Message: "Deck not found", Code: http.StatusNotFound}
-	} else if err != nil {
-		return nil, InternalError("sqlc.GetDeckById", err)
-	}
-
-	staleCards := map[uuid.UUID]struct{}{}
-	if cardIds, err := tx.DeckCardSet(ctx, deck.ID); err != nil {
-		return nil, InternalError("sqlc.DeckCardSet", err)
-	} else {
-		for _, id := range cardIds {
-			staleCards[id] = struct{}{}
-		}
-	}
-
-	for _, card := range patch.Cards {
-
-		if card.ID.Valid {
-			if count, err := tx.UpdateCardContent(ctx, db_gen.UpdateCardContentParams{
-				Content:   card.CardNodeContent,
-				ID:        card.ID.UUID,
-				DeckID:    deck.ID,
-				UpdatedAt: types.NewTime(time.Now()),
-			}); err != nil {
-				return nil, InternalError("sqlc.UpdateCardContent", err)
-			} else if count > 0 {
-				delete(staleCards, card.ID.UUID)
-				continue
-			}
+		if err := patch.Details.Valid(); err != nil {
+			return nil, &APIError{Message: fmt.Sprintf("Invalid deck details: %v", err), Code: http.StatusBadRequest}
 		}
 
-		if err := tx.InsertCard(ctx, db_gen.InsertCardParams{
-			Content:   card.CardNodeContent,
-			ID:        uuid.New(),
-			DeckID:    deck.ID,
-			CreatedAt: types.NewTime(time.Now()),
-			UpdatedAt: types.NewTime(time.Now()),
+		if deck, err = tx.UpdateDeckMetadata(ctx, db_gen.UpdateDeckMetadataParams{
+			ID:           id,
+			CollectionID: patch.CollectionID,
+			Name:         patch.Details.Name,
+			Description:  types.NewNullString(patch.Details.Description),
+			UpdatedAt:    types.NewTime(time.Now()),
 		}); err != nil {
-			return nil, InternalError("sqlc.InsertCard", err)
+			return nil, InternalError("sqlc.UpdateDeckMetadata", err)
 		}
-	}
-
-	for id := range staleCards {
-		if err := tx.DeleteCard(ctx, id); err != nil {
-			return nil, InternalError("sqlc.DeleteCard", err)
-		}
-	}
-
-	if err := tx.Commit(); err != nil {
-		return nil, InternalError("sqlc.Commit", err)
 	}
 
 	result := transform.CardDeckMetadataFromRow(deck)
-	result.Size = len(patch.Cards)
+
+	if patch.Content != nil {
+
+		staleCards := map[uuid.UUID]struct{}{}
+		if cardIds, err := tx.DeckCardSet(ctx, deck.ID); err != nil {
+			return nil, InternalError("sqlc.DeckCardSet", err)
+		} else {
+			for _, id := range cardIds {
+				staleCards[id] = struct{}{}
+			}
+		}
+
+		for _, card := range patch.Content.Cards {
+
+			if card.ID.Valid {
+				if count, err := tx.UpdateCardContent(ctx, db_gen.UpdateCardContentParams{
+					Content:   card.CardNodeContent,
+					ID:        card.ID.UUID,
+					DeckID:    deck.ID,
+					UpdatedAt: types.NewTime(time.Now()),
+				}); err != nil {
+					return nil, InternalError("sqlc.UpdateCardContent", err)
+				} else if count > 0 {
+					delete(staleCards, card.ID.UUID)
+					continue
+				}
+			}
+
+			if err := tx.InsertCard(ctx, db_gen.InsertCardParams{
+				Content:   card.CardNodeContent,
+				ID:        uuid.New(),
+				DeckID:    deck.ID,
+				CreatedAt: types.NewTime(time.Now()),
+				UpdatedAt: types.NewTime(time.Now()),
+			}); err != nil {
+				return nil, InternalError("sqlc.InsertCard", err)
+			}
+		}
+
+		for id := range staleCards {
+			if err := tx.DeleteCard(ctx, id); err != nil {
+				return nil, InternalError("sqlc.DeleteCard", err)
+			}
+		}
+
+		result.Size = len(patch.Content.Cards)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, InternalError("sqlc.Commit", err)
+	}
 
 	return &result, nil
 }

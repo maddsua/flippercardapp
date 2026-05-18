@@ -52,31 +52,12 @@ type Card struct {
 	Updated time.Time `json:"updated"`
 }
 
-type CollectionPatch struct {
+type CollectionDetailsPatch struct {
 	Name        string `json:"name"`
 	Description string `json:"description,omitempty"`
 }
 
-func (patch *CollectionPatch) Valid() error {
-
-	if patch.Name = strings.TrimSpace(patch.Name); patch.Name == "" {
-		return errors.New("name field is empty")
-	} else if len(patch.Name) > math.MaxUint8 {
-		return errors.New("'name' field too long")
-	} else if len(patch.Description) > math.MaxUint8 {
-		return errors.New("'description' field too long")
-	}
-
-	return nil
-}
-
-type CardDeckMetadataPatch struct {
-	CollectionID uuid.NullUUID `json:"collection_id"`
-	Name         string        `json:"name"`
-	Description  string        `json:"description,omitempty"`
-}
-
-func (patch *CardDeckMetadataPatch) Valid() error {
+func (patch *CollectionDetailsPatch) Valid() error {
 
 	if patch.Name = strings.TrimSpace(patch.Name); patch.Name == "" {
 		return errors.New("name field is empty")
@@ -90,8 +71,27 @@ func (patch *CardDeckMetadataPatch) Valid() error {
 }
 
 type CardDeckPatch struct {
-	CardDeckMetadataPatch
-	Cards []CardPatch `json:"cards"`
+	CollectionID uuid.NullUUID         `json:"collection_id"`
+	Details      *CardDeckDetailsPatch `json:"details,omitempty"`
+	Content      *CardDeckContentPatch `json:"content,omitempty"`
+}
+
+type CardDeckDetailsPatch struct {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+}
+
+func (patch *CardDeckDetailsPatch) Valid() error {
+
+	if patch.Name = strings.TrimSpace(patch.Name); patch.Name == "" {
+		return errors.New("name field is empty")
+	} else if len(patch.Name) > math.MaxUint8 {
+		return errors.New("'name' field too long")
+	} else if len(patch.Description) > math.MaxUint8 {
+		return errors.New("'description' field too long")
+	}
+
+	return nil
 }
 
 type CardDeckContentPatch struct {

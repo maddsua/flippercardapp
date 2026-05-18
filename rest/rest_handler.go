@@ -155,7 +155,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 			return nil, err
 		}
 
-		params, err := ParseGeneric[model.CollectionPatch](req)
+		params, err := ParseGeneric[model.CollectionDetailsPatch](req)
 		if err != nil {
 			return nil, err
 		}
@@ -176,7 +176,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 			return nil, err
 		}
 
-		params, err := ParseGeneric[model.CollectionPatch](req)
+		params, err := ParseGeneric[model.CollectionDetailsPatch](req)
 		if err != nil {
 			return nil, err
 		}
@@ -216,7 +216,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return rslv.CreateCardDeck(req.Context(), params)
 	}))
 
-	mux.Handle("PATCH /manage/content/deck/{id}/metadata", MethodHandleFunc(func(req *http.Request) (*model.CardDeckMetadata, error) {
+	mux.Handle("PATCH /manage/content/deck/{id}", MethodHandleFunc(func(req *http.Request) (*model.CardDeckMetadata, error) {
 
 		if perms, err := authStateFor(req.Context()).Permissions(); err != nil {
 			return nil, err
@@ -229,33 +229,12 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 			return nil, err
 		}
 
-		params, err := ParseGeneric[model.CardDeckMetadataPatch](req)
+		params, err := ParseGeneric[model.CardDeckPatch](req)
 		if err != nil {
 			return nil, err
 		}
 
-		return rslv.UpdateCardDeckMetadata(req.Context(), deckID, params)
-	}))
-
-	mux.Handle("PATCH /manage/content/deck/{id}/content", MethodHandleFunc(func(req *http.Request) (*model.CardDeckMetadata, error) {
-
-		if perms, err := authStateFor(req.Context()).Permissions(); err != nil {
-			return nil, err
-		} else if err := perms.CanEditContent(); err != nil {
-			return nil, err
-		}
-
-		deckID, err := ParseUUID(req.PathValue("id"))
-		if err != nil {
-			return nil, err
-		}
-
-		params, err := ParseGeneric[model.CardDeckContentPatch](req)
-		if err != nil {
-			return nil, err
-		}
-
-		return rslv.UpdateCardDeckContent(req.Context(), deckID, params)
+		return rslv.PatchCardDeck(req.Context(), deckID, params)
 	}))
 
 	mux.Handle("DELETE /manage/content/deck/{id}", MethodHandleFunc(func(req *http.Request) (*any, error) {
