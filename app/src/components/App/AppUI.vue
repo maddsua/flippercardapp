@@ -46,6 +46,10 @@ import AppNavigation from './AppNavigation.vue';
 			scrollbar-width: thin;
 			padding: 2rem;
 			flex-grow: 1;
+
+			@media (orientation: portrait) {
+				padding: 2rem 1rem;
+			}
 		}
 	}
 </style>

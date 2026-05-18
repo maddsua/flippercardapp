@@ -39,6 +39,10 @@ const props = defineProps<{
 		background-color: var(--app-theme-irish-green);
 		color: var(--app-theme-snow-white);
 
+		@media (orientation: portrait) {
+			padding: 1rem 1.5rem;
+		}
+
 		.header {
 			flex-grow: 1;
 			display: flex;
