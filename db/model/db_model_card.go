@@ -4,6 +4,8 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+
+	"github.com/maddsua/flippercardapp/utils"
 )
 
 type CardNodeContent struct {
@@ -111,39 +113,25 @@ func (element CardContentElement) MarshalJSON() ([]byte, error) {
 	return marshalCardContentNode(element.Element)
 }
 
-func (element *CardContentElement) UnmarshalJSON(data []byte) error {
+func (element *CardContentElement) UnmarshalJSON(data []byte) (err error) {
 
 	nodeType, err := peekCardContentNodeType(data)
 	if err != nil {
 		return err
 	}
 
-	var unmarshalNode = func(node any) error {
-
-		target, ok := node.(BaseCardContentElement)
-		if !ok {
-			return fmt.Errorf("node doesn't implement BaseCardContentElement")
-		}
-
-		if err := json.Unmarshal(data, &target); err != nil {
-			return err
-		}
-
-		element.Element = target
-
-		return nil
-	}
-
 	switch nodeType {
 	case "title":
-		return unmarshalNode(&CardTitleElement{})
+		element.Element, err = utils.DecodeGenericJSON[CardTitleElement](data)
 	case "textbox":
-		return unmarshalNode(&CardTextBoxElement{})
+		element.Element, err = utils.DecodeGenericJSON[CardTextBoxElement](data)
 	case "poll":
-		return unmarshalNode(&CardPollElement{})
+		element.Element, err = utils.DecodeGenericJSON[CardPollElement](data)
 	default:
 		return fmt.Errorf("unsupported element type: '%v'", nodeType)
 	}
+
+	return
 }
 
 type CardTitleElement struct {
@@ -184,37 +172,23 @@ func (element CardTextboxElement) MarshalJSON() ([]byte, error) {
 	return marshalCardContentNode(element.Element)
 }
 
-func (element *CardTextboxElement) UnmarshalJSON(data []byte) error {
+func (element *CardTextboxElement) UnmarshalJSON(data []byte) (err error) {
 
 	nodeType, err := peekCardContentNodeType(data)
 	if err != nil {
 		return err
 	}
 
-	var unmarshalNode = func(node any) error {
-
-		target, ok := node.(BaseCardTextboxElement)
-		if !ok {
-			return fmt.Errorf("node doesn't implement BaseCardTextboxElement")
-		}
-
-		if err := json.Unmarshal(data, &target); err != nil {
-			return err
-		}
-
-		element.Element = target
-
-		return nil
-	}
-
 	switch nodeType {
 	case "text":
-		return unmarshalNode(&CardTextboxElementTextNode{})
+		element.Element, err = utils.DecodeGenericJSON[CardTextboxElementTextNode](data)
 	case "newline":
-		return unmarshalNode(&CardTextboxElementNewlineNode{})
+		element.Element, err = utils.DecodeGenericJSON[CardTextboxElementNewlineNode](data)
 	default:
 		return fmt.Errorf("unsupported element type: '%v'", nodeType)
 	}
+
+	return
 }
 
 type CardTextboxElementTextNode struct {
