@@ -48,7 +48,7 @@ type CardCanvasTheme struct {
 	OutlineColor string `json:"outline_color,omitempty"`
 }
 
-func marshalCardContentNode(node any) ([]byte, error) {
+func marshalCardContentNode1(node any) ([]byte, error) {
 
 	var typeLabel string
 
@@ -61,19 +61,12 @@ func marshalCardContentNode(node any) ([]byte, error) {
 		return nil, fmt.Errorf("%T doesn't implement content node", node)
 	}
 
-	fields := map[string]json.RawMessage{}
-
-	if data, err := json.Marshal(node); err != nil {
-		return nil, fmt.Errorf("marshal content node field: %v", err)
-	} else if err = json.Unmarshal(data, &fields); err != nil {
-		return nil, fmt.Errorf("marshal content node field: %v", err)
+	fields, err := utils.ExtractStructJSONFields(node)
+	if err != nil {
+		return nil, fmt.Errorf("extract struct fields: %v", err)
 	}
 
-	if typeData, err := json.Marshal(typeLabel); err != nil {
-		return nil, fmt.Errorf("marshal content node type: %v", err)
-	} else {
-		fields["type"] = typeData
-	}
+	fields["type"] = typeLabel
 
 	return json.Marshal(fields)
 }
@@ -94,10 +87,19 @@ func (element *CardContentElement) Type() string {
 }
 
 func (element CardContentElement) MarshalJSON() ([]byte, error) {
+
 	if element.Element == nil {
 		return nil, nil
 	}
-	return marshalCardContentNode(element.Element)
+
+	fields, err := utils.ExtractStructJSONFields(element.Element)
+	if err != nil {
+		return nil, fmt.Errorf("extract struct fields: %v", err)
+	}
+
+	fields["type"] = element.Element.ContentElementType()
+
+	return json.Marshal(fields)
 }
 
 func (element *CardContentElement) UnmarshalJSON(data []byte) (err error) {
@@ -153,10 +155,19 @@ func (element *CardTextboxElement) Type() string {
 }
 
 func (element CardTextboxElement) MarshalJSON() ([]byte, error) {
+
 	if element.Element == nil {
 		return nil, nil
 	}
-	return marshalCardContentNode(element.Element)
+
+	fields, err := utils.ExtractStructJSONFields(element.Element)
+	if err != nil {
+		return nil, fmt.Errorf("extract struct fields: %v", err)
+	}
+
+	fields["type"] = element.Element.TextElementNodeType()
+
+	return json.Marshal(fields)
 }
 
 func (element *CardTextboxElement) UnmarshalJSON(data []byte) (err error) {
