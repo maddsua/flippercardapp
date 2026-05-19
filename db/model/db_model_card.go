@@ -48,19 +48,6 @@ type CardCanvasTheme struct {
 	OutlineColor string `json:"outline_color,omitempty"`
 }
 
-func peekCardContentNodeType(data []byte) (string, error) {
-
-	var ts struct {
-		Type string `json:"type"`
-	}
-
-	if err := json.Unmarshal(data, &ts); err != nil {
-		return "", err
-	}
-
-	return ts.Type, nil
-}
-
 func marshalCardContentNode(node any) ([]byte, error) {
 
 	var typeLabel string
@@ -115,7 +102,7 @@ func (element CardContentElement) MarshalJSON() ([]byte, error) {
 
 func (element *CardContentElement) UnmarshalJSON(data []byte) (err error) {
 
-	nodeType, err := peekCardContentNodeType(data)
+	nodeType, err := utils.ExtractJSONField[string](data, "type")
 	if err != nil {
 		return err
 	}
@@ -174,7 +161,7 @@ func (element CardTextboxElement) MarshalJSON() ([]byte, error) {
 
 func (element *CardTextboxElement) UnmarshalJSON(data []byte) (err error) {
 
-	nodeType, err := peekCardContentNodeType(data)
+	nodeType, err := utils.ExtractJSONField[string](data, "type")
 	if err != nil {
 		return err
 	}
