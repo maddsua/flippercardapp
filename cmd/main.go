@@ -73,7 +73,7 @@ func main() {
 		}
 	}
 
-	if err := db_pkg.InitState(dbconn, db_pkg.StateInitParams{
+	if err := db_pkg.InitDatabase(dbconn, db_pkg.StateInitParams{
 		RootUserName:     os.Getenv("INIT_ROOT_USERNAME"),
 		RootUserPassword: os.Getenv("INIT_ROOT_PASSWORD"),
 		RestRootPassword: strings.EqualFold(os.Getenv("INIT_RESET_ROOT_PASSWORD"), "true"),
