@@ -3,11 +3,54 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/maddsua/flippercardapp/rest/model"
 )
+
+func MethodHandleFunc[T any](fn func(req *http.Request) (*T, error)) http.Handler {
+	return http.HandlerFunc(func(wrt http.ResponseWriter, req *http.Request) {
+		NewResponse(fn(req)).Write(wrt)
+	})
+}
+
+func NewResponse[T any](data *T, err error) *model.Response[T] {
+	if err != nil {
+		return NewErrorResponseStatus[T](err, http.StatusBadRequest)
+	}
+	return &model.Response[T]{Data: data}
+}
+
+func NewErrorResponseStatus[T any](err error, code int) *model.Response[T] {
+
+	if err, ok := err.(*model.Error); ok {
+		return &model.Response[T]{Error: err}
+	}
+
+	if sc, ok := err.(interface{ StatusCode() int }); ok {
+		return &model.Response[T]{Error: &model.Error{
+			Message: err.Error(),
+			Code:    sc.StatusCode(),
+		}}
+	}
+
+	return &model.Response[T]{Error: &model.Error{
+		Message: err.Error(),
+		Code:    code,
+	}}
+}
+
+func InternalError(op string, err error) error {
+
+	slog.Error("Internal server error",
+		slog.String("op", op),
+		slog.String("err", err.Error()))
+
+	return &model.Error{Message: err.Error(), Code: http.StatusInternalServerError}
+}
 
 type UUIDSet map[uuid.UUID]struct{}
 
@@ -51,7 +94,7 @@ func ParseUUIDSet(val string) (UUIDSet, error) {
 func ParseUUID(val string) (uuid.UUID, error) {
 	id, err := uuid.Parse(val)
 	if err != nil {
-		return uuid.UUID{}, &APIError{Message: "Invalid resource ID"}
+		return uuid.UUID{}, &model.Error{Message: "Invalid resource ID"}
 	}
 	return id, nil
 }
@@ -61,21 +104,21 @@ func ParseGeneric[T any](req *http.Request) (T, error) {
 	var result T
 
 	if req.ContentLength == 0 {
-		return result, &APIError{
+		return result, &model.Error{
 			Message: "empty json payload",
 			Code:    http.StatusLengthRequired,
 		}
 	}
 
 	if contentType := req.Header.Get("Content-Type"); !strings.EqualFold(contentType, "application/json") {
-		return result, &APIError{
+		return result, &model.Error{
 			Message: fmt.Sprintf("content type '%v' not allowed", contentType),
 			Code:    http.StatusUnprocessableEntity,
 		}
 	}
 
 	if err := json.NewDecoder(req.Body).Decode(&result); err != nil {
-		return result, &APIError{
+		return result, &model.Error{
 			Message: fmt.Sprintf("content decoding error: %v", err),
 			Code:    http.StatusBadRequest,
 		}

@@ -1,14 +1,51 @@
 package model
 
 import (
+	"encoding/json"
 	"errors"
 	"math"
+	"net/http"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	db_model "github.com/maddsua/flippercardapp/db/model"
 )
+
+type Response[T any] struct {
+	Data  *T     `json:"data"`
+	Error *Error `json:"error"`
+}
+
+func (resp *Response[T]) Write(wrt http.ResponseWriter) {
+
+	if resp.Data == nil && resp.Error == nil {
+		wrt.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	wrt.Header().Set("Content-Type", "application/json")
+
+	if resp.Error != nil {
+		wrt.WriteHeader(resp.Error.StatusCode())
+	}
+
+	json.NewEncoder(wrt).Encode(resp)
+}
+
+type Error struct {
+	Message string `json:"message"`
+	Code    int    `json:"-"`
+}
+
+func (err *Error) StatusCode() int {
+	// min-max the error code to avoid whoopsie-daisies with invalid statuses
+	return min(max(http.StatusBadRequest, err.Code), http.StatusNetworkAuthenticationRequired)
+}
+
+func (err *Error) Error() string {
+	return err.Message
+}
 
 type CollectionMetadata struct {
 	ID          uuid.UUID `json:"id"`

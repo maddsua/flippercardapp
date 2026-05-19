@@ -26,7 +26,7 @@ func (rslv *resolver) LoadCardDeck(ctx context.Context, id uuid.UUID) (*model.Ca
 
 	deck, err := rslv.db.GetDeckById(ctx, id)
 	if db_pkg.IsNull(err) {
-		return nil, &APIError{Message: "deck not found", Code: http.StatusNotFound}
+		return nil, &model.Error{Message: "deck not found", Code: http.StatusNotFound}
 	} else if err != nil {
 		return nil, InternalError("sqlc.GetDeckById", err)
 	}
@@ -98,7 +98,7 @@ func (rslv *resolver) LoadCollection(ctx context.Context, id uuid.UUID) (*model.
 
 	collection, err := rslv.db.GetCollectionById(ctx, id)
 	if db_pkg.IsNull(err) {
-		return nil, &APIError{Message: "collection not found", Code: http.StatusNotFound}
+		return nil, &model.Error{Message: "collection not found", Code: http.StatusNotFound}
 	} else if err != nil {
 		return nil, InternalError("sqlc.GetCollectionById", err)
 	}
@@ -196,9 +196,9 @@ func (rslv *resolver) SearchCollections(ctx context.Context, term string, page P
 func (rslv *resolver) matchFuzzyCollections(ctx context.Context, term string, page PagePointers) ([]rankedSearchEntry, error) {
 
 	if term = strings.ToLower(strings.TrimSpace(term)); len(term) < 2 {
-		return nil, &APIError{Message: "Search term too short"}
+		return nil, &model.Error{Message: "Search term too short"}
 	} else if len(term) > math.MaxUint8 {
-		return nil, &APIError{Message: "Search term too long", Code: http.StatusRequestEntityTooLarge}
+		return nil, &model.Error{Message: "Search term too long", Code: http.StatusRequestEntityTooLarge}
 	}
 
 	tx, err := rslv.db.BeginTx(ctx)
@@ -263,13 +263,13 @@ func (rslv *resolver) CreateContentCollection(ctx context.Context, params model.
 	defer tx.Rollback()
 
 	if err := params.Valid(); err != nil {
-		return nil, &APIError{Message: fmt.Sprintf("Invalid collection details: %v", err), Code: http.StatusBadRequest}
+		return nil, &model.Error{Message: fmt.Sprintf("Invalid collection details: %v", err), Code: http.StatusBadRequest}
 	}
 
 	if exists, err := tx.CollectionNameExists(ctx, params.Name); err != nil {
 		return nil, InternalError("sqlc.CollectionNameExists", err)
 	} else if exists > 0 {
-		return nil, &APIError{
+		return nil, &model.Error{
 			Message: "Collection name already exists",
 			Code:    http.StatusConflict,
 		}
@@ -297,7 +297,7 @@ func (rslv *resolver) CreateContentCollection(ctx context.Context, params model.
 func (rslv *resolver) UpdateContentCollection(ctx context.Context, id uuid.UUID, patch model.CollectionPatch) (*model.CollectionMetadata, error) {
 
 	if err := patch.Valid(); err != nil {
-		return nil, &APIError{Message: fmt.Sprintf("Invalid collection details: %v", err), Code: http.StatusBadRequest}
+		return nil, &model.Error{Message: fmt.Sprintf("Invalid collection details: %v", err), Code: http.StatusBadRequest}
 	}
 
 	entry, err := rslv.db.UpdateCollection(ctx, db_gen.UpdateCollectionParams{
@@ -307,7 +307,7 @@ func (rslv *resolver) UpdateContentCollection(ctx context.Context, id uuid.UUID,
 		UpdatedAt:   types.NewTime(time.Now()),
 	})
 	if db_pkg.IsNull(err) {
-		return nil, &APIError{Message: "Collection not found", Code: http.StatusNotFound}
+		return nil, &model.Error{Message: "Collection not found", Code: http.StatusNotFound}
 	} else if err != nil {
 		return nil, InternalError("sqlc.UpdateCollection", err)
 	}
@@ -326,19 +326,19 @@ func (rslv *resolver) DeleteCollection(ctx context.Context, id uuid.UUID) error 
 	if count, err := tx.CollectionSize(ctx, id); err != nil {
 
 		if db_pkg.IsNull(err) {
-			return &APIError{Message: "Collection not found", Code: http.StatusNotFound}
+			return &model.Error{Message: "Collection not found", Code: http.StatusNotFound}
 		}
 
 		return InternalError("sqlc.CollectionSize", err)
 
 	} else if count > 0 {
-		return &APIError{Message: "Collection is not empty", Code: http.StatusConflict}
+		return &model.Error{Message: "Collection is not empty", Code: http.StatusConflict}
 	}
 
 	if count, err := tx.DeleteCollection(ctx, id); err != nil {
 		return InternalError("sqlc.DeleteCollection", err)
 	} else if count == 0 {
-		return &APIError{Message: "Collectcion not found", Code: http.StatusNotFound}
+		return &model.Error{Message: "Collectcion not found", Code: http.StatusNotFound}
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -351,13 +351,13 @@ func (rslv *resolver) DeleteCollection(ctx context.Context, id uuid.UUID) error 
 func (rslv *resolver) CreateCardDeck(ctx context.Context, params model.CardDeckPatch) (*model.CardDeckMetadata, error) {
 
 	if params.Details == nil {
-		return nil, &APIError{Message: "Deck details must be provided"}
+		return nil, &model.Error{Message: "Deck details must be provided"}
 	} else if err := params.Details.Valid(); err != nil {
-		return nil, &APIError{Message: fmt.Sprintf("Invalid deck details: %v", err), Code: http.StatusBadRequest}
+		return nil, &model.Error{Message: fmt.Sprintf("Invalid deck details: %v", err), Code: http.StatusBadRequest}
 	} else if params.Content == nil || len(params.Content.Cards) == 0 {
-		return nil, &APIError{Message: "Deck has no cards in it"}
+		return nil, &model.Error{Message: "Deck has no cards in it"}
 	} else if !params.CollectionID.Valid {
-		return nil, &APIError{Message: "Collection ID must be provided"}
+		return nil, &model.Error{Message: "Collection ID must be provided"}
 	}
 
 	tx, err := rslv.db.BeginTx(ctx)
@@ -369,7 +369,7 @@ func (rslv *resolver) CreateCardDeck(ctx context.Context, params model.CardDeckP
 	if count, err := tx.CollectionIDExists(ctx, params.CollectionID.UUID); err != nil {
 		return nil, InternalError("sqlc.CollectionIDExists", err)
 	} else if count == 0 {
-		return nil, &APIError{Message: "Collection ID not found", Code: http.StatusNotFound}
+		return nil, &model.Error{Message: "Collection ID not found", Code: http.StatusNotFound}
 	}
 
 	deck, err := tx.InsertDeck(ctx, db_gen.InsertDeckParams{
@@ -421,7 +421,7 @@ func (rslv *resolver) UpdateCardDeck(ctx context.Context, id uuid.UUID, patch mo
 	})
 
 	if db_pkg.IsNull(err) {
-		return nil, &APIError{Message: "Deck ID not found", Code: http.StatusNotFound}
+		return nil, &model.Error{Message: "Deck ID not found", Code: http.StatusNotFound}
 	} else if err != nil {
 		return nil, InternalError("sqlc.GetDeckById", err)
 	}
@@ -430,14 +430,14 @@ func (rslv *resolver) UpdateCardDeck(ctx context.Context, id uuid.UUID, patch mo
 		if count, err := tx.CollectionIDExists(ctx, patch.CollectionID.UUID); err != nil {
 			return nil, InternalError("sqlc.CollectionIDExists", err)
 		} else if count == 0 {
-			return nil, &APIError{Message: "Collection ID not found", Code: http.StatusNotFound}
+			return nil, &model.Error{Message: "Collection ID not found", Code: http.StatusNotFound}
 		}
 	}
 
 	if patch.Details != nil {
 
 		if err := patch.Details.Valid(); err != nil {
-			return nil, &APIError{Message: fmt.Sprintf("Invalid deck details: %v", err), Code: http.StatusBadRequest}
+			return nil, &model.Error{Message: fmt.Sprintf("Invalid deck details: %v", err), Code: http.StatusBadRequest}
 		}
 
 		if deck, err = tx.UpdateDeckMetadata(ctx, db_gen.UpdateDeckMetadataParams{
@@ -511,7 +511,7 @@ func (rslv *resolver) DeleteDeck(ctx context.Context, id uuid.UUID) error {
 	if count, err := rslv.db.DeleteDeck(ctx, id); err != nil {
 		return InternalError("sqlc.DeleteDeck", err)
 	} else if count == 0 {
-		return &APIError{Message: "Deck not found", Code: http.StatusNotFound}
+		return &model.Error{Message: "Deck not found", Code: http.StatusNotFound}
 	}
 
 	return nil

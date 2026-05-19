@@ -19,6 +19,7 @@ enum Stage {
 
 const state = reactive({
 	data: null as AuthState | null,
+	ready: false,
 	busy: false,
 	stage: Stage.Idle,
 	error: null as string | null,
@@ -50,6 +51,8 @@ const retryCheckAuthState = async () => {
 	if (state.error) {
 		setTimeout(retryCheckAuthState, 15_000);
 	}
+
+	state.ready = true;
 };
 
 onMounted(retryCheckAuthState);
@@ -117,7 +120,7 @@ const handleSignout = async () => {
 			</template>
 		</ErrorMessage>
 
-		<LoadingMessage v-else-if="!state.data">
+		<LoadingMessage v-else-if="!state.ready || state.busy">
 			One second...
 		</LoadingMessage>
 
