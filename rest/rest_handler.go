@@ -79,6 +79,8 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 			return nil, &APIError{Message: "User not found", Code: http.StatusUnauthorized}
 		} else if err != nil {
 			return nil, InternalError("sqlc.GetUserByName", err)
+		} else if strings.TrimSpace(params.Password) == "" {
+			return nil, &APIError{Message: "Invalid password", Code: http.StatusUnauthorized}
 		}
 
 		if err := bcrypt.CompareHashAndPassword(user.PasswordHash, []byte(params.Password)); err != nil {
