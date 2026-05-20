@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import GenericButton from '../App/GenericButton.vue';
 import DeckMetaEditorPopup from './DeckMetaEditorPopup.vue';
+import DeckEditorTitle from './DeckEditorTitle.vue';
 
 interface DeckDetails {
 	name: string;
@@ -32,22 +33,7 @@ const metaEditorOpen = ref(false);
 
 		<div class="wrapper">
 
-			<div class="deck-meta">
-				<div class="group">
-					<div class="name">
-						{{ meta.name }}
-					</div>
-					<div class="description">
-						<template v-if="meta.description">
-							{{ meta.description }}
-						</template>
-						<template v-else>
-							[No description]
-						</template>
-					</div>
-				</div>
-				<button type="button" class="icon edit" title="Edit info" @click="metaEditorOpen = true"></button>
-			</div>
+			<DeckEditorTitle :meta="meta" @click="metaEditorOpen = true" />
 
 			<div class="view-actions">
 				<button type="button" class="icon flip" title="Flip view" @click="emit('flip')"></button>
@@ -98,38 +84,6 @@ const metaEditorOpen = ref(false);
 			border-bottom-right-radius: 0.75rem;
 		}
 
-		.deck-meta {
-			display: flex;
-			flex-flow: row nowrap;
-			gap: 0.75rem;
-			align-items: center;
-			width: 100%;
-
-			.group {
-				display: flex;
-				flex-direction: column;
-				gap: 0.25rem;
-				max-width: 100%;
-
-				.name, .description {
-					max-width: 100%;
-					overflow: hidden;
-					text-overflow: ellipsis;
-					white-space: nowrap;
-				}
-
-				.name {
-					font-size: 0.75rem;
-					font-weight: 600;
-				}
-				
-				.description {
-					font-size: 0.65rem;
-					font-weight: 400;
-				}
-			}
-		}
-
 		.view-actions {
 			display: flex;
 			align-items: center;
@@ -163,10 +117,6 @@ const metaEditorOpen = ref(false);
 				width: 2rem;
 				height: 2rem;
 				mask-image: url(/src/assets/icons/flip-mask.svg);
-			}
-
-			&.edit {
-				mask-image: url(/src/assets/icons/edit-mask.svg);
 			}
 		}
 	}
