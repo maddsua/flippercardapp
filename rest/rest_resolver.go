@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/lithammer/fuzzysearch/fuzzy"
+	"github.com/maddsua/flippercardapp/auth"
 	db_pkg "github.com/maddsua/flippercardapp/db"
 	db_gen "github.com/maddsua/flippercardapp/db/generated"
 	"github.com/maddsua/flippercardapp/db/types"
@@ -256,6 +257,12 @@ type rankedSearchEntry struct {
 
 func (rslv *resolver) CreateContentCollection(ctx context.Context, params model.CollectionPatch) (*model.CollectionMetadata, error) {
 
+	if perms, err := auth.For(ctx).Permissions(); err != nil {
+		return nil, err
+	} else if err := perms.CanEditContent(); err != nil {
+		return nil, err
+	}
+
 	tx, err := rslv.db.BeginTx(ctx)
 	if err != nil {
 		return nil, InternalError("sqlc.BeginTx", err)
@@ -296,6 +303,12 @@ func (rslv *resolver) CreateContentCollection(ctx context.Context, params model.
 
 func (rslv *resolver) UpdateContentCollection(ctx context.Context, id uuid.UUID, patch model.CollectionPatch) (*model.CollectionMetadata, error) {
 
+	if perms, err := auth.For(ctx).Permissions(); err != nil {
+		return nil, err
+	} else if err := perms.CanEditContent(); err != nil {
+		return nil, err
+	}
+
 	if err := patch.Valid(); err != nil {
 		return nil, &model.Error{Message: fmt.Sprintf("Invalid collection details: %v", err), Code: http.StatusBadRequest}
 	}
@@ -316,6 +329,12 @@ func (rslv *resolver) UpdateContentCollection(ctx context.Context, id uuid.UUID,
 }
 
 func (rslv *resolver) DeleteCollection(ctx context.Context, id uuid.UUID) error {
+
+	if perms, err := auth.For(ctx).Permissions(); err != nil {
+		return err
+	} else if err := perms.CanEditContent(); err != nil {
+		return err
+	}
 
 	tx, err := rslv.db.BeginTx(ctx)
 	if err != nil {
@@ -349,6 +368,12 @@ func (rslv *resolver) DeleteCollection(ctx context.Context, id uuid.UUID) error 
 }
 
 func (rslv *resolver) CreateCardDeck(ctx context.Context, params model.CardDeckPatch) (*model.CardDeckMetadata, error) {
+
+	if perms, err := auth.For(ctx).Permissions(); err != nil {
+		return nil, err
+	} else if err := perms.CanEditContent(); err != nil {
+		return nil, err
+	}
 
 	if params.Details == nil {
 		return nil, &model.Error{Message: "Deck details must be provided"}
@@ -408,6 +433,12 @@ func (rslv *resolver) CreateCardDeck(ctx context.Context, params model.CardDeckP
 }
 
 func (rslv *resolver) UpdateCardDeck(ctx context.Context, id uuid.UUID, patch model.CardDeckPatch) (*model.CardDeckMetadata, error) {
+
+	if perms, err := auth.For(ctx).Permissions(); err != nil {
+		return nil, err
+	} else if err := perms.CanEditContent(); err != nil {
+		return nil, err
+	}
 
 	tx, err := rslv.db.BeginTx(ctx)
 	if err != nil {
@@ -507,6 +538,12 @@ func (rslv *resolver) UpdateCardDeck(ctx context.Context, id uuid.UUID, patch mo
 }
 
 func (rslv *resolver) DeleteDeck(ctx context.Context, id uuid.UUID) error {
+
+	if perms, err := auth.For(ctx).Permissions(); err != nil {
+		return err
+	} else if err := perms.CanEditContent(); err != nil {
+		return err
+	}
 
 	if count, err := rslv.db.DeleteDeck(ctx, id); err != nil {
 		return InternalError("sqlc.DeleteDeck", err)

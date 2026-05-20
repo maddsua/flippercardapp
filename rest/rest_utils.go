@@ -99,7 +99,7 @@ func ParseUUID(val string) (uuid.UUID, error) {
 	return id, nil
 }
 
-func ParseGeneric[T any](req *http.Request) (T, error) {
+func ParseGenericJSON[T any](req *http.Request) (T, error) {
 
 	var result T
 
