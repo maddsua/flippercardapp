@@ -71,20 +71,41 @@ const serializeArrayQueryParams = (target: URLSearchParams, name: string, value:
 	target.append(name, value.join(','));
 };
 
+class CachedAuthState {
+
+	state: AuthState = {};
+
+	private epoch: number = 0;
+
+	readonly ttl = 900_000; // 900s or 15m
+
+	store = (val: AuthState | null) => {
+		this.state = val || {};
+		this.epoch = new Date().getTime();
+	};
+
+	valid = () => (new Date().getTime() - this.epoch) < this.ttl;
+};
+
 export class ApiClient {
 
 	readonly endpoint: URL;
 
+	private authCache: CachedAuthState;
+
 	constructor(endpoint: string | URL) {
+
 		if (typeof endpoint !== 'string' || endpoint.includes('://')) {
 			this.endpoint = new URL(endpoint);
 		} else {
 			this.endpoint = new URL(window.location.href);
 			this.endpoint.pathname = endpoint;
 		}
+
+		this.authCache = new CachedAuthState();
 	}
 
-	private procedureURL = (name: string, params?: MethodParamsInit) => {
+	private procURL = (name: string, params?: MethodParamsInit) => {
 
 		const url = new URL(this.endpoint.href);
 
@@ -106,7 +127,7 @@ export class ApiClient {
 			headers.set('Content-Type', 'application/json');
 		}
 
-		const { response, fetchError } = await fetch(this.procedureURL(proc, params), {
+		const { response, fetchError } = await fetch(this.procURL(proc, params), {
 			method,
 			headers,
 			body: body ? JSON.stringify(body) : null,
@@ -133,54 +154,68 @@ export class ApiClient {
 	};
 
 	auth = {
-		whoami: async () => {
-			return this.exec<AuthState>('GET','/auth/whoami');
+
+		whoami: async (opts?: { cached?: boolean }): Promise<Result<AuthState>> => {
+
+			if (opts?.cached && this.authCache.valid()) {
+				return { data: this.authCache.state, error: null };
+			}
+
+			const result = await this.exec<AuthState>('GET', '/auth/whoami');
+			this.authCache.store(result.data);
+			return result;
 		},
-		signin: async (signin: SignInParams) => {
-			return this.exec<AuthState>('POST','/auth/signin', {}, signin);
+
+		signin: async (params: SignInParams): Promise<Result<AuthState>> => {
+			const result = await this.exec<AuthState>('POST', '/auth/signin', {}, params)
+			this.authCache.store(result.data);
+			return result;
 		},
-		signout: async () => {
-			return this.exec<AuthState>('POST','/auth/signout');
+
+		signout: async (): Promise<Result<AuthState>> => {
+			const result = await this.exec<AuthState>('POST', '/auth/signout')
+			this.authCache.store(result.data);
+			return result;
 		},
 	};
 
 	collections = {
-		list: async (params?: { ids?: string[] | null } & Partial<Pagination>) => {
-			return this.exec<Page<CollectionMetadata>>('GET', '/collections', params);
-		},
-		search: async (term: string) => {
-			return this.exec<Page<CollectionSearchResult>>('GET', '/collections/search', { term });
-		},
-		load: async (id: string) => {
-			return this.exec<Collection>('GET', `/collections/${id}`);
-		},
-		create: async (patch: CollectionPatch) => {
-			return this.exec<CollectionMetadata>('PUT', '/manage/content/collection', {}, patch);
-		},
-		update: async (id: string, patch: CollectionPatch) => {
-			return this.exec<CollectionMetadata>('PATCH', `/manage/content/collection/${id}/metadata`, {}, patch);
-		},
-		remove: async (id: string) => {
-			return this.exec<null>('DELETE', `/manage/content/collection/${id}`);
-		},
+
+		list: async (params?: { ids?: string[] | null } & Partial<Pagination>) =>
+			this.exec<Page<CollectionMetadata>>('GET', '/collections', params),
+
+		search: async (term: string) =>
+			this.exec<Page<CollectionSearchResult>>('GET', '/collections/search', { term }),
+
+		load: async (id: string) =>
+			this.exec<Collection>('GET', `/collections/${id}`),
+
+		create: async (patch: CollectionPatch) =>
+			this.exec<CollectionMetadata>('PUT', '/manage/content/collection', {}, patch),
+
+		update: async (id: string, patch: CollectionPatch) =>
+			this.exec<CollectionMetadata>('PATCH', `/manage/content/collection/${id}/metadata`, {}, patch),
+
+		remove: async (id: string) =>
+			this.exec<null>('DELETE', `/manage/content/collection/${id}`),
 	};
 
 	decks = {
-		list: async (params?: { ids?: string[] | null, collection_id?: string } & Partial<Pagination>) => {
-			return this.exec<Page<CardDeckMetadata>>('GET','/decks', params);
-		},
-		load: async (id: string) => {
-			return this.exec<CardDeck>('GET',`/decks/${id}`);
-		},
-		create: async (patch: CardDeckPatch) => {
-			return this.exec<CardDeckMetadata>('PUT', '/manage/content/deck', {}, patch);
-		},
-		update: async (id: string, patch: CardDeckPatch) => {
-			return this.exec<CardDeckMetadata>('PATCH', `/manage/content/deck/${id}`, {}, patch);
-		},
-		remove: async (id: string) => {
-			return this.exec<null>('DELETE', `/manage/content/deck/${id}`);
-		},
+
+		list: async (params?: { ids?: string[] | null, collection_id?: string } & Partial<Pagination>) =>
+			this.exec<Page<CardDeckMetadata>>('GET','/decks', params),
+
+		load: async (id: string) =>
+			this.exec<CardDeck>('GET',`/decks/${id}`),
+
+		create: async (patch: CardDeckPatch) =>
+			this.exec<CardDeckMetadata>('PUT', '/manage/content/deck', {}, patch),
+
+		update: async (id: string, patch: CardDeckPatch) =>
+			this.exec<CardDeckMetadata>('PATCH', `/manage/content/deck/${id}`, {}, patch),
+
+		remove: async (id: string) =>
+			this.exec<null>('DELETE', `/manage/content/deck/${id}`),
 	};
 };
 
