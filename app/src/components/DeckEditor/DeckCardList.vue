@@ -8,6 +8,7 @@ const props = defineProps<{
 const emit = defineEmits<{
 	(e: 'select', idx: number): void;
 	(e: 'remove', idx: number): void;
+	(e: 'duplicate', idx: number): void;
 	(e: 'add'): void;
 }>();
 
@@ -16,6 +17,7 @@ const emit = defineEmits<{
 <template>
 	<div class="card-list">
 		<div v-for="idx in size" class="card-item-tile" :class="{ selected: idx-1 === activeIdx }" @click="emit('select', idx-1)">
+			<button type="button" class="duplicate" title="Remove card" @click.self.stop="emit('duplicate', idx-1)"></button>
 			<div class="label">
 				{{ idx }}
 			</div>
@@ -62,11 +64,9 @@ const emit = defineEmits<{
 				border-color: var(--app-theme-sky-blue);
 			}
 
-			button.remove {
+			button {
 				display: block;
 				position: absolute;
-				right: 0.25rem;
-				top: 0.25rem;
 				width: 1.25rem;
 				height: 1.25rem;
 				border: none;
@@ -76,12 +76,30 @@ const emit = defineEmits<{
 				mask-position: center;
 				mask-repeat: no-repeat;
 				mask-size: contain;
-				mask-image: url(/src/assets/icons/delete-mask.svg);
 				transition: all 150ms ease;
-	
+
 				&:hover {
 					cursor: pointer;
-					background-color: var(--app-theme-blood-red);
+				}
+
+				&.duplicate {
+					left: 0.25rem;
+					top: 0.25rem;
+					mask-image: url(/src/assets/icons/copy-mask.svg);
+
+					&:hover {
+						background-color: var(--app-theme-deep-lavender);
+					}
+				}
+
+				&.remove {
+					right: 0.25rem;
+					top: 0.25rem;
+					mask-image: url(/src/assets/icons/delete-mask.svg);
+		
+					&:hover {
+						background-color: var(--app-theme-blood-red);
+					}
 				}
 			}
 		}

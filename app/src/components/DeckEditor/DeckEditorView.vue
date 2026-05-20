@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
-import { computed, onMounted, reactive, watch } from 'vue';
+import { computed, onMounted, reactive, toRaw, watch } from 'vue';
 import DeckEditorStatusBar from './DeckEditorStatusBar.vue';
 import CardFaceComponent from '../Cards/CardFace.vue';
 import type { CardContentFace, CardContentNode } from '../../content';
@@ -184,16 +184,28 @@ const flipCardFace = () => {
 	}, 150);
 };
 
-const addNewCard = () => {
-	const newFace = () => ({ content: [] });
-	state.content.cards.push({ id: crypto.randomUUID(), front: newFace(), back: newFace() });
+const addCard = (node: CardContentNode) => {
+	state.content.cards.push(node);
 	state.view.cardIdx = state.content.cards.length - 1;
 	state.view.frontFace = true;
+};
+
+const createCard = () => {
+	const newFace = () => ({ content: [] });
+	addCard({ id: crypto.randomUUID(), front: newFace(), back: newFace() });
 };
 
 const selectCard = (idx: number) => {
 	state.view.cardIdx = idx;
 	state.view.frontFace = true;
+};
+
+const duplicateCard = (idx: number) => {
+	const clonedNode = state.content.cards[idx];
+	if (!clonedNode) {
+		return;
+	}
+	addCard(structuredClone(toRaw(clonedNode)));
 };
 
 const removeCard = (idx: number) => {
@@ -342,7 +354,8 @@ const updateDetails = (val: { name: string, description?: string | null }) => {
 					:size="state.content.cards.length"
 					:activeIdx="state.view.cardIdx"
 					@select="selectCard"
-					@add="addNewCard()"
+					@add="createCard()"
+					@duplicate="duplicateCard"
 					@remove="removeCard" />
 
 				<EditorCanvasColumn>
