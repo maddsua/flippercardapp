@@ -15,6 +15,7 @@ import FullscreenMessage from '../App/FullscreenMessage.vue';
 import EditorErrorScreen from './EditorErrorScreen.vue';
 import EditorLoadingScreen from './EditorLoadingScreen.vue';
 import { downloadFile, type CollectionBundleDeckContent, type DeckBundle } from '../../content_io';
+import type { CardDeck } from '../../api_models';
 
 const route = useRoute();
 const router = useRouter();
@@ -63,6 +64,8 @@ const state = reactive({
 	error: null as ErrorState | null,
 });
 
+interface ResumableState extends Pick<typeof state, 'content' | 'view' | 'meta'> {};
+
 const isEdited = computed(() => state.editor.cardsChanged || state.editor.detailsChanged);
 const isValid = computed(() => !state.error && !state.loading && state.content.cards.length > 0);
 
@@ -108,7 +111,7 @@ const publishNewDeck = async () => {
 	state.meta = { id: data.id, collectionID: null };
 	state.editor = { detailsChanged: false, cardsChanged: false, snapshotSaved: false };
 
-	store.deckEditor.store(null);
+	clearStateSnapshot();
 };
 
 const patchDeckExisting = async (id: string) => {
@@ -129,7 +132,7 @@ const patchDeckExisting = async (id: string) => {
 	state.editor.detailsChanged = false;
 	state.editor.cardsChanged = false;
 
-	store.deckEditor.store(null);
+	clearStateSnapshot();
 };
 
 const publishChanges = async () => {
@@ -162,7 +165,7 @@ const discardChanges = () => {
 
 const exitEditor = () => {
 
-	store.deckEditor.store(null);
+	clearStateSnapshot();
 
 	if (state.meta.collectionID) {
 		router.push(`/app/dashboard/content/collection/${state.meta.collectionID}`);
@@ -221,6 +224,25 @@ const removeCard = (idx: number) => {
 	}
 };
 
+const storeStateSnapshot = async () => {
+
+	if (state.locked || state.editor.snapshotSaved) {
+		return;
+	}
+
+	state.locked = true;
+
+	const snapshot: ResumableState = { content: state.content, view: state.view, meta: state.meta };
+	await store.deckEditor.store(snapshot);
+
+	state.editor.snapshotSaved = true;
+	state.locked = false;
+};
+
+const loadSnapshot = async () => await store.deckEditor.load() as ResumableState | null;
+
+const clearStateSnapshot = async () => store.deckEditor.store(null);
+
 const initAutosave = () => {
 
 	watch(() => state.content.details, () => {
@@ -235,70 +257,104 @@ const initAutosave = () => {
 
 	setInterval(async () => {
 
-		if (!isEdited.value || state.locked || state.editor.snapshotSaved) {
+		if (!isEdited.value) {
 			return;
 		}
 
-		await store.deckEditor.store(state.content);
-		state.editor.snapshotSaved = true;
+		await storeStateSnapshot();
 
 	}, 1000);
 };
 
-const loadDeckState = async (id: string) => {
-
-	const { data, error } = await client.decks.load(id);
-	if (!data || error) {
-		state.error = {
-			message: 'Unable to load deck',
-			details: error?.message,
-		};
-		return;
-	}
+const applyRemoteDeckState = (deck: CardDeck) => {
 
 	state.content = {
 		details: {
-			name: data.name,
-			description: data.description || null,
+			name: deck.name,
+			description: deck.description || null,
 		},
-		cards: data.cards,
+		cards: deck.cards,
 	};
 
-	state.meta.id = data.id;
-	state.meta.collectionID = data.collection_id;
+	state.meta.id = deck.id;
+	state.meta.collectionID = deck.collection_id;
 
-	initAutosave();
+	state.editor.cardsChanged = true;
+	state.editor.detailsChanged = true;
+};
+
+const applySnapshotState = (snapshot: ResumableState) => {
+	state.meta = snapshot.meta;
+	state.content = snapshot.content;
+};
+
+const resolveDeckState = async (data: CardDeck) => {
+
+	const snapshot = await loadSnapshot();
+	if (!snapshot) {
+		applyRemoteDeckState(data);
+		return null;
+	}
+
+	const { id: storedID } = snapshot.meta;
+
+	if (storedID === data.id) {
+		applySnapshotState(snapshot);
+		return null
+	}
+
+	if (!confirm('Editor contains unsaved changed of another deck. Overwrite changes or load them?')) {
+		applySnapshotState(snapshot);
+		state.meta = { id: data.id, collectionID: null };
+		return;
+	}
+
+	await clearStateSnapshot();
+	applyRemoteDeckState(data);
+
+	return null;
 };
 
 onMounted(async () => {
 
 	const { deck_id } = route.params;
-
 	if (typeof deck_id === 'string') {
-		state.loading = true;
-		await loadDeckState(deck_id);
-		state.loading = false;
+
+		const { data, error } = await client.decks.load(deck_id);
+		if (!data || error) {
+			state.error = {
+				message: 'Unable to load deck',
+				details: error?.message,
+			};
+			return;
+		}
+
+		await resolveDeckState(data);
+
+		initAutosave();
+		
 		return;
 	}
 
 	const { collection_id } = Object.fromEntries(new URLSearchParams(window.location.search).entries());
-	if (!collection_id) {
-		state.error = {
-			message: 'Invalid editor URL',
-			details: 'collection id parameter not provided'
-		};
+	if (collection_id) {
+
+		const snapshot = await loadSnapshot();
+		if (snapshot) {
+			applySnapshotState(snapshot);
+		}
+
+		state.meta.collectionID = collection_id;
+
+		initAutosave();
+
 		return;
 	}
 
-	state.meta.collectionID = collection_id;
-
-	const storedState = await store.deckEditor.load();
-	if (storedState && typeof storedState === 'object') {
-		state.content = storedState;
-		state.editor = { detailsChanged: true, cardsChanged: true, snapshotSaved: false };
-	}
-
-	initAutosave();
+	state.error = {
+		message: 'Invalid editor URL',
+		details: 'Collection or deck id parameter not provided'
+	};
 });
 
 const exportContentBundle = async () => {

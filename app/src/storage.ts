@@ -76,7 +76,7 @@ class Storage {
 
 	collections: ListStore<string>;
 	starredDecks: ListStore<string>;
-	deckEditor: GenericStore<any>;
+	deckEditor: GenericStore<object>;
 }
 
 export const useStorage = () => new Storage();
