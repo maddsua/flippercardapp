@@ -14,7 +14,7 @@ import { useClient } from '../../api';
 import FullscreenMessage from '../App/FullscreenMessage.vue';
 import EditorErrorScreen from './EditorErrorScreen.vue';
 import EditorLoadingScreen from './EditorLoadingScreen.vue';
-import { downloadFile, type CollectionBundleDeckContent, type DeckBundle } from '../../content_io';
+import { downloadFile, escapeName, pickUploadFiles, type CardDeckBundle } from '../../content_io';
 import type { CardDeck } from '../../api_models';
 
 const route = useRoute();
@@ -357,25 +357,60 @@ onMounted(async () => {
 	};
 });
 
-const exportContentBundle = async () => {
+const importDeckBundle = async () => {
 
-	const deck: CollectionBundleDeckContent = {
-		meta: {
-			... state.content.details,
-			name: state.content.details.name,
-			description: state.content.details.description || undefined,
+	if (state.loading || state.locked) {
+		return;
+	}
+
+	const files = await pickUploadFiles({ accept: ['.json'] });
+	if (!files) {
+		return;
+	}
+
+	const bundle: CardDeckBundle | null = await files[0].text()
+		.then(data => JSON.parse(data))
+		.catch(() => null);
+
+	if (!bundle || typeof bundle !== 'object' || bundle.type !== 'maddsua:flippercarddapp:bundle:deck') {
+		console.warn('Invalid bundle file: Invalid JSON object or unsupported bundle type');
+		return;
+	}
+
+	if (isEdited.value) {
+		if (!confirm('Importing a bundle will discard current changes. Continue anyway?')) {
+			return;
+		}
+	}
+
+	state.content = {
+		details: {
+			name: bundle.name,
+			description: bundle.description,
 		},
+		cards: bundle.cards,
+	};
+
+	state.meta = {
+		id: bundle.id,
+		collectionID: bundle.collection_id,
+	};
+};
+
+const exportDeckBundle = async () => {
+
+	const bundle: CardDeckBundle = {
+		type: 'maddsua:flippercarddapp:bundle:deck',
+		id: state.meta.id,
+		collection_id: state.meta.collectionID,
+		name: state.content.details.name,
+		description: state.content.details.description,
 		cards: state.content.cards,
 	};
 
-	const bundle: DeckBundle = {
-		type: 'deck_bundle',
-		content: [deck]
-	};
+	const name = escapeName(state.content.details.name) || 'unnamed_deck';
 
-	const name = state.content.details.name.replace(/[^a-z0-9]/gi, '_') || 'Unnamed_deck';
-
-	downloadFile(JSON.stringify(bundle), `${name}-export.json`);
+	downloadFile(JSON.stringify(bundle), `${name}-export-${new Date().getTime()}.json`);
 };
 
 const updateDetails = (val: { name: string, description?: string | null }) => {
@@ -399,7 +434,8 @@ const updateDetails = (val: { name: string, description?: string | null }) => {
 			@updateDetails="updateDetails"
 			@flip="flipCardFace"
 			@publish="publishChanges"
-			@export="exportContentBundle"
+			@import="importDeckBundle"
+			@export="exportDeckBundle"
 			@disacard="discardChanges" />
 
 		<div class="editor-canvas">

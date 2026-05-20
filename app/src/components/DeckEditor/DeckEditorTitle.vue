@@ -36,6 +36,7 @@ const props = defineProps<{
 		gap: 0.75rem;
 		align-items: center;
 		width: 100%;
+		min-width: 0;
 		padding: 0.25rem 0.5rem;
 		border-radius: 0.5rem;
 		user-select: none;

@@ -36,6 +36,19 @@ export const downloadFile = (content: BlobPart, filename: string, opts?: { mimet
 	window.URL.revokeObjectURL(url);
 };
 
+export const escapeName = (val: string) => val.replace(/[^a-z0-9]/gi, '_').replace(/[^a-z0-9]/gi, '_')
+
+export interface CardDeckBundle {
+	type: 'maddsua:flippercarddapp:bundle:deck';
+	id: string | null;
+	collection_id: string | null;
+	name: string;
+	description: string | null;
+	cards: Array<Omit<Card, 'created' | 'updated'>>;
+};
+
+//	todo: nuke everything below
+
 export interface CollectionBundle {
 	type: 'collection_bundle';
 	content: CollectionBundleContent[];
@@ -51,9 +64,9 @@ export interface CollectionBundleDeckContent {
 	cards: Array<Omit<Card, 'created' | 'updated'>>;
 };
 
-export interface DeckBundle {
+export interface DeckBundle1 {
 	type: 'deck_bundle';
 	content: CollectionBundleDeckContent[];
 };
 
-export type ContentBundle = CollectionBundle | DeckBundle;
+export type ContentBundle = CollectionBundle | DeckBundle1;

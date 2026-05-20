@@ -11,7 +11,7 @@ import type { Collection } from '../../../../api_models';
 import GenericButton from '../../../App/GenericButton.vue';
 import CentralMessage from '../../../App/CentralMessage.vue';
 import DeckEntry from './DeckEntry.vue';
-import { downloadFile, pickUploadFiles, type CollectionBundleContent, type CollectionBundle, type ContentBundle, type CollectionBundleDeckContent } from '../../../../content_io';
+import { downloadFile, type CollectionBundleContent, type CollectionBundle } from '../../../../content_io';
 import ContentExporterStatus from './ContentExporterStatus.vue';
 
 const route = useRoute();
@@ -151,99 +151,6 @@ const exportCollection = async () => {
 	setTimeout(() => state.contentIO.active = false, 3_000);
 };
 
-const importContent = async () => {
-
-	const files = await pickUploadFiles();
-	if (!files?.length) {
-		return;
-	}
-
-	state.contentIO.active = true;
-	state.contentIO.operation = 'Parsing bundles...';
-
-	for (const file of files) {
-		try {
-			const bundle: ContentBundle | null = await file.text().then(data => JSON.parse(data));
-			await importContentBundle(bundle);
-		} catch (error) {
-			state.contentIO.error = error instanceof Error ? error.message : 'Unable to parse bundle';
-		}
-	}
-
-	if (!state.contentIO.error) {
-		setTimeout(() => state.contentIO.active = false, 3_000);
-	}
-};
-
-const importContentBundle = async (bundle: ContentBundle | null) => {
-
-	let decks: CollectionBundleDeckContent[] = [];
-
-	switch (bundle?.type) {
-
-		case 'collection_bundle':
-
-			if (!confirm(`Are you sure you want to import content from ${bundle.content.length} bundles?`)) {
-				state.contentIO.error = 'Import cancelled by user';
-				return;
-			}
-
-			decks = bundle.content.map(item => item.decks).flat();
-			break;
-
-		case 'deck_bundle':
-			decks = bundle.content;
-			break;
-
-		default:
-			state.contentIO.error = 'Unsupported bundle file';
-			return;
-	}
-
-	state.contentIO.operation = 'Importing decks...';
-
-	let imported = 0;
-
-	for (const deck of decks) {
-
-		if (!state.contentIO.active) {
-			return;
-		}
-		
-		const { data, error } = await client.decks.create({
-			... deck.meta,
-			collection_id: state.data!.id,
-			cards: deck.cards,
-		});
-
-		if (!data || error) {
-			console.error('Import:', error?.message);
-			state.contentIO.warn = error?.message || 'Unable to import deck';
-			continue;
-		}
-
-		imported++;
-		state.contentIO.progress = decks.length / imported;
-
-		state.data?.decks.push(data);
-	}
-
-	state.contentIO.progress = 1;
-
-	if (imported !== decks.length) {
-
-		if (imported === 0) {
-			state.contentIO.error = 'Unable to load collection decks';
-			return;
-		}
-
-		const missingCount = decks.length - imported;
-		state.contentIO.warn = `Unable to export ${missingCount} decks`;
-	}
-
-	state.contentIO.operation = 'Import done';
-};
-
 </script>
 
 <template>
@@ -311,11 +218,8 @@ const importContentBundle = async (bundle: ContentBundle | null) => {
 					Collection's decks
 				</div>
 				<div class="actions">
-					<GenericButton variant="thin" :disabled="!state.data" @click="openDeckEditor({ collectionID: state.data.id })">
-						Add deck
-					</GenericButton>
-					<GenericButton variant="thin" theme="green" :disabled="!state.data" @click="importContent">
-						Upload decks
+					<GenericButton variant="thin" theme="green" :disabled="!state.data" @click="openDeckEditor({ collectionID: state.data.id })">
+						New deck
 					</GenericButton>
 				</div>
 			</div>

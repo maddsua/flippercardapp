@@ -99,7 +99,7 @@ const importBundledCollection = async (bundle: ContentBundle | null) => {
 		const { data, error } = await client.decks.create({
 			... deck.meta,
 			collection_id,
-			cards: deck.cards,
+			content: { cards: deck.cards },
 		});
 
 		if (!data || error) {

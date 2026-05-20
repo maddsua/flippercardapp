@@ -21,6 +21,7 @@ const emit = defineEmits<{
 	(e: 'updateDetails', details: DeckDetails): void;
 	(e: 'disacard'): void;
 	(e: 'publish'): void;
+	(e: 'import'): void;
 	(e: 'export'): void;
 }>();
 
@@ -47,6 +48,9 @@ const metaEditorOpen = ref(false);
 					<template v-else>
 						Exit
 					</template>
+				</GenericButton>
+				<GenericButton variant="thin" theme="blue" @click="emit('import')">
+					Import
 				</GenericButton>
 				<GenericButton variant="thin" theme="blue" :disabled="!valid" @click="emit('export')">
 					Export
