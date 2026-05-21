@@ -313,4 +313,11 @@ export class ApiClient {
 	};
 };
 
-export const useClient = () => new ApiClient('/api');
+export const useClient = () => {
+
+	if (!window.appAPIClient) {
+		window.appAPIClient = new ApiClient('/api');
+	}
+
+	return window.appAPIClient;
+};
