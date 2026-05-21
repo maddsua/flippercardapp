@@ -2,8 +2,8 @@
 import { onMounted, reactive } from 'vue';
 import type { CollectionMetadata } from '../../api_models';
 import LoadingMessage from '../App/LoadingMessage.vue';
-import CollectionList from '../Collections/CollectionList.vue';
-import CollectionListEntry from '../Collections/CollectionListEntry.vue';
+import ContentList from '../Content/ContentList.vue';
+import ContentListEntry from '../Content/ContentListEntry.vue';
 import { intl, useLanguage } from '../../intl';
 import { useClient } from '../../api';
 import { useStorage } from '../../storage';
@@ -68,14 +68,15 @@ onMounted(async () => {
 			}) }}
 		</LoadingMessage>
 
-		<CollectionList v-else-if="state.data.length">
-			<CollectionListEntry v-for="item of state.data"
+		<ContentList v-else-if="state.data.length">
+			<ContentListEntry v-for="item of state.data"
 				:title="item.name"
 				:summary="item.description"
 				:starrable="true"
 				:starred="item.starred"
+				:deckCount="item.size"
 				@click="handleSelect(item)" />
-		</CollectionList>
+		</ContentList>
 
 		<template v-else>
 			<CentralMessage>

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { onMounted, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import CollectionList from './CollectionList.vue';
+import ContentList from '../Content/ContentList.vue';
 import ErrorMessage from '../App/ErrorMessage.vue';
-import CollectionListEntry from './CollectionListEntry.vue';
+import ContentListEntry from '../Content/ContentListEntry.vue';
 import CollectionEndlistAction from './CollectionEndlistAction.vue';
 import CollectionBreak from './CollectionBreak.vue';
 import GenericButton from '../App/GenericButton.vue';
@@ -133,12 +133,14 @@ const toggleStar = async () => {
 
 		</AppUiHeader>
 
-		<CollectionList v-if="state.data && state.data.decks.length">
-			<CollectionListEntry v-for="item of state.data.decks"
+		<ContentList v-if="state.data && state.data.decks.length">
+			<ContentListEntry v-for="item of state.data.decks"
 				:starred="item.starred"
 				:title="item.name"
+				:summary="item.description"
+				:cardCount="item.size"
 				@click="openDeck(item.id)" />
-		</CollectionList>
+		</ContentList>
 
 		<CentralMessage v-else>
 

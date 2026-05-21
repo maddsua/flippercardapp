@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { onMounted, reactive } from 'vue';
 import { useRouter } from 'vue-router';
-import CollectionList from './CollectionList.vue';
-import CollectionListEntry from './CollectionListEntry.vue';
+import ContentList from '../Content/ContentList.vue';
+import ContentListEntry from '../Content/ContentListEntry.vue';
 import ErrorMessage from '../App/ErrorMessage.vue';
 import CollectionBreak from './CollectionBreak.vue';
 import CollectionEndlistAction from './CollectionEndlistAction.vue';
@@ -78,9 +78,14 @@ const lang = useLanguage();
 
 		</AppUiHeader>
 
-		<CollectionList v-if="state.data !== null && state.data.length">
-			<CollectionListEntry v-for="item of state.data" :title="item.name" :starred="true" @click="openCollection(item.id)" />
-		</CollectionList>
+		<ContentList v-if="state.data !== null && state.data.length">
+			<ContentListEntry v-for="item of state.data"
+				:title="item.name"
+				:summary="item.description"
+				:starred="true"
+				:deckCount="item.size"
+				@click="openCollection(item.id)" />
+		</ContentList>
 
 		<CentralMessage v-else>
 

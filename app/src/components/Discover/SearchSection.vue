@@ -7,8 +7,8 @@ import { intl, useLanguage } from '../../intl';
 import type { CollectionSearchResult } from '../../api_models';
 import Searchbar from './Searchbar.vue';
 import LoadingMessage from '../App/LoadingMessage.vue';
-import CollectionList from '../Collections/CollectionList.vue';
-import CollectionListEntry from '../Collections/CollectionListEntry.vue';
+import ContentList from '../Content/ContentList.vue';
+import ContentListEntry from '../Content/ContentListEntry.vue';
 import ErrorMessage from '../App/ErrorMessage.vue';
 
 const emit = defineEmits<{
@@ -108,14 +108,15 @@ const handleSelect = async (entry: SearchResultState) => {
 			}) }}
 		</LoadingMessage>
 
-		<CollectionList v-else-if="state.data.length">
-			<CollectionListEntry v-for="item of state.data"
+		<ContentList v-else-if="state.data.length">
+			<ContentListEntry v-for="item of state.data"
 				:title="item.name"
 				:summary="item.description"
 				:starrable="true"
 				:starred="item.starred"
+				:deckCount="item.size"
 				@click="handleSelect(item)" />
-		</CollectionList>
+		</ContentList>
 
 		<div v-if="!state.busy" class="searh-summary">
 			<div class="summary">

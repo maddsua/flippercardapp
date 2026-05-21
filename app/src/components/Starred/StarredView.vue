@@ -3,8 +3,8 @@ import { onMounted, reactive } from 'vue';
 import { intl, useLanguage } from '../../intl';
 import AppUI from '../App/AppUI.vue';
 import AppUiHeader from '../App/AppUiHeader.vue';
-import CollectionList from '../Collections/CollectionList.vue';
-import CollectionListEntry from '../Collections/CollectionListEntry.vue';
+import ContentList from '../Content/ContentList.vue';
+import ContentListEntry from '../Content/ContentListEntry.vue';
 import type { CardDeckMetadata } from '../../api_models';
 import { useRouter } from 'vue-router';
 import LoadingMessage from '../App/LoadingMessage.vue';
@@ -59,9 +59,14 @@ const openDeck = (id: string) => {
 			</template>
 		</AppUiHeader>
 
-		<CollectionList v-if="state.data && state.data.length">
-			<CollectionListEntry v-for="item of state.data" :title="item.name" :starred="true" @click="openDeck(item.id)" />
-		</CollectionList>
+		<ContentList v-if="state.data && state.data.length">
+			<ContentListEntry v-for="item of state.data"
+				:title="item.name"
+				:summary="item.description"
+				:starred="true"
+				:cardCount="item.size"
+				@click="openDeck(item.id)" />
+		</ContentList>
 
 		<CentralMessage v-else>
 

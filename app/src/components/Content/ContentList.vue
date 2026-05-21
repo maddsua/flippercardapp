@@ -1,5 +1,5 @@
 <template>
-	<div class="collection-list">
+	<div class="content-list">
 		<slot>
 			[Content]
 		</slot>
@@ -7,7 +7,7 @@
 </template>
 
 <style lang="scss" scoped>
-	.collection-list {
+	.content-list {
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
