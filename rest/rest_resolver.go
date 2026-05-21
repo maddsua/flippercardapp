@@ -326,7 +326,7 @@ func (rslv *resolver) UpdateContentCollection(ctx context.Context, id uuid.UUID,
 	return &result, nil
 }
 
-func (rslv *resolver) DeleteCollection(ctx context.Context, id uuid.UUID) error {
+func (rslv *resolver) DeleteCollection(ctx context.Context, id uuid.UUID, recursive bool) error {
 
 	if perms, err := auth.For(ctx).Permissions(); err != nil {
 		return err
@@ -340,16 +340,19 @@ func (rslv *resolver) DeleteCollection(ctx context.Context, id uuid.UUID) error 
 	}
 	defer tx.Rollback()
 
-	if count, err := tx.CollectionSize(ctx, id); err != nil {
+	if !recursive {
 
-		if db_pkg.IsNull(err) {
-			return &model.Error{Message: "Collection not found", Code: http.StatusNotFound}
+		if count, err := tx.CollectionSize(ctx, id); err != nil {
+
+			if db_pkg.IsNull(err) {
+				return &model.Error{Message: "Collection not found", Code: http.StatusNotFound}
+			}
+
+			return InternalError("sqlc.CollectionSize", err)
+
+		} else if count > 0 {
+			return &model.Error{Message: "Collection is not empty", Code: http.StatusConflict}
 		}
-
-		return InternalError("sqlc.CollectionSize", err)
-
-	} else if count > 0 {
-		return &model.Error{Message: "Collection is not empty", Code: http.StatusConflict}
 	}
 
 	if count, err := tx.DeleteCollection(ctx, id); err != nil {

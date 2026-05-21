@@ -33,7 +33,7 @@ export interface Pagination {
 };
 
 type OneOrMore<T> = T | T[];
-type ParamValue = OneOrMore<string> | OneOrMore<number>;
+type ParamValue = OneOrMore<string> | OneOrMore<number> | boolean;
 type MethodParamsInit = Record<string, ParamValue | null | undefined>;
 
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -66,6 +66,9 @@ const serializeQueryParams = (target: URLSearchParams, params?: MethodParamsInit
 				break;
 			case 'number':
 				target.append(name, value.toString());
+				break;
+			case 'boolean':
+				target.append(name, 'true');
 				break;
 			case 'object':
 				serializeArrayQueryParams(target,name, value);
@@ -281,8 +284,8 @@ export class ApiClient {
 		update: async (id: string, patch: CollectionPatch) =>
 			this.execJSON<CollectionMetadata>('PATCH', `/manage/content/collection/${id}/metadata`, {}, patch),
 
-		remove: async (id: string) =>
-			this.execJSON<null>('DELETE', `/manage/content/collection/${id}`),
+		remove: async (id: string, opts?: { recursive?: boolean }) =>
+			this.execJSON<null>('DELETE', `/manage/content/collection/${id}`, opts),
 
 		exportBundle: async (id: string) =>
 			this.execBlob('POST', `/manage/content/collection/${id}/export`),

@@ -154,7 +154,8 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		if err != nil {
 			return nil, err
 		}
-		return nil, rslv.DeleteCollection(req.Context(), collectionID)
+		recursive := strings.EqualFold(req.URL.Query().Get("recursive"), "true")
+		return nil, rslv.DeleteCollection(req.Context(), collectionID, recursive)
 	}))
 
 	mux.Handle("PUT /manage/content/deck", MethodHandleFunc(func(req *http.Request) (*model.CardDeckMetadata, error) {

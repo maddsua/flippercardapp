@@ -111,11 +111,26 @@ const deleteCollection = async () => {
 		throw new Error('Invalid condition');
 	}
 
-	if (!confirm('Really delete this collection?')) {
+	if (state.data.size > 0) {
+
+		const confirmText = 'Delete collection and content';
+		while (true) {
+
+			const response = prompt(`Type '${confirmText}' to proceed`)?.trim();
+			if (!response) {
+				return;
+			}
+
+			if (response.toLowerCase() === confirmText.toLowerCase()) {
+				break;
+			}
+		}
+
+	} else if (!confirm('Really delete this collection?')) {
 		return;
 	}
 
-	const { error } = await client.collections.remove(state.data.id);
+	const { error } = await client.collections.remove(state.data.id, { recursive: state.data.size > 0 });
 	if (error) {
 		state.error = error?.message || 'Unable to delete collection';
 		return;	
@@ -206,7 +221,7 @@ const deleteCollection = async () => {
 			<GenericButton variant="thin" :spinner="state.exporter.busy" :disabled="!state.data || state.exporter.busy" @click="exportCollection">
 				Export collection bundle
 			</GenericButton>
-			<GenericButton  variant="thin" theme="red" :disabled="state.data.size > 0" @click="deleteCollection">
+			<GenericButton  variant="thin" theme="red" @click="deleteCollection">
 				✗ Delete collection
 			</GenericButton>
 		</InputRow>
