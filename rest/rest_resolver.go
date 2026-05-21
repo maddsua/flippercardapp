@@ -16,7 +16,6 @@ import (
 	db_gen "github.com/maddsua/flippercardapp/db/generated"
 	"github.com/maddsua/flippercardapp/db/types"
 	"github.com/maddsua/flippercardapp/rest/model"
-	"github.com/maddsua/flippercardapp/rest/model/transform"
 )
 
 type resolver struct {
@@ -38,7 +37,7 @@ func (rslv *resolver) LoadCardDeck(ctx context.Context, id uuid.UUID) (*model.Ca
 	}
 
 	result := model.CardDeck{
-		CardDeckMetadata: transform.CardDeckMetadataFromRow(deck),
+		CardDeckMetadata: db_pkg.TransformRow[model.CardDeckMetadata](deck),
 		Labels:           []string{deck.Name},
 		Cards:            make([]model.Card, len(cards)),
 	}
@@ -52,7 +51,7 @@ func (rslv *resolver) LoadCardDeck(ctx context.Context, id uuid.UUID) (*model.Ca
 	}
 
 	for idx, val := range cards {
-		result.Cards[idx] = transform.CardFromRow(val)
+		result.Cards[idx].FromRow(val)
 	}
 
 	return &result, nil
@@ -66,18 +65,18 @@ func (rslv *resolver) ListCardDeckPage(ctx context.Context, ids UUIDSet, page Pa
 
 		for _, id := range idList.WithPage(page) {
 
-			next, err := rslv.db.GetDecksBatch(ctx, db_gen.GetDecksBatchParams{
+			nextEntry, err := rslv.db.GetDecksBatch(ctx, db_gen.GetDecksBatchParams{
 				ID:    types.NewNullUUID(id),
 				Limit: 1,
 			})
 
 			if err != nil {
 				return nil, InternalError("sqlc.GetDecksBatch", err)
-			} else if len(next) == 0 {
+			} else if len(nextEntry) == 0 {
 				continue
 			}
 
-			entries = append(entries, transform.CardDeckMetadataFromBatchRow(next[0]))
+			entries = append(entries, db_pkg.TransformBatchRow[model.CardDeckMetadata](nextEntry[0]))
 		}
 
 		return WrapPage(page, entries), nil
@@ -92,7 +91,7 @@ func (rslv *resolver) ListCardDeckPage(ctx context.Context, ids UUIDSet, page Pa
 		return nil, InternalError("sqlc.GetDecksBatch", err)
 	}
 
-	return TransformPage(page, entries, transform.CardDeckMetadataFromBatchRow), nil
+	return TransformPage(page, entries, db_pkg.TransformBatchRow[model.CardDeckMetadata, db_gen.GetDecksBatchRow]), nil
 }
 
 func (rslv *resolver) LoadCollection(ctx context.Context, id uuid.UUID) (*model.Collection, error) {
@@ -114,14 +113,14 @@ func (rslv *resolver) LoadCollection(ctx context.Context, id uuid.UUID) (*model.
 	}
 
 	result := model.Collection{
-		CollectionMetadata: transform.CollectionMetadataFromRow(collection),
+		CollectionMetadata: db_pkg.TransformRow[model.CollectionMetadata](collection),
 		Decks:              make([]model.CardDeckMetadata, len(decks)),
 	}
 
 	result.CollectionMetadata.Size = len(decks)
 
 	for idx, val := range decks {
-		result.Decks[idx] = transform.CardDeckMetadataFromBatchRow(val)
+		result.Decks[idx].FromBatchRow(val)
 	}
 
 	return &result, nil
@@ -135,18 +134,18 @@ func (rslv *resolver) ListCollectionsPage(ctx context.Context, ids UUIDSet, page
 
 		for _, id := range idList.WithPage(page) {
 
-			next, err := rslv.db.GetCollectionBatch(ctx, db_gen.GetCollectionBatchParams{
+			nextEntry, err := rslv.db.GetCollectionBatch(ctx, db_gen.GetCollectionBatchParams{
 				ID:    types.NewNullUUID(id),
 				Limit: 1,
 			})
 
 			if err != nil {
 				return nil, InternalError("sqlc.GetCollectionBatch", err)
-			} else if len(next) == 0 {
+			} else if len(nextEntry) == 0 {
 				continue
 			}
 
-			entries = append(entries, transform.CollectionMetadataFromBatchRow(next[0]))
+			entries = append(entries, db_pkg.TransformBatchRow[model.CollectionMetadata](nextEntry[0]))
 		}
 
 		return WrapPage(page, entries), nil
@@ -160,7 +159,7 @@ func (rslv *resolver) ListCollectionsPage(ctx context.Context, ids UUIDSet, page
 		return nil, InternalError("sqlc.GetCollectionBatch", err)
 	}
 
-	return TransformPage(page, entries, transform.CollectionMetadataFromBatchRow), nil
+	return TransformPage(page, entries, db_pkg.TransformBatchRow[model.CollectionMetadata, db_gen.GetCollectionBatchRow]), nil
 }
 
 func (rslv *resolver) SearchCollections(ctx context.Context, term string, page PagePointers) (*Page[model.CollectionSearchResult], error) {
@@ -174,21 +173,18 @@ func (rslv *resolver) SearchCollections(ctx context.Context, term string, page P
 
 	for _, item := range matched {
 
-		next, err := rslv.db.GetCollectionBatch(ctx, db_gen.GetCollectionBatchParams{
+		nextEntry, err := rslv.db.GetCollectionBatch(ctx, db_gen.GetCollectionBatchParams{
 			ID:    types.NewNullUUID(item.id),
 			Limit: 1,
 		})
 
 		if err != nil {
 			return nil, InternalError("sqlc.GetCollectionBatch", err)
-		} else if len(next) == 0 {
+		} else if len(nextEntry) == 0 {
 			continue
 		}
 
-		entries = append(entries, model.CollectionSearchResult{
-			CollectionMetadata: transform.CollectionMetadataFromBatchRow(next[0]),
-			Rank:               item.rank,
-		})
+		entries = append(entries, db_pkg.TransformBatchRow[model.CollectionSearchResult](nextEntry[0]))
 	}
 
 	return WrapPage(page, entries), nil
@@ -270,7 +266,7 @@ func (rslv *resolver) CreateContentCollection(ctx context.Context, params model.
 	defer tx.Rollback()
 
 	if err := params.Valid(); err != nil {
-		return nil, &model.Error{Message: fmt.Sprintf("Invalid collection details: %v", err), Code: http.StatusBadRequest}
+		return nil, &model.Error{Message: fmt.Sprintf("Invalid collection details: %v", err)}
 	}
 
 	if exists, err := tx.CollectionNameExists(ctx, params.Name); err != nil {
@@ -298,7 +294,8 @@ func (rslv *resolver) CreateContentCollection(ctx context.Context, params model.
 		return nil, InternalError("sqlc.Commit", err)
 	}
 
-	return transform.ToPtr(transform.CollectionMetadataFromRow(entry)), nil
+	result := db_pkg.TransformRow[model.CollectionMetadata](entry)
+	return &result, nil
 }
 
 func (rslv *resolver) UpdateContentCollection(ctx context.Context, id uuid.UUID, patch model.CollectionPatch) (*model.CollectionMetadata, error) {
@@ -310,7 +307,7 @@ func (rslv *resolver) UpdateContentCollection(ctx context.Context, id uuid.UUID,
 	}
 
 	if err := patch.Valid(); err != nil {
-		return nil, &model.Error{Message: fmt.Sprintf("Invalid collection details: %v", err), Code: http.StatusBadRequest}
+		return nil, &model.Error{Message: fmt.Sprintf("Invalid collection details: %v", err)}
 	}
 
 	entry, err := rslv.db.UpdateCollection(ctx, db_gen.UpdateCollectionParams{
@@ -325,7 +322,8 @@ func (rslv *resolver) UpdateContentCollection(ctx context.Context, id uuid.UUID,
 		return nil, InternalError("sqlc.UpdateCollection", err)
 	}
 
-	return transform.ToPtr(transform.CollectionMetadataFromRow(entry)), nil
+	result := db_pkg.TransformRow[model.CollectionMetadata](entry)
+	return &result, nil
 }
 
 func (rslv *resolver) DeleteCollection(ctx context.Context, id uuid.UUID) error {
@@ -378,7 +376,7 @@ func (rslv *resolver) CreateCardDeck(ctx context.Context, params model.CardDeckP
 	if params.Details == nil {
 		return nil, &model.Error{Message: "Deck details must be provided"}
 	} else if err := params.Details.Valid(); err != nil {
-		return nil, &model.Error{Message: fmt.Sprintf("Invalid deck details: %v", err), Code: http.StatusBadRequest}
+		return nil, &model.Error{Message: fmt.Sprintf("Invalid deck details: %v", err)}
 	} else if params.Content == nil || len(params.Content.Cards) == 0 {
 		return nil, &model.Error{Message: "Deck has no cards in it"}
 	} else if !params.CollectionID.Valid {
@@ -418,7 +416,7 @@ func (rslv *resolver) CreateCardDeck(ctx context.Context, params model.CardDeckP
 			CreatedAt: types.NewTime(time.Now()),
 			UpdatedAt: types.NewTime(time.Now()),
 		}); err != nil {
-			return nil, InternalError("sqlc.InsertDeck", err)
+			return nil, InternalError("sqlc.InsertCard", err)
 		}
 	}
 
@@ -426,9 +424,8 @@ func (rslv *resolver) CreateCardDeck(ctx context.Context, params model.CardDeckP
 		return nil, InternalError("sqlc.Commit", err)
 	}
 
-	result := transform.CardDeckMetadataFromRow(deck)
+	result := db_pkg.TransformRow[model.CardDeckMetadata](deck)
 	result.Size = len(params.Content.Cards)
-
 	return &result, nil
 }
 
@@ -468,7 +465,7 @@ func (rslv *resolver) UpdateCardDeck(ctx context.Context, id uuid.UUID, patch mo
 	if patch.Details != nil {
 
 		if err := patch.Details.Valid(); err != nil {
-			return nil, &model.Error{Message: fmt.Sprintf("Invalid deck details: %v", err), Code: http.StatusBadRequest}
+			return nil, &model.Error{Message: fmt.Sprintf("Invalid deck details: %v", err)}
 		}
 
 		if deck, err = tx.UpdateDeckMetadata(ctx, db_gen.UpdateDeckMetadataParams{
@@ -481,7 +478,7 @@ func (rslv *resolver) UpdateCardDeck(ctx context.Context, id uuid.UUID, patch mo
 		}
 	}
 
-	result := transform.CardDeckMetadataFromRow(deck)
+	result := db_pkg.TransformRow[model.CardDeckMetadata](deck)
 
 	if patch.Content != nil {
 
@@ -552,4 +549,129 @@ func (rslv *resolver) DeleteDeck(ctx context.Context, id uuid.UUID) error {
 	}
 
 	return nil
+}
+
+func (rslv *resolver) ExportCollectionBundle(ctx context.Context, id uuid.UUID) (*model.CollectionBundle, error) {
+
+	if perms, err := auth.For(ctx).Permissions(); err != nil {
+		return nil, err
+	} else if err := perms.IsTeamMember(); err != nil {
+		return nil, err
+	}
+
+	tx, err := rslv.db.BeginTx(ctx)
+	if err != nil {
+		return nil, InternalError("sqlc.BeginTx", err)
+	}
+	defer tx.Rollback()
+
+	collection, err := tx.GetCollectionById(ctx, id)
+	if db_pkg.IsNull(err) {
+		return nil, &model.Error{Message: "collection not found", Code: http.StatusNotFound}
+	} else if err != nil {
+		return nil, InternalError("sqlc.GetCollectionById", err)
+	}
+
+	decks, err := tx.GetDecksBatch(ctx, db_gen.GetDecksBatchParams{
+		CollectionID: types.NewNullUUID(collection.ID),
+		Limit:        math.MaxInt,
+	})
+
+	if err != nil {
+		return nil, InternalError("sqlc.GetDecksBatch", err)
+	}
+
+	bundle := model.CollectionBundle{
+		CollectionMetadata: db_pkg.TransformRow[model.CollectionMetadata](collection),
+		Decks:              make([]model.CardDeckBundle, len(decks)),
+	}
+
+	for idx, deck := range decks {
+
+		cards, err := tx.GetDeckCards(ctx, deck.ID)
+		if err != nil {
+			return nil, InternalError("sqlc.GetDeckCards", err)
+		}
+
+		deckBundle := model.CardDeckBundle{
+			CardDeckMetadata: db_pkg.TransformBatchRow[model.CardDeckMetadata](deck),
+			Cards:            make([]model.Card, len(cards)),
+		}
+
+		for idx, val := range cards {
+			deckBundle.Cards[idx].FromRow(val)
+		}
+
+		bundle.Decks[idx] = deckBundle
+	}
+
+	return &bundle, nil
+}
+
+func (rslv *resolver) ImportCollectionBundle(ctx context.Context, bundle *model.CollectionBundle) (*model.CollectionMetadata, error) {
+
+	if perms, err := auth.For(ctx).Permissions(); err != nil {
+		return nil, err
+	} else if err := perms.CanEditContent(); err != nil {
+		return nil, err
+	}
+
+	if err := bundle.Valid(); err != nil {
+		return nil, &model.Error{Message: fmt.Sprintf("Invalid collection bundle: %v", err)}
+	}
+
+	tx, err := rslv.db.BeginTx(ctx)
+	if err != nil {
+		return nil, InternalError("sqlc.BeginTx", err)
+	}
+	defer tx.Rollback()
+
+	collectionEntry, err := tx.InsertCollection(ctx, db_gen.InsertCollectionParams{
+		ID:          uuid.New(),
+		CreatedAt:   types.NewTime(time.Now()),
+		UpdatedAt:   types.NewTime(time.Now()),
+		Name:        fmt.Sprintf("%v - import %d", bundle.Name, time.Now().Unix()),
+		Description: types.NewNullString(bundle.Description),
+	})
+
+	if err != nil {
+		return nil, InternalError("sqlc.InsertCollection", err)
+	}
+
+	for _, deck := range bundle.Decks {
+
+		deckEntry, err := tx.InsertDeck(ctx, db_gen.InsertDeckParams{
+			ID:           uuid.New(),
+			CollectionID: collectionEntry.ID,
+			CreatedAt:    types.NewTime(deck.Created),
+			UpdatedAt:    types.NewTime(deck.Updated),
+			Name:         deck.Name,
+			Description:  types.NewNullString(deck.Description),
+		})
+
+		if err != nil {
+			return nil, InternalError("sqlc.InsertDeck", err)
+		}
+
+		for _, card := range deck.Cards {
+			if err := tx.InsertCard(ctx, db_gen.InsertCardParams{
+				Content:   card.CardNodeContent,
+				ID:        uuid.New(),
+				DeckID:    deckEntry.ID,
+				CreatedAt: types.NewTime(card.Created),
+				UpdatedAt: types.NewTime(card.Updated),
+			}); err != nil {
+				return nil, InternalError("sqlc.InsertCard", err)
+			}
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, InternalError("sqlc.Commit", err)
+	}
+
+	result := db_pkg.TransformRow[model.CollectionMetadata](collectionEntry)
+	result.Size = len(bundle.Decks)
+
+	return &result, nil
 }

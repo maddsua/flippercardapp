@@ -15,6 +15,7 @@ import ErrorMessage from '../../../App/ErrorMessage.vue';
 import LoadingMessage from '../../../App/LoadingMessage.vue';
 import FullscreenMessage from '../../../App/FullscreenMessage.vue';
 import InputRow from '../../../App/InputRow.vue';
+import { downloadBlob } from '../../../../files';
 
 const route = useRoute();
 const router = useRouter();
@@ -27,6 +28,10 @@ const state = reactive({
 	inputs: {
 		name: '',
 		description: ''
+	},
+	exporter: {
+		busy: false,
+		error: null as string | null,
 	},
 	error: null as string | null,
 });
@@ -78,6 +83,26 @@ const updateCollection = async () => {
 	}
 
 	router.push(backHref.value);
+};
+
+const exportCollection = async () => {
+
+	if (!state.data) {
+		return;
+	}
+
+	state.exporter = { busy: true, error: null };
+
+	const { blob, error } = await client.collections.exportBundle(state.data.id);
+	if (!blob || error) {
+		state.exporter.busy = false;
+		state.error = error?.message || 'Unable to export collection';
+		return;
+	}
+
+	downloadBlob(blob, `${state.data.name}-export-${new Date().getTime()}.cardbundle`);
+
+	state.exporter.busy = false;
 };
 
 const deleteCollection = async () => {
@@ -172,10 +197,16 @@ const deleteCollection = async () => {
 		</InlineErorrMessage>
 
 		<InputRow>
-			<GenericButton :disabled="!formValid" @click="updateCollection">
+			<GenericButton theme="green" :disabled="!formValid" @click="updateCollection">
 				Update collection →
 			</GenericButton>
-			<GenericButton theme="red" :disabled="state.data.size > 0" @click="deleteCollection">
+		</InputRow>
+
+		<InputRow>
+			<GenericButton variant="thin" :spinner="state.exporter.busy" :disabled="!state.data || state.exporter.busy" @click="exportCollection">
+				Export collection bundle
+			</GenericButton>
+			<GenericButton  variant="thin" theme="red" :disabled="state.data.size > 0" @click="deleteCollection">
 				✗ Delete collection
 			</GenericButton>
 		</InputRow>

@@ -85,8 +85,8 @@ func createRootUser(ctx context.Context, tx *TxWrapper, username, password strin
 		PasswordHash: pwHash,
 		Permissions: model.NullUserPermissions{
 			Permissions: model.UserPermissions{
-				Administrative: true,
-				ContentEdit:    true,
+				TeamMember:  true,
+				ContentEdit: true,
 			},
 			Valid: true,
 		},

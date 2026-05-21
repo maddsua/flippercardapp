@@ -7,8 +7,8 @@ import (
 )
 
 type UserPermissions struct {
-	Administrative bool `json:"administrative,omitempty"`
-	ContentEdit    bool `json:"content_edit,omitempty"`
+	TeamMember  bool `json:"team_member,omitempty"`
+	ContentEdit bool `json:"content_edit,omitempty"`
 }
 
 func (perms UserPermissions) Value() (driver.Value, error) {

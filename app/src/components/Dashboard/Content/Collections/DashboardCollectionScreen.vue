@@ -11,8 +11,6 @@ import type { Collection } from '../../../../api_models';
 import GenericButton from '../../../App/GenericButton.vue';
 import CentralMessage from '../../../App/CentralMessage.vue';
 import DeckEntry from './DeckEntry.vue';
-import { downloadFile, type CollectionBundleContent, type CollectionBundle } from '../../../../content_io';
-import ContentExporterStatus from './ContentExporterStatus.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -23,14 +21,6 @@ const backHref = '/app/dashboard/content';
 const state = reactive({
 	data: null as Collection | null,
 	error: null as string | null,
-
-	contentIO: {
-		operation: null as string | null,
-		active: false,
-		progress: 0,
-		warn: null as string | null,
-		error: null as string | null
-	},
 });
 
 onMounted(async () => {
@@ -77,78 +67,6 @@ const deleteDeck = async (deckID: string) => {
 	}
 
 	state.data.decks = state.data.decks?.filter(item => item.id !== deckID) || null;
-};
-
-const exportCollection = async () => {
-
-	if (!state.data) {
-		throw new Error('Logic error');
-	}
-
-	state.contentIO.active = true;
-	state.contentIO.operation = 'Exporting collection...';
-	state.contentIO.warn = null;
-	state.contentIO.error = null;
-
-	const collection: CollectionBundleContent = {
-		meta: {
-			name: state.data.name,
-			description: state.data.description,
-			created: state.data.created,
-			updated: state.data.updated
-		},
-		decks: []
-	};
-
-	for (const entry of state.data.decks) {
-
-		if (!state.contentIO.active) {
-			return;
-		}
-
-		const { data, error } = await client.decks.load(entry.id);
-		if (!data || error) {
-			state.contentIO.warn = error?.message || 'Unable to export deck';
-			continue;
-		}
-
-		collection.decks.push({
-			meta: {
-				name: entry.name,
-				description: entry.description,
-			},
-			cards: data.cards,
-		});
-
-		state.contentIO.progress = collection.decks.length / state.data.decks.length;
-	}
-
-	state.contentIO.progress = 1;
-
-	if (state.data.decks.length !== collection.decks.length) {
-
-		if (collection.decks.length === 0) {
-			state.contentIO.error = 'Unable to load collection decks';
-			state.contentIO.active = false;
-			return;
-		}
-
-		const missingCount = state.data.decks.length - collection.decks.length;
-		state.contentIO.warn = `Unable to export ${missingCount} decks`;
-	}
-
-	const bundle: CollectionBundle = {
-		type: 'collection_bundle',
-		content: [collection]
-	};
-
-	const name = state.data.name.replace(/[^a-z0-9]/gi, '_');
-
-	downloadFile(JSON.stringify(bundle), `${name}-export.json`);
-
-	state.contentIO.operation = 'Export done';
-
-	setTimeout(() => state.contentIO.active = false, 3_000);
 };
 
 </script>
@@ -202,11 +120,8 @@ const exportCollection = async () => {
 			</div>
 
 			<div class="actions">
-				<GenericButton variant="thin" theme="red" :disabled="!state.data" @click="editCollectionMetadata">
+				<GenericButton variant="thin" :disabled="!state.data" @click="editCollectionMetadata">
 					Manage
-				</GenericButton>
-				<GenericButton variant="thin" :disabled="!state.data || state.contentIO.active" @click="exportCollection">
-					Export
 				</GenericButton>
 			</div>
 		</div>
@@ -223,13 +138,6 @@ const exportCollection = async () => {
 					</GenericButton>
 				</div>
 			</div>
-
-			<ContentExporterStatus v-if="state.contentIO.active"
-				:operation="state.contentIO.operation"
-				:progress="state.contentIO.progress"
-				:warn="state.contentIO.warn"
-				:error="state.contentIO.error"
-				@cancel="state.contentIO.active = false" />
 
 			<div v-if="state.data" class="deck-list">
 

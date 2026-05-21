@@ -43,6 +43,10 @@ func NewErrorResponseStatus[T any](err error, code int) *model.Response[T] {
 	}}
 }
 
+func RespondWithError(wrt http.ResponseWriter, err error) {
+	NewErrorResponseStatus[any](err, http.StatusBadRequest).Write(wrt)
+}
+
 func InternalError(op string, err error) error {
 
 	slog.Error("Internal server error",

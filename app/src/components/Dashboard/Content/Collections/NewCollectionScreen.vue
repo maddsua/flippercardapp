@@ -10,18 +10,14 @@ import GenericInput from '../../../App/GenericInput.vue';
 import InlineErorrMessage from '../../../App/InlineErorrMessage.vue';
 import GenericButton from '../../../App/GenericButton.vue';
 import InputRow from '../../../App/InputRow.vue';
-import { pickUploadFiles, type ContentBundle } from '../../../../content_io';
-import ContentExporterStatus from './ContentExporterStatus.vue';
+import { pickLocalFile } from '../../../../files';
 
 const client = useClient();
 const router = useRouter();
 
 const state = reactive({
 	importer: {
-		operation: null as string | null,
-		active: false,
-		progress: 0,
-		warn: null as string | null,
+		busy: false,
 		error: null as string | null
 	},
 	inputs: {
@@ -48,86 +44,21 @@ const createCollection = async () => {
 
 const uploadFile = async () => {
 
-	const files = await pickUploadFiles({ accept: ['application/json'] });
+	const files = await pickLocalFile({ accept: ['.cardbundle'] });
 	if (!files?.length) {
 		return;
 	}
 
-	state.importer.active = true;
-	state.importer.operation = 'Uploading bundle';
+	state.importer = { busy: true, error: null };
 
-	try {
-		const bundle: ContentBundle | null = await files[0].text().then(data => JSON.parse(data));
-		await importBundledCollection(bundle);
-	} catch (error) {
-		state.importer.error = error instanceof Error ? error.message : 'Unable to parse bundle';
-	}
-};
-
-const importBundledCollection = async (bundle: ContentBundle | null) => {
-
-	if (bundle?.type !== 'collection_bundle') {
-		state.importer.error = 'Unsupported bundle type';
-		return;
-	} else if (bundle.content.length === 0) {
-		state.importer.error = 'Empty bundle';
-		return;
-	} else if (bundle.content.length > 1) {
-		state.importer.warn = 'Bundle contains multiple collections, only the first one will be imorted';
-	}
-
-	const { meta, decks } = bundle.content[0];
-
-	const { data, error } = await client.collections.create(meta);
+	const { data, error } = await client.collections.importBundle(files[0]);
 	if (!data || error) {
-		state.importer.error = error?.message || 'Unable to create collection';
+		state.importer.busy = false;
+		state.importer.error = error?.message || 'Bundle import failed';
 		return;
 	}
 
-	const { id: collection_id } = data;
-
-	state.importer.operation = 'Importing decks...';
-
-	let imported = 0;
-
-	for (const deck of decks) {
-
-		if (!state.importer.active) {
-			return;
-		}
-		
-		const { data, error } = await client.decks.create({
-			... deck.meta,
-			collection_id,
-			content: { cards: deck.cards },
-		});
-
-		if (!data || error) {
-			state.importer.warn = error?.message || 'Unable to import deck';
-			continue;
-		}
-
-		imported++;
-		state.importer.progress = decks.length / imported;
-	}
-
-	state.importer.progress = 1;
-
-	if (imported !== decks.length) {
-
-		if (imported === 0) {
-			state.importer.error = 'Unable to load collection decks';
-			state.importer.active = false;
-			return;
-		}
-
-		const missingCount = decks.length - imported;
-		state.importer.warn = `Unable to import ${missingCount} decks`;
-	}
-
-	state.importer.operation = 'Import done';
-
-	openCollection(collection_id);
+	openCollection(data.id);
 };
 
 const openCollection = (id: string) => {
@@ -183,17 +114,16 @@ const openCollection = (id: string) => {
 			<GenericButton :disabled="!formValid" @click="createCollection">
 				Create collection →
 			</GenericButton>
-			<GenericButton theme="orange" variant="thin" :disabled="state.importer.active" @click="uploadFile">
-				Upload file
-			</GenericButton>
 		</InputRow>
 
-		<ContentExporterStatus v-if="state.importer.active"
-			:operation="state.importer.operation"
-			:progress="state.importer.progress"
-			:warn="state.importer.warn"
-			:error="state.importer.error"
-			@cancel="state.importer.active = false" />
+		<InputRow>
+			<GenericButton theme="orange" variant="thin" :spinner="state.importer.busy" :disabled="state.importer.busy" @click="uploadFile">
+				Upload file
+			</GenericButton>
+			<InlineErorrMessage v-if="state.importer.error">
+				{{ state.importer.error }}
+			</InlineErorrMessage>
+		</InputRow>
 
 	</CollectionFormWrapper>
 

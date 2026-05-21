@@ -54,7 +54,7 @@ export interface AuthSession {
 };
 
 export interface UserPermissions {
-	administrative: boolean;
+	team_member: boolean;
 	content_edit: boolean;
 };
 

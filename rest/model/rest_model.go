@@ -2,13 +2,14 @@ package model
 
 import (
 	"encoding/json"
-	"errors"
+	"fmt"
 	"math"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
+	db_gen "github.com/maddsua/flippercardapp/db/generated"
 	db_model "github.com/maddsua/flippercardapp/db/model"
 )
 
@@ -47,13 +48,60 @@ func (err *Error) Error() string {
 	return err.Message
 }
 
+type ContentEntrySummary struct {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+}
+
+func (val *ContentEntrySummary) Valid() error {
+
+	if val.Name = strings.TrimSpace(val.Name); val.Name == "" {
+		return &Error{Message: "Summary invalid: 'name' field is empty"}
+	} else if len(val.Name) > math.MaxUint8 {
+		return &Error{Message: "Summary invalid: 'name' field too long"}
+	} else if len(val.Description) > math.MaxUint8 {
+		return &Error{Message: "Summary invalid: 'description' field too long"}
+	}
+
+	return nil
+}
+
 type CollectionMetadata struct {
-	ID          uuid.UUID `json:"id"`
-	Name        string    `json:"name"`
-	Description string    `json:"description,omitempty"`
-	Created     time.Time `json:"created"`
-	Updated     time.Time `json:"updated"`
-	Size        int       `json:"size"`
+	ContentEntrySummary
+	ID      uuid.UUID `json:"id"`
+	Created time.Time `json:"created"`
+	Updated time.Time `json:"updated"`
+	Size    int       `json:"size"`
+}
+
+func (meta *CollectionMetadata) Valid() error {
+
+	if meta.ID == uuid.Nil {
+		return &Error{Message: "Invalid collection ID"}
+	}
+
+	return meta.ContentEntrySummary.Valid()
+}
+
+func (meta *CollectionMetadata) FromRow(row db_gen.Collection) {
+	meta.ContentEntrySummary = ContentEntrySummary{
+		Name:        row.Name,
+		Description: row.Description.String,
+	}
+	meta.ID = row.ID
+	meta.Created = row.CreatedAt.Time
+	meta.Updated = row.UpdatedAt.Time
+}
+
+func (meta *CollectionMetadata) FromBatchRow(row db_gen.GetCollectionBatchRow) {
+	meta.ContentEntrySummary = ContentEntrySummary{
+		Name:        row.Name,
+		Description: row.Description.String,
+	}
+	meta.ID = row.ID
+	meta.Created = row.CreatedAt.Time
+	meta.Updated = row.UpdatedAt.Time
+	meta.Size = int(row.Size)
 }
 
 type CollectionSearchResult struct {
@@ -66,20 +114,68 @@ type Collection struct {
 	Decks []CardDeckMetadata `json:"decks"`
 }
 
+type CollectionBundle struct {
+	CollectionMetadata
+	Decks []CardDeckBundle `json:"decks"`
+}
+
+func (bundle *CollectionBundle) Valid() error {
+
+	if err := bundle.CollectionMetadata.Valid(); err != nil {
+		return err
+	}
+
+	for idx, deck := range bundle.Decks {
+
+		if err := deck.CardDeckMetadata.Valid(); err != nil {
+			return &Error{Message: fmt.Sprintf("Deck at index %d: %v", idx, err)}
+		}
+	}
+
+	return nil
+}
+
 type CardDeckMetadata struct {
+	ContentEntrySummary
 	ID           uuid.UUID `json:"id"`
 	CollectionID uuid.UUID `json:"collection_id"`
-	Name         string    `json:"name"`
-	Description  string    `json:"description,omitempty"`
 	Created      time.Time `json:"created"`
 	Updated      time.Time `json:"updated"`
 	Size         int       `json:"size"`
+}
+
+func (meta *CardDeckMetadata) FromRow(row db_gen.Deck) {
+	meta.ContentEntrySummary = ContentEntrySummary{
+		Name:        row.Name,
+		Description: row.Description.String,
+	}
+	meta.ID = row.ID
+	meta.CollectionID = row.CollectionID
+	meta.Created = row.CreatedAt.Time
+	meta.Updated = row.UpdatedAt.Time
+}
+
+func (meta *CardDeckMetadata) FromBatchRow(row db_gen.GetDecksBatchRow) {
+	meta.ContentEntrySummary = ContentEntrySummary{
+		Name:        row.Name,
+		Description: row.Description.String,
+	}
+	meta.ID = row.ID
+	meta.CollectionID = row.CollectionID
+	meta.Created = row.CreatedAt.Time
+	meta.Updated = row.UpdatedAt.Time
+	meta.Size = int(row.Size)
 }
 
 type CardDeck struct {
 	CardDeckMetadata
 	Labels []string `json:"labels"`
 	Cards  []Card   `json:"cards"`
+}
+
+type CardDeckBundle struct {
+	CardDeckMetadata
+	Cards []Card `json:"cards"`
 }
 
 type Card struct {
@@ -89,22 +185,15 @@ type Card struct {
 	Updated time.Time `json:"updated"`
 }
 
-type CollectionPatch struct {
-	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
+func (card *Card) FromRow(row db_gen.Card) {
+	card.CardNodeContent = row.Content
+	card.ID = row.ID
+	card.Created = row.CreatedAt.Time
+	card.Updated = row.UpdatedAt.Time
 }
 
-func (patch *CollectionPatch) Valid() error {
-
-	if patch.Name = strings.TrimSpace(patch.Name); patch.Name == "" {
-		return errors.New("name field is empty")
-	} else if len(patch.Name) > math.MaxUint8 {
-		return errors.New("'name' field too long")
-	} else if len(patch.Description) > math.MaxUint8 {
-		return errors.New("'description' field too long")
-	}
-
-	return nil
+type CollectionPatch struct {
+	ContentEntrySummary
 }
 
 type CardDeckPatch struct {
@@ -114,21 +203,7 @@ type CardDeckPatch struct {
 }
 
 type CardDeckDetailsPatch struct {
-	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
-}
-
-func (patch *CardDeckDetailsPatch) Valid() error {
-
-	if patch.Name = strings.TrimSpace(patch.Name); patch.Name == "" {
-		return errors.New("name field is empty")
-	} else if len(patch.Name) > math.MaxUint8 {
-		return errors.New("'name' field too long")
-	} else if len(patch.Description) > math.MaxUint8 {
-		return errors.New("'description' field too long")
-	}
-
-	return nil
+	ContentEntrySummary
 }
 
 type CardDeckContentPatch struct {

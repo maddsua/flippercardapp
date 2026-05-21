@@ -15,6 +15,11 @@ export interface Result <T> {
 	error: Error | null;
 };
 
+export interface BlobResult {
+	blob: Blob | null;
+	error: Error | null;
+};
+
 export interface Page <T> {
 	entries: T[];
 	offset: number;
@@ -31,8 +36,14 @@ type OneOrMore<T> = T | T[];
 type ParamValue = OneOrMore<string> | OneOrMore<number>;
 type MethodParamsInit = Record<string, ParamValue | null | undefined>;
 
+type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
 const unwrapError = (error: any): Error => {
-	return error instanceof Error ? error : new Error(`${error}`);
+	return error instanceof Error ? error : new Error(unwrapErrorMessage(error));
+};
+
+const unwrapErrorMessage = (error: any): string => {
+	return typeof error === 'object' ? 'message' in error ? error.message : 'Unknown error' : `${error}`;
 };
 
 const serializeQueryParams = (target: URLSearchParams, params?: MethodParamsInit) => {
@@ -119,38 +130,112 @@ export class ApiClient {
 		return url;
 	};
 
-	private exec = async <T, R extends {} = {}> (method: string, proc: string, params?: MethodParamsInit, body?: R | null): Promise<Result<T>> => {
+	private wrapPayload = <T extends {} = {}>(payload?: T | null) => {
 
-		const headers = new Headers({ 'Accept': 'application/json' });
+		const headers = new Headers();
 
-		if (body) {
+		if (payload instanceof Blob) {
+			headers.set('Content-Type', payload.type || 'application/octet-stream');
+			return { headers, body: payload, };
+		} else if (payload instanceof File) {
+			headers.set('Content-Type', payload.type || 'application/octet-stream');
+			return { headers, body: payload, };
+		} else if (payload) {
 			headers.set('Content-Type', 'application/json');
+			return { headers, body: JSON.stringify(payload), };
 		}
 
-		const { response, fetchError } = await fetch(this.procURL(proc, params), {
-			method,
-			headers,
-			body: body ? JSON.stringify(body) : null,
-		}).then(response => ({ response, fetchError: null }))
-			.catch(err => ({ response: null, fetchError: unwrapError(err)}));
+		return { headers, body: null };
+	};
 
+	private fetch = async (url: URL | string, method: Method, headers: Headers, body: BodyInit | null) => {
+
+		const { response, error } = await fetch(url, { method, headers, body, })
+			.then(response => ({ response, error: null }))
+			.catch(err => ({ response: null, error: unwrapError(err) }));
+
+		if (error) {
+			return { response: null, error: new Error(`Fetch API: ${error.message}`) };
+		}
+
+		return { response, error: null };
+	};
+
+	private unwrapJSON = async <T extends any = object> (response: Response): Promise<Result<T>> => {
+
+		const { result, error: parseError } = await response.json()
+			.then(result => ({ result: result as Result<T>, error: null }))
+			.catch(err => ({ result: null, error: unwrapError(err)}));
+
+		if (parseError) {
+			return { data: null, error: new Error(`Parse API response: ${parseError.message}; status code: ${response.status}`) };
+		}
+
+		const { data, error } = result;
+		if (!data && !error) {
+			return { data: null, error: new Error('Received an empty data response') };
+		}
+
+		return { data, error };
+	};
+
+	private execJSON = async <R extends any = object, P extends any = object> (
+		method: Method,
+		proc: string,
+		params?: MethodParamsInit,
+		payload?: P | null
+	): Promise<Result<R>> => {
+
+		const url = this.procURL(proc, params);
+		const { headers, body } = this.wrapPayload(payload);
+
+		headers.set('Accept', 'application/json');
+
+		const { response, error: fetchError } = await this.fetch(url, method, headers, body);
 		if (fetchError) {
-			return { data: null, error: new Error(`Fetch API: ${fetchError.message}`) };
+			return { data: null, error: fetchError };
 		}
 
 		if (response.status === 204) {
 			return { data: null, error: null };
 		}
 
-		const { result, parseError } = await response.json()
-			.then(result => ({ result: result as Result<T>, parseError: null }))
-			.catch(err => ({ result: null, parseError: unwrapError(err)}));
+		return await this.unwrapJSON<R>(response);
+	};
 
-		if (parseError) {
-			return { data: null, error: new Error(`Parse API response: ${parseError.message}; status code: ${response.status}`) };
+	private execBlob = async <P extends any = object> (
+		method: Method,
+		proc: string,
+		params?: MethodParamsInit,
+		payload?: P | null
+	): Promise<BlobResult> => {
+
+		const url = this.procURL(proc, params);
+		const { headers, body } = this.wrapPayload(payload);
+
+		headers.set('Accept', '*');
+
+		const { response, error: fetchError } = await this.fetch(url, method, headers, body);
+		if (fetchError) {
+			return { blob: null, error: fetchError };
 		}
 
-		return result;
+		if (response.status === 204) {
+			return { blob: null, error: null };
+		} else if (!response.ok) {
+			const { error } = await this.unwrapJSON<any>(response);
+			return { blob: null, error };
+		}
+
+		const { blob, error: blobError } = await response.blob()
+			.then(blob => ({ blob, error: null }))
+			.catch(err => ({ blob: null, error: unwrapError(err) }));
+
+		if (blobError) {
+			return { blob: null, error: new Error(`Retreive blob: ${blobError}`) };
+		}
+
+		return { blob, error: null };
 	};
 
 	auth = {
@@ -161,19 +246,19 @@ export class ApiClient {
 				return { data: this.authCache.state, error: null };
 			}
 
-			const result = await this.exec<AuthState>('GET', '/auth/whoami');
+			const result = await this.execJSON<AuthState>('GET', '/auth/whoami');
 			this.authCache.store(result.data);
 			return result;
 		},
 
 		signin: async (params: SignInParams): Promise<Result<AuthState>> => {
-			const result = await this.exec<AuthState>('POST', '/auth/signin', {}, params)
+			const result = await this.execJSON<AuthState>('POST', '/auth/signin', {}, params);
 			this.authCache.store(result.data);
 			return result;
 		},
 
 		signout: async (): Promise<Result<AuthState>> => {
-			const result = await this.exec<AuthState>('POST', '/auth/signout')
+			const result = await this.execJSON<AuthState>('POST', '/auth/signout');
 			this.authCache.store(result.data);
 			return result;
 		},
@@ -182,40 +267,46 @@ export class ApiClient {
 	collections = {
 
 		list: async (params?: { ids?: string[] | null } & Partial<Pagination>) =>
-			this.exec<Page<CollectionMetadata>>('GET', '/collections', params),
+			this.execJSON<Page<CollectionMetadata>>('GET', '/collections', params),
 
 		search: async (term: string) =>
-			this.exec<Page<CollectionSearchResult>>('GET', '/collections/search', { term }),
+			this.execJSON<Page<CollectionSearchResult>>('GET', '/collections/search', { term }),
 
 		load: async (id: string) =>
-			this.exec<Collection>('GET', `/collections/${id}`),
+			this.execJSON<Collection>('GET', `/collections/${id}`),
 
 		create: async (patch: CollectionPatch) =>
-			this.exec<CollectionMetadata>('PUT', '/manage/content/collection', {}, patch),
+			this.execJSON<CollectionMetadata>('PUT', '/manage/content/collection', {}, patch),
 
 		update: async (id: string, patch: CollectionPatch) =>
-			this.exec<CollectionMetadata>('PATCH', `/manage/content/collection/${id}/metadata`, {}, patch),
+			this.execJSON<CollectionMetadata>('PATCH', `/manage/content/collection/${id}/metadata`, {}, patch),
 
 		remove: async (id: string) =>
-			this.exec<null>('DELETE', `/manage/content/collection/${id}`),
+			this.execJSON<null>('DELETE', `/manage/content/collection/${id}`),
+
+		exportBundle: async (id: string) =>
+			this.execBlob('POST', `/manage/content/collection/${id}/export`),
+
+		importBundle: async (file: File) =>
+			this.execJSON<CollectionMetadata>('POST', `/manage/content/collections/import`, {}, file),
 	};
 
 	decks = {
 
 		list: async (params?: { ids?: string[] | null, collection_id?: string } & Partial<Pagination>) =>
-			this.exec<Page<CardDeckMetadata>>('GET','/decks', params),
+			this.execJSON<Page<CardDeckMetadata>>('GET','/decks', params),
 
 		load: async (id: string) =>
-			this.exec<CardDeck>('GET',`/decks/${id}`),
+			this.execJSON<CardDeck>('GET',`/decks/${id}`),
 
 		create: async (patch: CardDeckPatch) =>
-			this.exec<CardDeckMetadata>('PUT', '/manage/content/deck', {}, patch),
+			this.execJSON<CardDeckMetadata>('PUT', '/manage/content/deck', {}, patch),
 
 		update: async (id: string, patch: CardDeckPatch) =>
-			this.exec<CardDeckMetadata>('PATCH', `/manage/content/deck/${id}`, {}, patch),
+			this.execJSON<CardDeckMetadata>('PATCH', `/manage/content/deck/${id}`, {}, patch),
 
 		remove: async (id: string) =>
-			this.exec<null>('DELETE', `/manage/content/deck/${id}`),
+			this.execJSON<null>('DELETE', `/manage/content/deck/${id}`),
 	};
 };
 

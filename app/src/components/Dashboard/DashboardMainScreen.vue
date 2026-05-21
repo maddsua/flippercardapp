@@ -25,7 +25,7 @@ const state = reactive({
 
 	<div class="options-menu" v-if="state.auth?.actor">
 
-		<template v-if="state.auth.actor.permissions.administrative">
+		<template v-if="state.auth.actor.permissions.team_member">
 
 			<DashboardMenuSection>
 

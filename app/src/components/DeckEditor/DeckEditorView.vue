@@ -14,8 +14,8 @@ import { useClient } from '../../api';
 import FullscreenMessage from '../App/FullscreenMessage.vue';
 import EditorErrorScreen from './EditorErrorScreen.vue';
 import EditorLoadingScreen from './EditorLoadingScreen.vue';
-import { downloadFile, escapeName, pickUploadFiles, type CardDeckBundle } from '../../content_io';
-import type { CardDeck } from '../../api_models';
+import type { Card as CardType, CardDeck } from '../../api_models';
+import { downloadBlob, escapeFileName, pickLocalFile } from '../../files';
 
 const route = useRoute();
 const router = useRouter();
@@ -357,13 +357,22 @@ onMounted(async () => {
 	};
 });
 
+interface CardDeckBundle {
+	type: 'maddsua:flippercarddapp:bundle:deck';
+	id: string | null;
+	collection_id: string | null;
+	name: string;
+	description: string | null;
+	cards: Array<Omit<CardType, 'created' | 'updated'>>;
+};
+
 const importDeckBundle = async () => {
 
 	if (state.loading || state.locked) {
 		return;
 	}
 
-	const files = await pickUploadFiles({ accept: ['.json'] });
+	const files = await pickLocalFile({ accept: ['.json'] });
 	if (!files) {
 		return;
 	}
@@ -408,9 +417,12 @@ const exportDeckBundle = async () => {
 		cards: state.content.cards,
 	};
 
-	const name = escapeName(state.content.details.name) || 'unnamed_deck';
+	const baseName = escapeFileName(state.content.details.name) || 'unnamed_deck';
+	const name = `${baseName}-export-${new Date().getTime()}.json`;
 
-	downloadFile(JSON.stringify(bundle), `${name}-export-${new Date().getTime()}.json`);
+	const blob = new Blob([JSON.stringify(bundle)]);
+
+	downloadBlob(blob, name);
 };
 
 const updateDetails = (val: { name: string, description?: string | null }) => {

@@ -2,12 +2,13 @@
 const props = defineProps<{
 	theme?: 'blue' | 'orange' | 'green' | 'red';
 	variant?: 'thin' | 'thick' | 'wide';
+	spinner?: boolean;
 	disabled?: boolean;
 }>();
 </script>
 
 <template>
-	<button type="button" :class="{ [`variant-${variant}`]: !!variant, [`theme-${theme}`]: !!theme }" :disabled="disabled">
+	<button type="button" :class="{ [`variant-${variant}`]: !!variant, [`theme-${theme}`]: !!theme, spinner }" :disabled="disabled">
 		<slot>
 			[Button label]
 		</slot>
@@ -65,6 +66,14 @@ const props = defineProps<{
 			pointer-events: none;
 			filter: saturate(0);
 			opacity: 0.75;
+		}
+
+		&.spinner {
+			color: transparent;
+			background-image: url(/src/assets/animated/ring-resize-white.svg);
+			background-position: center;
+			background-repeat: no-repeat;
+			background-size: 1.5rem;
 		}
 	}
 </style>
