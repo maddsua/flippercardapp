@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref, watch } from 'vue';
 import type { CardContentFace } from '../../content';
 import CardFace from '../Cards/CardFace.vue';
 
@@ -14,10 +15,18 @@ const emit = defineEmits<{
 	(e: 'add'): void;
 }>();
 
+const scrollableRef = ref<HTMLElement | null>(null);
+
+watch(() => props.list.length, (length, oldLength) => {
+	if (length > oldLength && scrollableRef.value) {
+		setTimeout(() => scrollableRef.value!.scrollTop = scrollableRef.value!.scrollHeight, 100);
+	}
+});
+
 </script>
 
 <template>
-	<div class="card-list">
+	<div class="card-list" ref="scrollableRef">
 		<div v-for="(card, idx) of list" class="card-item-tile" :class="{ selected: idx === pointer }" @click="emit('select', idx)">
 			<div class="controls-layer">
 				<div class="label">
@@ -50,6 +59,7 @@ const emit = defineEmits<{
 		overflow: hidden auto;
 		scrollbar-width: thin;
 		padding-right: 0.5rem;
+		scroll-behavior: smooth;
 
 		.card-item-tile {
 			position: relative;
