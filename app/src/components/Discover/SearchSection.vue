@@ -22,6 +22,7 @@ const lang = useLanguage();
 
 interface SearchResultState extends CollectionSearchResult {
 	starred: boolean;
+	score: number;
 };
 
 const state = reactive({
@@ -44,8 +45,14 @@ const execSearchQuery = async (term: string) => {
 		return;
 	}
 
+	const scoreMap = await store.playStats.collectionScores();
 	const starred = new Set(await store.collections.entries());
-	state.data = data.entries.map(item => ({ ... item, starred: starred.has(item.id) }));
+
+	state.data = data.entries.map(item => ({
+		... item,
+		starred: starred.has(item.id),
+		score: scoreMap.get(item.id) || 0,
+	}));
 };
 
 const handleSearchInput = (value?: string) => {
@@ -115,6 +122,7 @@ const handleSelect = async (entry: SearchResultState) => {
 				:starrable="true"
 				:starred="item.starred"
 				:deckCount="item.size"
+				:score="item.score"
 				@click="handleSelect(item)" />
 		</ContentList>
 

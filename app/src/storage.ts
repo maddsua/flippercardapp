@@ -21,7 +21,7 @@ class GenericStore<T> {
 	};
 };
 
-class ListStore<T> {
+class SetStore<T> {
 
 	private readonly store: GenericStore<T[]>;
 
@@ -66,17 +66,100 @@ class ListStore<T> {
 	};
 };
 
+class MapStore <T> {
+
+	//	todo: use an array so that it can be iterated over to accumulate values
+
+	private readonly _store: GenericStore<Record<string, T>>;
+
+	constructor(key: string) {
+		this._store = new GenericStore(key)
+	}
+
+	entries = async () => Object.entries(await this._store.load() || {});
+
+	store = async (key: string, val: T | null) => {
+
+		const fields = await this._store.load() || {};
+
+		if (val === null) {
+			delete fields[key];
+		} else {
+			fields[key]=val;
+		}
+
+		await this._store.store(fields);
+	};
+
+	load = async (key: string): Promise<T | null> => {
+
+		const fields = await this._store.load();
+		if (!fields) {
+			return null;
+		}
+
+		return fields[key] || null;
+	};
+
+	remove = async (key: string) => {
+
+		const fields = await this._store.load();
+		if (!fields || !fields[key]) {
+			return;
+		}
+
+		delete fields[key];
+
+		await this._store.store(fields);
+	};
+
+};
+
+class PlayStatsStore extends MapStore<PlayStats> {
+
+	constructor() {
+		super('play_stats')
+	}
+
+	collectionScores = async (): Promise<Map<string, number>> => {
+
+		const scoreMap = new Map<string, number>();
+
+		for (const [_, entry] of await this.entries()) {
+
+			if (!entry.collection_id) {
+				continue;
+			}
+
+			const acc = scoreMap.get(entry.collection_id);
+			const avg = typeof acc === 'number' ? (acc + entry.score) / 2 : entry.score;
+
+			scoreMap.set(entry.collection_id, avg);
+		}
+
+		return scoreMap;
+	};
+};
+
 class Storage {
 
 	constructor() {
-		this.collections = new ListStore<string>('saved_collections');
-		this.starredDecks = new ListStore<string>('starred_decks');
-		this.deckEditor = new GenericStore<any>('deck_editor_state_snapshot');
+		this.collections = new SetStore('saved_collections');
+		this.starredDecks = new SetStore('starred_decks');
+		this.deckEditor = new GenericStore('deck_editor_state_snapshot');
+		this.playStats = new PlayStatsStore();
 	}
 
-	collections: ListStore<string>;
-	starredDecks: ListStore<string>;
+	collections: SetStore<string>;
+	starredDecks: SetStore<string>;
 	deckEditor: GenericStore<object>;
+	playStats: PlayStatsStore;
 }
+
+export interface PlayStats {
+	deck_id: string;
+	collection_id: string | null;
+	score: number;
+};
 
 export const useStorage = () => new Storage();

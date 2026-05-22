@@ -18,6 +18,7 @@ const lang = useLanguage();
 
 interface RecommendedEntry extends CollectionMetadata {
 	starred: boolean;
+	score: number;
 };
 
 const state = reactive({
@@ -38,8 +39,14 @@ onMounted(async () => {
 		return;
 	}
 
+	const scoreMap = await store.playStats.collectionScores();
 	const starred = new Set(await store.collections.entries());
-	state.data = data.entries.map(item => ({ ... item, starred: starred.has(item.id) }));
+
+	state.data = data.entries.map(item => ({
+		... item,
+		starred: starred.has(item.id),
+		score: scoreMap.get(item.id) || 0,
+	}));
 });
 
 </script>
@@ -75,6 +82,7 @@ onMounted(async () => {
 				:starrable="true"
 				:starred="item.starred"
 				:deckCount="item.size"
+				:score="item.score"
 				@click="handleSelect(item)" />
 		</ContentList>
 

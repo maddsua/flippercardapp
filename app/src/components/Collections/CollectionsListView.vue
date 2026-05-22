@@ -20,8 +20,12 @@ const router = useRouter();
 const client = useClient();
 const store = useStorage();
 
+interface Entry extends CollectionMetadata {
+	score: number;
+};
+
 const state = reactive({
-	data: null as CollectionMetadata[] | null,
+	data: null as Entry[] | null,
 	error: null as string | null,
 });
 
@@ -39,7 +43,8 @@ onMounted(async () => {
 		return;
 	}
 
-	setTimeout(() => state.data = data.entries, 250);
+	const scoreMap = await store.playStats.collectionScores();
+	state.data = data.entries.map(item => ({ ...item, score: scoreMap.get(item.id) || 0 }));
 });
 
 const openCollection = (id: string) => {
@@ -84,6 +89,7 @@ const lang = useLanguage();
 				:summary="item.description"
 				:starred="true"
 				:deckCount="item.size"
+				:score="item.score"
 				@click="openCollection(item.id)" />
 		</ContentList>
 

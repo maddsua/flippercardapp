@@ -6,8 +6,8 @@ const props = defineProps<{
 	starred?: boolean;
 	cardCount?: number;
 	deckCount?: number;
+	score?: number;
 }>();
-//	todo: triage layout
 </script>
 
 <template>
@@ -19,16 +19,19 @@ const props = defineProps<{
 				{{ title }}
 			</div>
 
-			<template v-if="starred || starrable || cardCount || deckCount">
+			<template v-if="starred || starrable || score || cardCount || deckCount">
 
 				<div class="stats">
-					<div class="item star" :class="{ starred }"></div>
+					<div v-if="score" class="item score">
+						{{ score.toFixed(0) }}%
+					</div>
 					<div v-if="cardCount" class="item cards">
-						{{ cardCount }}
+						{{ cardCount.toFixed(0) }}
 					</div>
 					<div v-if="deckCount" class="item decks">
-						{{ deckCount }}
+						{{ deckCount.toFixed(0) }}
 					</div>
+					<div class="item star" :class="{ starred }"></div>
 				</div>
 
 			</template>
@@ -131,6 +134,10 @@ const props = defineProps<{
 
 				&.decks::before {
 					background-image: url(/src/assets/icons/card-deck-mask.svg);
+				}
+
+				&.score::before {
+					background-image: url(/src/assets/icons/target-mask.svg);
 				}
 
 				&.star {

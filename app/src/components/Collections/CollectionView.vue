@@ -22,16 +22,17 @@ const route = useRoute();
 const client = useClient();
 const store = useStorage();
 
-interface CardDeckMetadataState extends CardDeckMetadata {
+interface DeckEntry extends CardDeckMetadata {
 	starred: boolean;
+	score: number;
 };
 
-interface CollectionState extends CollectionMetadata{
-	decks: CardDeckMetadataState[];
+interface CollectionEntry extends CollectionMetadata {
+	decks: DeckEntry[];
 };
 
 const state = reactive({
-	data: null as CollectionState | null,
+	data: null as CollectionEntry | null,
 	starred: false,
 	error: null as string | null,
 });
@@ -51,12 +52,19 @@ onMounted(async () => {
 	}
 
 	const starredDecks = new Set(await store.starredDecks.entries());
+	const playStats = new Map(await store.playStats.entries());
 
-	const decks = data.decks
-		.map(item => ({ ... item, starred: starredDecks.has(item.id) }))
-		.sort((a,b) => (b.starred ? 1 : 0) - (a.starred ? 1 : 0));
+	const deckEntries = data.decks .map(item => ({
+		... item,
+		starred: starredDecks.has(item.id),
+		score: playStats.get(item.id)?.score || 0,
+	}));
 
-	state.data = ({  ... data, decks, });
+	state.data = {
+		... data,
+		decks: deckEntries.sort((a,b) => (b.starred ? 1 : 0) - (a.starred ? 1 : 0)),
+	};
+
 	state.starred = await store.collections.contains(data.id);
 });
 
@@ -139,6 +147,7 @@ const toggleStar = async () => {
 				:title="item.name"
 				:summary="item.description"
 				:cardCount="item.size"
+				:score="item.score"
 				@click="openDeck(item.id)" />
 		</ContentList>
 

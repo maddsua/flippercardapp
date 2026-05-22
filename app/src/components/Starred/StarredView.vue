@@ -13,8 +13,12 @@ import CentralMessage from '../App/CentralMessage.vue';
 import { useStorage } from '../../storage';
 import { useClient } from '../../api';
 
+interface Entry extends CardDeckMetadata {
+	score: number;
+};
+
 const state = reactive({
-	data: null as CardDeckMetadata[] | null,
+	data: null as Entry[] | null,
 	error: null as string | null
 });
 
@@ -37,7 +41,9 @@ onMounted(async () => {
 		return;
 	}
 
-	state.data = data.entries;
+	const playStats = new Map(await store.playStats.entries());
+
+	state.data = data.entries.map(item => ({ ... item, score: playStats.get(item.id)?.score || 0 }));
 });
 
 const openDeck = (id: string) => {
@@ -65,6 +71,7 @@ const openDeck = (id: string) => {
 				:summary="item.description"
 				:starred="true"
 				:cardCount="item.size"
+				:score="item.score"
 				@click="openDeck(item.id)" />
 		</ContentList>
 

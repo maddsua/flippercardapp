@@ -23,7 +23,7 @@ const emit = defineEmits<{
 	(e: 'finish'): void;
 }>();
 
-const scoreRate = computed(() => props.stats.score / props.stats.questions);
+const scoreFraction = computed(() => props.stats.score / props.stats.questions);
 
 const time = computed(() => {
 
@@ -50,7 +50,7 @@ const lang = useLanguage();
 			<EndscreenHeader>
 				<template v-slot:summary>
 
-					<template v-if="scoreRate > 0.95">
+					<template v-if="scoreFraction > 0.95">
 						{{ intl(lang, {
 							en: `You've nailed it!`,
 							de: 'Perfekt hingekriegt!',
@@ -58,7 +58,7 @@ const lang = useLanguage();
 						}) }}
 					</template>
 
-					<template v-else-if="scoreRate > 0.75">
+					<template v-else-if="scoreFraction > 0.75">
 						{{ intl(lang, {
 							en: 'Good job!',
 							de: 'Gute Arbeit!',
@@ -66,7 +66,7 @@ const lang = useLanguage();
 						}) }}
 					</template>
 
-					<template v-else-if="scoreRate > 0.6">
+					<template v-else-if="scoreFraction > 0.6">
 						{{ intl(lang, {
 							en: 'Hey, not bad!',
 							de: 'Hey, nicht schlecht!',
@@ -74,7 +74,7 @@ const lang = useLanguage();
 						}) }}
 					</template>
 
-					<template v-else-if="scoreRate > 0.3">
+					<template v-else-if="scoreFraction > 0.3">
 						{{ intl(lang, {
 							en: 'You could do better!',
 							de: 'Es könnte besser sein.',
@@ -93,7 +93,7 @@ const lang = useLanguage();
 				</template>
 			</EndscreenHeader>
 
-			<EndscreenScore :rate="scoreRate" />
+			<EndscreenScore :rate="scoreFraction" />
 			<EndscreenStats>
 				<EndscreenStatTile icon="target">
 					<template v-slot:title>
@@ -127,7 +127,7 @@ const lang = useLanguage();
 						}) }}
 					</template>
 
-					{{ Math.floor(scoreRate*100) }}%
+					{{ Math.floor(scoreFraction*100) }}%
 				</EndscreenStatTile>
 			</EndscreenStats>
 			<EndscreenActions>

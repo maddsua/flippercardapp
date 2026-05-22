@@ -131,6 +131,24 @@ const finishDeck = () => {
 
 	state.round.playTime = Math.floor((new Date().getTime() - state.round.startTime.getTime()) / 1000);
 	state.round.isFinished = true;
+
+	updateStats();
+};
+
+const updateStats = async () => {
+
+	if (!state.deckID || !statsScreen.value) {
+		return;
+	}
+
+	const latestScore = Math.round((statsScreen.value.score / statsScreen.value.questions) * 100);
+	const stats = await store.playStats.load(state.deckID);
+
+	await store.playStats.store(state.deckID, {
+		deck_id: state.deckID,
+		collection_id: state.collectionID,
+		score: stats && stats.score >= latestScore ? stats.score : latestScore,
+	});
 };
 
 const exitView = () => {
