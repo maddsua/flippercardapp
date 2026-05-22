@@ -79,6 +79,7 @@ onMounted(async () => {
 			<ContentListEntry v-for="item of state.data"
 				:title="item.name"
 				:summary="item.description"
+				:visibility="item.visibility"
 				:starrable="true"
 				:starred="item.starred"
 				:deckCount="item.size"

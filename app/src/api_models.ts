@@ -1,9 +1,15 @@
 import type { CardContentNode } from "./content";
 
-export interface CollectionMetadata {
-	id: string;
+export interface ContentEntryMetaBase {
 	name: string;
-	description?: string;
+	description?: string | null;
+	visibility: ResourceVisibility;
+};
+
+export type ResourceVisibility = 'PRIVATE' | 'HIDDEN' | 'PUBLIC';
+
+export interface CollectionMetadata extends ContentEntryMetaBase{
+	id: string;
 	created: string;
 	updated: string;
 	size: number;
@@ -13,11 +19,9 @@ export interface CollectionSearchResult extends CollectionMetadata {
 	rank: number;
 };
 
-export interface CardDeckMetadata {
+export interface CardDeckMetadata extends ContentEntryMetaBase{
 	id: string;
 	collection_id: string;
-	name: string;
-	description?: string;
 	created: string;
 	updated: string;
 	size: number;
@@ -70,13 +74,8 @@ export interface CollectionPatch {
 
 export interface CardDeckPatch {
 	collection_id?: string | null;
-	details?: CardDeckDetailsPatch | null;
+	meta?: ContentEntryMetaBase | null;
 	content?: CardDeckContentPatch | null;
-};
-
-export interface CardDeckDetailsPatch {
-	name: string;
-	description?: string | null;
 };
 
 export interface CardDeckContentPatch  {

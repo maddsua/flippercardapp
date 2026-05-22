@@ -75,16 +75,16 @@ type ActorPermissions struct {
 	db_model.UserPermissions
 }
 
-func (perms *ActorPermissions) IsTeamMember() error {
+func (perms *ActorPermissions) AsTeamMember() error {
 	if !perms.UserPermissions.TeamMember {
 		return &PermissionError{Permission: "TeamMember"}
 	}
 	return nil
 }
 
-func (perms *ActorPermissions) CanEditContent() error {
+func (perms *ActorPermissions) AsContentEditor() error {
 
-	if err := perms.IsTeamMember(); err != nil {
+	if err := perms.AsTeamMember(); err != nil {
 		return err
 	}
 

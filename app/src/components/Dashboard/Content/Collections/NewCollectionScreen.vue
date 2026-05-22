@@ -11,6 +11,9 @@ import InlineErorrMessage from '../../../App/InlineErorrMessage.vue';
 import GenericButton from '../../../App/GenericButton.vue';
 import InputRow from '../../../App/InputRow.vue';
 import { pickLocalFile } from '../../../../files';
+import GenericDropdown from '../../../App/GenericDropdown.vue';
+import type { ResourceVisibility } from '../../../../api_models';
+import { resourceVisibilityOptions } from '../../../../inputs';
 
 const client = useClient();
 const router = useRouter();
@@ -22,7 +25,8 @@ const state = reactive({
 	},
 	inputs: {
 		name: '',
-		description: ''
+		description: '',
+		visibility: 'HIDDEN' as ResourceVisibility,
 	},
 	error: null as string | null,
 });
@@ -103,6 +107,16 @@ const openCollection = (id: string) => {
 			</template>
 
 			<GenericInput type="text" variant="borderless" placeholder="Describe the purpose of this collection" v-model="state.inputs.description" />
+
+		</InputLabel>
+
+		<InputLabel>
+
+			<template v-slot:label>
+				Visibility
+			</template>
+
+			<GenericDropdown :options="resourceVisibilityOptions" v-model="state.inputs.visibility" />
 
 		</InputLabel>
 

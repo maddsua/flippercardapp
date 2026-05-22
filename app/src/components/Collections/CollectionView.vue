@@ -143,10 +143,11 @@ const toggleStar = async () => {
 
 		<ContentList v-if="state.data && state.data.decks.length">
 			<ContentListEntry v-for="item of state.data.decks"
-				:starred="item.starred"
 				:title="item.name"
 				:summary="item.description"
+				:visibility="item.visibility"
 				:cardCount="item.size"
+				:starred="item.starred"
 				:score="item.score"
 				@click="openDeck(item.id)" />
 		</ContentList>

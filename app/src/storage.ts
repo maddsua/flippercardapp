@@ -68,8 +68,6 @@ class SetStore<T> {
 
 class MapStore <T> {
 
-	//	todo: use an array so that it can be iterated over to accumulate values
-
 	private readonly _store: GenericStore<Record<string, T>>;
 
 	constructor(key: string) {

@@ -8,8 +8,13 @@ select
 	count(cards.id) as size
 from decks
 	inner join cards on cards.deck_id = decks.id
-where (decks.id = sqlc.narg(id) or sqlc.narg(id) is null)
-	and (decks.collection_id = sqlc.narg(collection_id) or sqlc.narg(collection_id) is null)
+where (sqlc.narg(ids_set) is null or decks.id in (
+	select value from json_each(sqlc.narg(ids_set))
+)) and (decks.collection_id = sqlc.narg(collection_id)
+	or sqlc.narg(collection_id) is null
+) and (sqlc.narg(visibility_set) is null or decks.visibility in (
+	select value from json_each(sqlc.narg(visibility_set))
+))
 group by decks.id
 order by decks.created_at desc
 limit sqlc.arg(limit) offset sqlc.arg(offset);
@@ -28,13 +33,20 @@ select
 	count(decks.id) as size
 from collections
 	left join decks on decks.collection_id = collections.id
-where (collections.id = sqlc.narg(id) or sqlc.narg(id) is null)
+where (sqlc.narg(ids_set) is null or collections.id in (
+	select value from json_each(sqlc.narg(ids_set))
+)) and (sqlc.narg(visibility_set) is null or collections.visibility in (
+	select value from json_each(sqlc.narg(visibility_set))
+))
 group by collections.id
 order by collections.created_at desc
 limit sqlc.arg(limit) offset sqlc.arg(offset);
 
 -- name: GetCollectionSearchBatch :many
 select id, name from collections
+where (sqlc.narg(visibility_set) is null or collections.visibility in (
+	select value from json_each(sqlc.narg(visibility_set))
+))
 limit sqlc.arg(limit) offset sqlc.arg(offset);
 
 -- name: CollectionIDExists :one
@@ -55,13 +67,15 @@ insert into collections (
 	created_at,
 	updated_at,
 	name,
-	description
+	description,
+	visibility
 ) values (
 	sqlc.arg(id),
 	sqlc.arg(created_at),
 	sqlc.arg(updated_at),
 	sqlc.arg(name),
-	sqlc.narg(description)
+	sqlc.narg(description),
+	sqlc.arg(visibility)
 ) returning *;
 
 -- name: UpdateCollection :one
@@ -69,7 +83,8 @@ update collections
 set
 	updated_at = sqlc.arg(updated_at),
 	name = sqlc.arg(name),
-	description = sqlc.arg(description)
+	description = sqlc.arg(description),
+	visibility = sqlc.arg(visibility)
 where id = sqlc.arg(id)
 returning *;
 
@@ -90,14 +105,16 @@ insert into decks (
 	created_at,
 	updated_at,
 	name,
-	description
+	description,
+	visibility
 ) values (
 	sqlc.arg(id),
 	sqlc.arg(collection_id),
 	sqlc.arg(created_at),
 	sqlc.arg(updated_at),
 	sqlc.arg(name),
-	sqlc.narg(description)
+	sqlc.narg(description),
+	sqlc.arg(visibility)
 ) returning *;
 
 -- name: InsertCard :exec
@@ -126,7 +143,8 @@ update decks
 set
 	collection_id = coalesce(sqlc.narg(collection_id), collection_id),
 	name = sqlc.arg(name),
-	description = sqlc.arg(description)
+	description = sqlc.arg(description),
+	visibility = sqlc.arg(visibility)
 where id = sqlc.arg(id)
 returning *;
 

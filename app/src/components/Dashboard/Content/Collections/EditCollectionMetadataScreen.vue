@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useClient } from '../../../../api';
-import type { CollectionMetadata } from '../../../../api_models';
+import type { CollectionMetadata, ResourceVisibility } from '../../../../api_models';
 import AppUiHeader from '../../../App/AppUiHeader.vue';
 import Skeleton from '../../../App/Skeleton.vue';
 import CollectionFormWrapper from './CollectionFormWrapper.vue';
@@ -16,6 +16,8 @@ import LoadingMessage from '../../../App/LoadingMessage.vue';
 import FullscreenMessage from '../../../App/FullscreenMessage.vue';
 import InputRow from '../../../App/InputRow.vue';
 import { downloadBlob } from '../../../../files';
+import GenericDropdown from '../../../App/GenericDropdown.vue';
+import { resourceVisibilityOptions } from '../../../../inputs';
 
 const route = useRoute();
 const router = useRouter();
@@ -27,7 +29,8 @@ const state = reactive({
 	dataValid: false,
 	inputs: {
 		name: '',
-		description: ''
+		description: '',
+		visibility: 'HIDDEN' as ResourceVisibility,
 	},
 	exporter: {
 		busy: false,
@@ -67,6 +70,7 @@ onMounted(async () => {
 	state.inputs = {
 		name: collection.name,
 		description: collection.description || '',
+		visibility: collection.visibility,
 	};
 });
 
@@ -204,6 +208,16 @@ const deleteCollection = async () => {
 			</template>
 
 			<GenericInput type="text" variant="borderless" placeholder="Describe the purpose of this collection" v-model="state.inputs.description" />
+
+		</InputLabel>
+
+		<InputLabel>
+
+			<template v-slot:label>
+				Visibility
+			</template>
+
+			<GenericDropdown :options="resourceVisibilityOptions" v-model="state.inputs.visibility" />
 
 		</InputLabel>
 

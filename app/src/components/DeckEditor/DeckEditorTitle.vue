@@ -1,8 +1,11 @@
 <script setup lang="ts">
+import type { ResourceVisibility } from '../../api_models';
+
 
 interface MetaEntry {
 	name: string;
 	description?: string | null;
+	visibility: ResourceVisibility;
 }
 
 const props = defineProps<{
@@ -14,8 +17,11 @@ const props = defineProps<{
 <template>
 	<div class="deck-editor-title" >
 		<div class="group">
-			<div class="name">
-				{{ meta.name }}
+			<div class="title">
+				<div class="name">
+					{{ meta.name }}
+				</div>
+				<div class="visibility" :class="[ meta.visibility.toLowerCase() ]"></div>
 			</div>
 			<div class="description">
 				<template v-if="meta.description">
@@ -47,8 +53,17 @@ const props = defineProps<{
 			gap: 0.25rem;
 			max-width: 100%;
 
+			.title {
+				display: flex;
+				flex-flow: row nowrap;
+				align-items: center;
+				justify-content: center;
+				width: 100%;
+				gap: 1rem;
+			}
+
 			.name, .description {
-				max-width: 100%;
+				min-width: 0;
 				overflow: hidden;
 				text-overflow: ellipsis;
 				white-space: nowrap;
@@ -57,6 +72,28 @@ const props = defineProps<{
 			.name {
 				font-size: 0.75rem;
 				font-weight: 600;
+			}
+
+			.visibility {
+				display: block;
+				width: 1rem;
+				height: 1rem;
+				flex-shrink: 0;
+				background-position: center;
+				background-repeat: no-repeat;
+				background-size: contain;
+
+				&.public {
+					background-image: url(/src/assets/icons/world-mask.svg);
+				}
+
+				&.hidden {
+					background-image: url(/src/assets/icons/link-mask.svg);
+				}
+
+				&.private {
+					background-image: url(/src/assets/icons/lock-mask.svg);
+				}
 			}
 			
 			.description {

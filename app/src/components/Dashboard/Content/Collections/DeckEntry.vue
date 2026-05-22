@@ -26,24 +26,39 @@ const date = computed(() => new Date(props.entry.updated).toLocaleDateString('en
 	<div class="deck">
 
 		<div class="row">
+
 			<div class="details">
+
 				<div class="row">
 					<div class="name">
 						{{ entry.name }}
 					</div>
-					<div class="stats">
+					<div class="meta">
 						{{ date }}
 					</div>
 				</div>
-				<div class="description">
-					<template v-if="entry.description">
-						{{ entry.description }}
-					</template>
-					<template v-else>
-						[No description provided]
-					</template>
+
+				<div class="row">
+
+					<div class="description">
+						<template v-if="entry.description">
+							{{ entry.description }}
+						</template>
+						<template v-else>
+							[No description provided]
+						</template>
+					</div>
+
+					<div class="meta">
+						{{ entry.visibility }}
+						|
+						{{ entry.size }} card(s)
+					</div>
+
 				</div>
+
 			</div>
+
 		</div>
 
 		<div class="actions">
@@ -102,7 +117,7 @@ const date = computed(() => new Date(props.entry.updated).toLocaleDateString('en
 			text-overflow: ellipsis;
 		}
 
-		.stats {
+		.meta {
 			font-size: 0.75rem;
 			color: var(--app-theme-mysterious-white);
 			flex-shrink: 0;

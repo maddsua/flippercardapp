@@ -48,29 +48,6 @@ type CardCanvasTheme struct {
 	OutlineColor string `json:"outline_color,omitempty"`
 }
 
-func marshalCardContentNode1(node any) ([]byte, error) {
-
-	var typeLabel string
-
-	switch node := node.(type) {
-	case BaseCardContentElement:
-		typeLabel = node.ContentElementType()
-	case BaseCardTextboxElement:
-		typeLabel = node.TextElementNodeType()
-	default:
-		return nil, fmt.Errorf("%T doesn't implement content node", node)
-	}
-
-	fields, err := utils.ExtractStructJSONFields(node)
-	if err != nil {
-		return nil, fmt.Errorf("extract struct fields: %v", err)
-	}
-
-	fields["type"] = typeLabel
-
-	return json.Marshal(fields)
-}
-
 type BaseCardContentElement interface {
 	ContentElementType() string
 }

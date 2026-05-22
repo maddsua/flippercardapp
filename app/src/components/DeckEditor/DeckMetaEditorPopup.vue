@@ -4,14 +4,19 @@ import { computed, onMounted, reactive, ref } from 'vue';
 import GenericButton from '../App/GenericButton.vue';
 import GenericInput from '../App/GenericInput.vue';
 import InputLabel from '../App/InputLabel.vue';
+import GenericDropdown from '../App/GenericDropdown.vue';
+import { resourceVisibilityOptions } from '../../inputs';
+import type { ResourceVisibility } from '../../api_models';
+import { isContainerOutsideClick } from '../../dom';
 
 interface DeckMeta {
 	name: string;
 	description: string | null;
+	visibility: ResourceVisibility;
 };
 
 const props = defineProps<{
-	deck: DeckMeta;
+	meta: DeckMeta;
 }>();
 
 const emit = defineEmits<{
@@ -20,42 +25,43 @@ const emit = defineEmits<{
 }>();
 
 const state = reactive({
-	visible: false,
+	shown: false,
 	inputs: {
-		name: props.deck.name,
-		description: props.deck.description || '',
+		name: props.meta.name,
+		description: props.meta.description || '',
+		visibilty: props.meta.visibility,
 	}
 });
 
-const isEdited = computed(() => state.inputs.name !== props.deck.name || state.inputs.description !== (props.deck.description || ''));
+const isEdited = computed(() =>
+	state.inputs.name !== props.meta.name ||
+	state.inputs.description !== (props.meta.description || '') ||
+	state.inputs.visibilty !== props.meta.visibility);
 
 const openPrompt = () => {
-	state.visible = true;
+	state.shown = true;
 	window.addEventListener('click', handleOutsideClicks);
 };
 
 const closePrompt = () => {
-	state.visible = false;
+	state.shown = false;
 	setTimeout(() => emit('done'), 200);
 	window.removeEventListener('click', closePrompt);
 };
 
 const rootElement = ref<HTMLElement | null>(null);
 
-const handleOutsideClicks = (event: Event) => {
-
-	const target = event.target as HTMLElement;
-	if (!rootElement.value || !target || rootElement.value.contains(target) || isEdited.value) {
-		return;
-	}
-
-	closePrompt();
-};
+const handleOutsideClicks = (event: Event) =>
+	isContainerOutsideClick(rootElement.value, event.target) ? closePrompt() : null;
 
 onMounted(() => setTimeout(openPrompt, 10));
 
 const edit = () => {
-	emit('edit', { name: state.inputs.name, description: state.inputs.description || null });
+	emit('edit', {
+		name: state.inputs.name,
+		description: state.inputs.description || null,
+		visibility: state.inputs.visibilty,
+	});
 	closePrompt();
 };
 
@@ -63,10 +69,11 @@ const edit = () => {
 
 <template>
 	<div class="meta-editor">
-		<div class="wrapper" :class="{ hidden: !state.visible }" ref="rootElement">
+		<div class="wrapper" :class="{ hidden: !state.shown }" ref="rootElement">
+
 			<div class="header">
 				<div class="title">
-					Edit deck meta
+					Edit deck
 				</div>
 				<div class="actions">
 					<GenericButton variant="thin" theme="orange" @click="closePrompt">
@@ -77,6 +84,7 @@ const edit = () => {
 					</GenericButton>
 				</div>
 			</div>
+
 			<div class="form">
 
 				<InputLabel variant="slick">
@@ -91,6 +99,13 @@ const edit = () => {
 						Deck name
 					</template>
 					<GenericInput type="text" placeholder="Description" :multiline="true" v-model="state.inputs.description" />
+				</InputLabel>
+
+				<InputLabel variant="slick">
+					<template v-slot:label>
+						Visibility
+					</template>
+					<GenericDropdown :options="resourceVisibilityOptions" v-model="state.inputs.visibilty" />
 				</InputLabel>
 
 			</div>

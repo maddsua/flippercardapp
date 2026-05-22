@@ -30,7 +30,7 @@ const date = computed(() => new Date(props.entry.updated).toLocaleDateString('en
 				<div class="name">
 					{{ entry.name }}
 				</div>
-				<div class="date">
+				<div class="meta">
 					{{ date }}
 				</div>
 			</div>
@@ -44,7 +44,9 @@ const date = computed(() => new Date(props.entry.updated).toLocaleDateString('en
 						[No description provided]
 					</template>
 				</div>
-				<div class="size">
+				<div class="meta">
+					{{ entry.visibility }}
+					|
 					{{ entry.size }} deck(s)
 				</div>
 			</div>
@@ -99,7 +101,7 @@ const date = computed(() => new Date(props.entry.updated).toLocaleDateString('en
 				text-overflow: ellipsis;
 			}
 
-			.date, .size {
+			.meta {
 				font-size: 0.75rem;
 				color: var(--app-theme-mysterious-white);
 				flex-shrink: 0;

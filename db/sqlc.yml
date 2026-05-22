@@ -39,3 +39,7 @@ sql:
             go_type:
               import: "github.com/maddsua/flippercardapp/db/model"
               type: "CardNodeContent"
+          - db_type: "resource_visibility"
+            go_type:
+              import: "github.com/maddsua/flippercardapp/db/model"
+              type: "ResourceVisibility"

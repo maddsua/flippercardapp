@@ -48,12 +48,13 @@ func (err *Error) Error() string {
 	return err.Message
 }
 
-type ContentEntrySummary struct {
-	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
+type ContentEntryMetaBase struct {
+	Name        string                      `json:"name"`
+	Description string                      `json:"description,omitempty"`
+	Visibility  db_model.ResourceVisibility `json:"visibility"`
 }
 
-func (val *ContentEntrySummary) Valid() error {
+func (val *ContentEntryMetaBase) Valid() error {
 
 	if val.Name = strings.TrimSpace(val.Name); val.Name == "" {
 		return &Error{Message: "Summary invalid: 'name' field is empty"}
@@ -67,7 +68,7 @@ func (val *ContentEntrySummary) Valid() error {
 }
 
 type CollectionMetadata struct {
-	ContentEntrySummary
+	ContentEntryMetaBase
 	ID      uuid.UUID `json:"id"`
 	Created time.Time `json:"created"`
 	Updated time.Time `json:"updated"`
@@ -80,13 +81,14 @@ func (meta *CollectionMetadata) Valid() error {
 		return &Error{Message: "Invalid collection ID"}
 	}
 
-	return meta.ContentEntrySummary.Valid()
+	return meta.ContentEntryMetaBase.Valid()
 }
 
 func (meta *CollectionMetadata) FromRow(row db_gen.Collection) {
-	meta.ContentEntrySummary = ContentEntrySummary{
+	meta.ContentEntryMetaBase = ContentEntryMetaBase{
 		Name:        row.Name,
 		Description: row.Description.String,
+		Visibility:  row.Visibility,
 	}
 	meta.ID = row.ID
 	meta.Created = row.CreatedAt.Time
@@ -94,9 +96,10 @@ func (meta *CollectionMetadata) FromRow(row db_gen.Collection) {
 }
 
 func (meta *CollectionMetadata) FromBatchRow(row db_gen.GetCollectionBatchRow) {
-	meta.ContentEntrySummary = ContentEntrySummary{
+	meta.ContentEntryMetaBase = ContentEntryMetaBase{
 		Name:        row.Name,
 		Description: row.Description.String,
+		Visibility:  row.Visibility,
 	}
 	meta.ID = row.ID
 	meta.Created = row.CreatedAt.Time
@@ -136,7 +139,7 @@ func (bundle *CollectionBundle) Valid() error {
 }
 
 type CardDeckMetadata struct {
-	ContentEntrySummary
+	ContentEntryMetaBase
 	ID           uuid.UUID `json:"id"`
 	CollectionID uuid.UUID `json:"collection_id"`
 	Created      time.Time `json:"created"`
@@ -145,9 +148,10 @@ type CardDeckMetadata struct {
 }
 
 func (meta *CardDeckMetadata) FromRow(row db_gen.Deck) {
-	meta.ContentEntrySummary = ContentEntrySummary{
+	meta.ContentEntryMetaBase = ContentEntryMetaBase{
 		Name:        row.Name,
 		Description: row.Description.String,
+		Visibility:  row.Visibility,
 	}
 	meta.ID = row.ID
 	meta.CollectionID = row.CollectionID
@@ -156,9 +160,10 @@ func (meta *CardDeckMetadata) FromRow(row db_gen.Deck) {
 }
 
 func (meta *CardDeckMetadata) FromBatchRow(row db_gen.GetDecksBatchRow) {
-	meta.ContentEntrySummary = ContentEntrySummary{
+	meta.ContentEntryMetaBase = ContentEntryMetaBase{
 		Name:        row.Name,
 		Description: row.Description.String,
+		Visibility:  row.Visibility,
 	}
 	meta.ID = row.ID
 	meta.CollectionID = row.CollectionID
@@ -193,17 +198,13 @@ func (card *Card) FromRow(row db_gen.Card) {
 }
 
 type CollectionPatch struct {
-	ContentEntrySummary
+	ContentEntryMetaBase
 }
 
 type CardDeckPatch struct {
 	CollectionID uuid.NullUUID         `json:"collection_id"`
-	Details      *CardDeckDetailsPatch `json:"details,omitempty"`
+	Meta         *ContentEntryMetaBase `json:"meta,omitempty"`
 	Content      *CardDeckContentPatch `json:"content,omitempty"`
-}
-
-type CardDeckDetailsPatch struct {
-	ContentEntrySummary
 }
 
 type CardDeckContentPatch struct {

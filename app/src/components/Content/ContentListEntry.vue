@@ -1,13 +1,21 @@
 <script setup lang="ts">
+import { computed } from 'vue';
+import type { ResourceVisibility } from '../../api_models';
+
 const props = defineProps<{
 	title: string;
-	summary?: string;
-	starrable?: boolean;
-	starred?: boolean;
-	cardCount?: number;
-	deckCount?: number;
-	score?: number;
+	summary?: string | null;
+	visibility?: ResourceVisibility;
+	starrable?: boolean | null;
+	starred?: boolean | null;
+	cardCount?: number | null;
+	deckCount?: number | null;
+	score?: number | null;
 }>();
+
+//	don't display the icon for public resources to avoid icon cluttering
+const visibility = computed(() => props.visibility !== 'PUBLIC' ? (props.visibility || null) : null);
+
 </script>
 
 <template>
@@ -19,7 +27,7 @@ const props = defineProps<{
 				{{ title }}
 			</div>
 
-			<template v-if="starred || starrable || score || cardCount || deckCount">
+			<template v-if="starred || starrable || visibility || score || cardCount || deckCount">
 
 				<div class="stats">
 					<div v-if="score" class="item score">
@@ -31,7 +39,8 @@ const props = defineProps<{
 					<div v-if="deckCount" class="item decks">
 						{{ deckCount.toFixed(0) }}
 					</div>
-					<div class="item star" :class="{ starred }"></div>
+					<div v-if="visibility" class="item visibility" :class="[ visibility.toLowerCase() ]"></div>
+					<div v-if="starred || starrable" class="item star" :class="{ starred }"></div>
 				</div>
 
 			</template>
@@ -149,6 +158,18 @@ const props = defineProps<{
 					&.starred::before {
 						background-image: url(/src/assets/icons/star-filled-mask.svg);
 					}
+				}
+
+				&.visibility.public::before {
+					background-image: url(/src/assets/icons/world-mask.svg);
+				}
+
+				&.visibility.hidden::before {
+					background-image: url(/src/assets/icons/link-mask.svg);
+				}
+
+				&.visibility.private::before {
+					background-image: url(/src/assets/icons/lock-mask.svg);
 				}
 			}
 		}

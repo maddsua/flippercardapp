@@ -87,6 +87,7 @@ const lang = useLanguage();
 			<ContentListEntry v-for="item of state.data"
 				:title="item.name"
 				:summary="item.description"
+				:visibility="item.visibility"
 				:starred="true"
 				:deckCount="item.size"
 				:score="item.score"

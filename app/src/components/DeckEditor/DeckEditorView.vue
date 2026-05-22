@@ -14,7 +14,7 @@ import { useClient } from '../../api';
 import FullscreenMessage from '../App/FullscreenMessage.vue';
 import EditorErrorScreen from './EditorErrorScreen.vue';
 import EditorLoadingScreen from './EditorLoadingScreen.vue';
-import type { Card as CardType, CardDeck } from '../../api_models';
+import type { Card as CardType, CardDeck, ResourceVisibility } from '../../api_models';
 import { downloadBlob, escapeFileName, pickLocalFile } from '../../files';
 
 const route = useRoute();
@@ -35,9 +35,10 @@ interface ErrorState {
 const state = reactive({
 	
 	content: {
-		details: {
+		meta: {
 			name: 'Unnamed deck',
 			description: null as string | null,
+			visibility: 'HIDDEN' as ResourceVisibility,
 		},
 		cards: [] as CardContentNode[],
 	},
@@ -54,7 +55,7 @@ const state = reactive({
 	},
 
 	editor: {
-		detailsChanged: false,
+		metaChanged: false,
 		cardsChanged: false,
 		snapshotSaved: false,
 	},
@@ -66,7 +67,7 @@ const state = reactive({
 
 interface ResumableState extends Pick<typeof state, 'content' | 'view' | 'meta'> {};
 
-const isEdited = computed(() => state.editor.cardsChanged || state.editor.detailsChanged);
+const isEdited = computed(() => state.editor.cardsChanged || state.editor.metaChanged);
 const isValid = computed(() => !state.error && !state.loading && state.content.cards.length > 0);
 
 const activeCardFace = computed((): ActiveFace | null => {
@@ -95,7 +96,7 @@ const activeCardFace = computed((): ActiveFace | null => {
 const publishNewDeck = async () => {
 
 	const { data, error } = await client.decks.create({
-		details: state.content.details,
+		meta: state.content.meta,
 		content: { cards: state.content.cards },
 		collection_id: state.meta.collectionID,
 	});
@@ -109,7 +110,7 @@ const publishNewDeck = async () => {
 	}
 
 	state.meta = { id: data.id, collectionID: null };
-	state.editor = { detailsChanged: false, cardsChanged: false, snapshotSaved: false };
+	state.editor = { metaChanged: false, cardsChanged: false, snapshotSaved: false };
 
 	clearStateSnapshot();
 };
@@ -117,7 +118,7 @@ const publishNewDeck = async () => {
 const patchDeckExisting = async (id: string) => {
 
 	const { data, error } = await client.decks.update(id, {
-		details: state.editor.detailsChanged ? state.content.details : null,
+		meta: state.editor.metaChanged ? state.content.meta : null,
 		content: state.editor.cardsChanged ? { cards: state.content.cards } : null,
 	});
 
@@ -129,7 +130,7 @@ const patchDeckExisting = async (id: string) => {
 		return;
 	}
 
-	state.editor.detailsChanged = false;
+	state.editor.metaChanged = false;
 	state.editor.cardsChanged = false;
 
 	clearStateSnapshot();
@@ -245,8 +246,8 @@ const clearStateSnapshot = async () => store.deckEditor.store(null);
 
 const initAutosave = () => {
 
-	watch(() => state.content.details, () => {
-		state.editor.detailsChanged = true;
+	watch(() => state.content.meta, () => {
+		state.editor.metaChanged = true;
 		state.editor.snapshotSaved = false;
 	}, { deep: true });
 
@@ -269,9 +270,10 @@ const initAutosave = () => {
 const applyRemoteDeckState = (deck: CardDeck) => {
 
 	state.content = {
-		details: {
+		meta: {
 			name: deck.name,
 			description: deck.description || null,
+			visibility: deck.visibility,
 		},
 		cards: deck.cards,
 	};
@@ -279,8 +281,8 @@ const applyRemoteDeckState = (deck: CardDeck) => {
 	state.meta.id = deck.id;
 	state.meta.collectionID = deck.collection_id;
 
-	state.editor.cardsChanged = true;
-	state.editor.detailsChanged = true;
+	state.editor.cardsChanged = false;
+	state.editor.metaChanged = false;
 };
 
 const applySnapshotState = (snapshot: ResumableState) => {
@@ -393,9 +395,10 @@ const importDeckBundle = async () => {
 	}
 
 	state.content = {
-		details: {
+		meta: {
 			name: bundle.name,
 			description: bundle.description,
+			visibility: 'HIDDEN',
 		},
 		cards: bundle.cards,
 	};
@@ -412,22 +415,17 @@ const exportDeckBundle = async () => {
 		type: 'maddsua:flippercarddapp:bundle:deck',
 		id: state.meta.id,
 		collection_id: state.meta.collectionID,
-		name: state.content.details.name,
-		description: state.content.details.description,
+		name: state.content.meta.name,
+		description: state.content.meta.description,
 		cards: state.content.cards,
 	};
 
-	const baseName = escapeFileName(state.content.details.name) || 'unnamed_deck';
+	const baseName = escapeFileName(state.content.meta.name) || 'unnamed_deck';
 	const name = `${baseName}-export-${new Date().getTime()}.json`;
 
 	const blob = new Blob([JSON.stringify(bundle)]);
 
 	downloadBlob(blob, name);
-};
-
-const updateDetails = (val: { name: string, description?: string | null }) => {
-	state.content.details.name = val.name;
-	state.content.details.description = val.description || null;
 };
 
 </script>
@@ -440,10 +438,10 @@ const updateDetails = (val: { name: string, description?: string | null }) => {
 		<EditorErrorScreen v-else-if="state.error" :error="state.error" />
 
 		<DeckEditorStatusBar
-			:meta="state.content.details"
+			:meta="state.content.meta"
 			:edited="isEdited"
 			:valid="isValid"
-			@updateDetails="updateDetails"
+			@updateMeta="meta => state.content.meta = meta"
 			@flip="flipCardFace"
 			@publish="publishChanges"
 			@import="importDeckBundle"

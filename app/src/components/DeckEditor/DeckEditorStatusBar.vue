@@ -3,14 +3,16 @@ import { ref } from 'vue';
 import GenericButton from '../App/GenericButton.vue';
 import DeckMetaEditorPopup from './DeckMetaEditorPopup.vue';
 import DeckEditorTitle from './DeckEditorTitle.vue';
+import type { ResourceVisibility } from '../../api_models';
 
-interface DeckDetails {
+interface DeckMeta {
 	name: string;
 	description: string | null;
+	visibility: ResourceVisibility;
 };
 
 const props = defineProps<{
-	meta: DeckDetails;
+	meta: DeckMeta;
 	edited?: boolean;
 	published?: boolean;
 	valid?: boolean;
@@ -18,7 +20,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
 	(e: 'flip'): void;
-	(e: 'updateDetails', details: DeckDetails): void;
+	(e: 'updateMeta', meta: DeckMeta): void;
 	(e: 'disacard'): void;
 	(e: 'publish'): void;
 	(e: 'import'): void;
@@ -60,9 +62,9 @@ const metaEditorOpen = ref(false);
 				</GenericButton>
 			</div>
 
-			<DeckMetaEditorPopup v-if="metaEditorOpen" :deck="meta"
+			<DeckMetaEditorPopup v-if="metaEditorOpen" :meta="meta"
 				@done="metaEditorOpen = false"
-				@edit="val => emit('updateDetails', val)" />
+				@edit="val => emit('updateMeta', val)" />
 
 		</div>
 	</div>

@@ -69,6 +69,7 @@ const openDeck = (id: string) => {
 			<ContentListEntry v-for="item of state.data"
 				:title="item.name"
 				:summary="item.description"
+				:visibility="item.visibility"
 				:starred="true"
 				:cardCount="item.size"
 				:score="item.score"
