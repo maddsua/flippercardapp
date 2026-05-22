@@ -20,8 +20,11 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const SessionTTL = 6 * time.Hour
+const SessionBaseTTL = 18 * time.Hour
+const SessionMaxTTL = 14 * 24 * time.Hour
+const SessionTTLExtenderThreshold = min(SessionBaseTTL, 2*time.Hour)
 const SessionCookieKey = "st"
+const SessionCookieExpOverlap = time.Minute
 
 func ParseSessionToken(val string) (*SessionToken, error) {
 
@@ -207,24 +210,24 @@ func authorizeRequest(db *db_pkg.Wrapper, wrt http.ResponseWriter, req *http.Req
 		return invalidateRequest(wrt, "Invalid session secret")
 	}
 
-	if thresold := SessionTTL / 10; time.Until(session.ExpiresAt.Time) < thresold {
+	if totalDuration := time.Now().Sub(session.CreatedAt.Time) + SessionBaseTTL; totalDuration < SessionMaxTTL {
 
-		newExpiration := session.ExpiresAt.Add(SessionTTL)
+		if expiresIn := time.Until(session.ExpiresAt.Time) - SessionCookieExpOverlap; expiresIn < SessionTTLExtenderThreshold {
 
-		slog.Debug("Extending session lifetime",
-			slog.String("id", session.ID.String()),
-			slog.String("client", req.RemoteAddr),
-			slog.String("from", session.ExpiresAt.String()),
-			slog.String("to", newExpiration.String()))
+			if session, err = db.SetSessionExpirationTime(req.Context(), db_gen.SetSessionExpirationTimeParams{
+				ID:        session.ID,
+				ExpiresAt: types.NewTime(session.ExpiresAt.Add(SessionBaseTTL)),
+			}); err != nil {
+				return nil, internalError("sqlc.SetSessionExpirationTime", err)
+			}
 
-		if session, err = db.SetSessionExpirationTime(req.Context(), db_gen.SetSessionExpirationTimeParams{
-			ID:        session.ID,
-			ExpiresAt: types.NewTime(newExpiration),
-		}); err != nil {
-			return nil, internalError("sqlc.SetSessionExpirationTime", err)
+			slog.Debug("WEB AUTH: User still active; Extending their session",
+				slog.String("session_id", session.ID.String()),
+				slog.String("client", req.RemoteAddr),
+				slog.String("expires", session.ExpiresAt.String()))
+
+			setSessionCookie(wrt, session)
 		}
-
-		setSessionCookie(wrt, session)
 	}
 
 	user, err := db.GetUserByID(req.Context(), session.UserID)
@@ -269,7 +272,7 @@ func setSessionCookie(wrt http.ResponseWriter, session db_gen.UserSession) {
 		Name:     SessionCookieKey,
 		Value:    token.String(),
 		Path:     "/",
-		Expires:  session.ExpiresAt.Time,
+		Expires:  session.ExpiresAt.Time.Add(-SessionCookieExpOverlap),
 		Secure:   true,
 		HttpOnly: true,
 	})
@@ -331,7 +334,7 @@ func NewWebSessionWithPassword(ctx context.Context, username, password string) (
 		return nil, &AuthError{Message: "Invalid password"}
 	}
 
-	expires := time.Now().Add(SessionTTL)
+	expires := time.Now().Add(SessionBaseTTL)
 
 	sess, err := tx.InsertSession(ctx, db_gen.InsertSessionParams{
 		ID:        uuid.New(),
@@ -345,8 +348,8 @@ func NewWebSessionWithPassword(ctx context.Context, username, password string) (
 		return nil, internalError("sqlc.GetUserByName", err)
 	}
 
-	if sess := state.req.Session; sess != nil {
-		if err := tx.InvalidateSession(ctx, sess.ID); err != nil {
+	if oldSess := state.req.Session; oldSess != nil {
+		if err := tx.InvalidateSession(ctx, oldSess.ID); err != nil {
 			slog.Warn("WEB AUTH: InvalidateSession",
 				slog.String("op", "sqlc.InvalidateSession"),
 				slog.String("err", err.Error()))
@@ -356,6 +359,11 @@ func NewWebSessionWithPassword(ctx context.Context, username, password string) (
 	if err := tx.Commit(); err != nil {
 		return nil, internalError("sqlc.Commit", err)
 	}
+
+	slog.Debug("WEB AUTH: Sign-in: New password session",
+		slog.String("username", username),
+		slog.String("session_id", sess.ID.String()),
+		slog.String("expires", sess.ExpiresAt.String()))
 
 	setSessionCookie(state.wrt, sess)
 
@@ -383,6 +391,9 @@ func TerminateWebSession(ctx context.Context) (*RequestAuth, error) {
 	if err := state.db.InvalidateSession(ctx, state.req.Session.ID); err != nil {
 		return nil, internalError("sqlc.InvalidateSession", err)
 	}
+
+	slog.Debug("WEB AUTH: Sign-out",
+		slog.String("session_id", state.req.Session.ID.String()))
 
 	clearSessionCookie(state.wrt)
 
