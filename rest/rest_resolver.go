@@ -144,7 +144,7 @@ func (rslv *resolver) SearchCollections(ctx context.Context, term string, page P
 
 	entries, err := rslv.db.GetCollectionBatch(ctx, db_gen.GetCollectionBatchParams{
 		IdsSet: types.NewNullUUIDs(idList),
-		Limit:  1,
+		Limit:  page.QueryLimit(),
 	})
 
 	if err != nil {
