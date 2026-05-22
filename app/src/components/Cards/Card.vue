@@ -191,7 +191,7 @@ const handleDragDone = (event: PointerEvent) => {
 		@pointerleave.self="handleDragDone"
 		ref="containerRef">
 		<CardFace :entry="card.front" decoration="question-mark" @flip="flip" @score="(score) => emit('score', score)" @next="emit('next')" />
-		<CardFace :entry="card.back" @flip="flip" @score="(score) => emit('score', score)" @next="emit('next')" />
+		<CardFace :entry="card.back" :is3dBackface="true" @flip="flip" @score="(score) => emit('score', score)" @next="emit('next')" />
 	</div>
 </template>
 

@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import type { CardContentFace } from '../../content';
+import CardFace from '../Cards/CardFace.vue';
 
 const props = defineProps<{
-	size: number;
-	activeIdx: number;
+	list: CardContentFace[];
+	pointer: number;
 }>();
 
 const emit = defineEmits<{
@@ -16,12 +18,24 @@ const emit = defineEmits<{
 
 <template>
 	<div class="card-list">
-		<div v-for="idx in size" class="card-item-tile" :class="{ selected: idx-1 === activeIdx }" @click="emit('select', idx-1)">
-			<button type="button" class="duplicate" title="Remove card" @click.self.stop="emit('duplicate', idx-1)"></button>
-			<div class="label">
-				{{ idx }}
+		<div v-for="(card, idx) of list" class="card-item-tile" :class="{ selected: idx === pointer }" @click="emit('select', idx)">
+			<div class="controls-layer">
+				<div class="label">
+						{{ idx + 1 }}
+				</div>
+				<div class="col index">
+					<div class="index">
+						{{ idx + 1 }}
+					</div>
+				</div>
+				<div class="col controls">
+					<button type="button" class="remove" title="Remove card" @click.self.stop="emit('remove', idx)"></button>
+					<button type="button" class="duplicate" title="Remove card" @click.self.stop="emit('duplicate', idx)"></button>
+				</div>
 			</div>
-			<button type="button" class="remove" title="Remove card" @click.self.stop="emit('remove', idx-1)"></button>
+			<div class="preview-canvas">
+				<CardFace :entry="card" />
+			</div>
 		</div>
 		<button type="button" class="add" title="Add card" @click="emit('add')">+Add card</button>
 	</div>
@@ -45,14 +59,121 @@ const emit = defineEmits<{
 			align-items: center;
 			height: 8rem;
 			width: 5rem;
-			background-color: var(--app-theme-mysterious-white);
 			border-radius: 0.25rem;
 			border: 2px solid transparent;
 			flex-shrink: 0;
 
-			.label {
-				font-size: 2.5rem;
-				color: var(--app-theme-carbon);
+			.preview-canvas {
+				position: relative;
+				width: 100%;
+				height: 100%;
+				container-type: inline-size;
+				z-index: 0;
+				pointer-events: none;
+			}
+
+			.controls-layer {
+				position: absolute;
+				width: 100%;
+				height: 100%;
+				top: 0;
+				left: 0;
+				display: flex;
+				flex-flow: row nowrap;
+				justify-content: space-between;
+				padding: 0.25rem;
+				z-index: 1;
+
+				.col {
+					display: flex;
+					flex-direction: column;
+					justify-content: space-between;
+					gap: 0.5rem;
+					z-index: 1;
+					transition: opacity 150ms ease;
+
+					&.controls {
+						opacity: 0;
+					}
+				}
+
+				.index {
+					display: flex;
+					width: 1.125rem;
+					height: 1.125rem;
+					align-items: center;
+					justify-content: center;
+					overflow: visible;
+					background-color: var(--app-theme-snow-white);
+					color: var(--app-theme-carbon);
+					font-weight: 600;
+					font-size: 0.75rem;
+					border-radius: 100%;
+				}
+
+				button {
+					display: block;
+					width: 1.25rem;
+					height: 1.25rem;
+					border: none;
+					outline: none;
+					background-color: var(--app-theme-snow-white);
+					mask-type: alpha;
+					mask-position: center;
+					mask-repeat: no-repeat;
+					mask-size: contain;
+					transition: all 150ms ease;
+					z-index: 2;
+
+					&:hover {
+						cursor: pointer;
+					}
+
+					&.duplicate {
+						mask-image: url(/src/assets/icons/copy-mask.svg);
+
+						&:hover {
+							background-color: var(--app-theme-irish-green);
+						}
+					}
+
+					&.remove {
+						mask-image: url(/src/assets/icons/delete-mask.svg);
+
+						&:hover {
+							background-color: var(--app-theme-blood-red);
+						}
+					}
+				}
+
+				.label {
+					position: absolute;
+					width: 100%;
+					height: 100%;
+					top: 0;
+					left: 0;
+					display: flex;
+					align-items: center;
+					justify-content: center;
+					font-size: 2.5rem;
+					color: var(--app-theme-snow-white);
+					z-index: 0;
+					transition: opacity 150ms ease;
+					opacity: 0;
+				}
+
+				&:hover {
+					background-color: rgba(0, 0, 0, 0.4);
+					backdrop-filter: blur(2px);
+
+					.col.controls, .label {
+						opacity: 1;
+					}
+
+					.col.index {
+						opacity: 0;
+					}
+				}
 			}
 
 			&:hover {
@@ -62,45 +183,7 @@ const emit = defineEmits<{
 
 			&.selected {
 				border-color: var(--app-theme-sky-blue);
-			}
-
-			button {
-				display: block;
-				position: absolute;
-				width: 1.25rem;
-				height: 1.25rem;
-				border: none;
-				outline: none;
-				background-color: var(--app-theme-midnight);
-				mask-type: alpha;
-				mask-position: center;
-				mask-repeat: no-repeat;
-				mask-size: contain;
-				transition: all 150ms ease;
-
-				&:hover {
-					cursor: pointer;
-				}
-
-				&.duplicate {
-					left: 0.25rem;
-					top: 0.25rem;
-					mask-image: url(/src/assets/icons/copy-mask.svg);
-
-					&:hover {
-						background-color: var(--app-theme-deep-lavender);
-					}
-				}
-
-				&.remove {
-					right: 0.25rem;
-					top: 0.25rem;
-					mask-image: url(/src/assets/icons/delete-mask.svg);
-		
-					&:hover {
-						background-color: var(--app-theme-blood-red);
-					}
-				}
+				background-color: var(--app-theme-sky-blue);
 			}
 		}
 

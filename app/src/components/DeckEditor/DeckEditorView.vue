@@ -93,6 +93,8 @@ const activeCardFace = computed((): ActiveFace | null => {
 		: makeActive(card.back, `${card.id}-back`);
 });
 
+const cardSelectorList = computed(() => state.content.cards.map(item => item.front));
+
 const publishNewDeck = async () => {
 
 	const { data, error } = await client.decks.create({
@@ -453,8 +455,8 @@ const exportDeckBundle = async () => {
 			<div class="canvas-grid">
 
 				<DeckCardList
-					:size="state.content.cards.length"
-					:activeIdx="state.view.cardIdx"
+					:list="cardSelectorList"
+					:pointer="state.view.cardIdx"
 					@select="selectCard"
 					@add="createCard()"
 					@duplicate="duplicateCard"

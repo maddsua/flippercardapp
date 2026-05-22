@@ -9,6 +9,7 @@ import { computed } from 'vue';
 const props = defineProps<{
 	entry: CardContentFace;
 	decoration?: 'question-mark';
+	is3dBackface?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -22,7 +23,7 @@ const cardTheme = computed(() => props.entry.theme?.card);
 </script>
 
 <template>
-	<div class="card-canvas" :style="{ color: cardTheme?.mask_color }" :class="{ [`decoration-${decoration}`]: !!decoration }">
+	<div class="card-canvas" :style="{ color: cardTheme?.mask_color }" :class="{ [`decoration-${decoration}`]: !!decoration, backfase: is3dBackface }">
 		<div class="card-content" :style="{ backgroundColor: cardTheme?.fill_color, borderColor: cardTheme?.outline_color || cardTheme?.fill_color, color: cardTheme?.mask_color }">
 			<template v-for="node of entry.content">
 				<CardTitle v-if="node.type === 'title'">
@@ -69,7 +70,7 @@ const cardTheme = computed(() => props.entry.theme?.card);
 		outline: 1px solid transparent;
 		box-shadow: 0.5rem 0.5rem 2rem rgba(0, 0, 0, 0.25);
 
-		&:nth-child(2n) {
+		&.backface {
 			transform: rotateY(180deg);
 		}
 
