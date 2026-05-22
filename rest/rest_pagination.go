@@ -24,7 +24,7 @@ func Pagination(req *http.Request) PagePointers {
 	return PagePointers{Limit: int(limit), Offset: int(offset)}
 }
 
-func SlicePage[T any](entres []T, page PagePointers) []T {
+func SliceQueriedPage[T any](entres []T, page PagePointers) []T {
 	offset := page.QueryOffset()
 	if int(offset) >= len(entres) {
 		return nil

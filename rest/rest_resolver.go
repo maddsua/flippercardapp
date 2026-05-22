@@ -128,22 +128,15 @@ func (rslv *resolver) ListCollectionsPage(ctx context.Context, ids uuid.UUIDs, p
 
 func (rslv *resolver) SearchCollections(ctx context.Context, term string, page PagePointers) (*Page[rest_model.CollectionSearchResult], error) {
 
-	matched, err := rslv.matchFuzzyCollections(ctx, term, page)
+	matchIndex, err := rslv.fuzzyIndexCollection(ctx, term)
 	if err != nil {
 		return nil, err
-	}
-
-	if len(matched) == 0 {
+	} else if len(matchIndex) == 0 {
 		return WrapPage(page, []rest_model.CollectionSearchResult{}), nil
 	}
 
-	idList := make([]uuid.UUID, len(matched))
-	for idx, val := range matched {
-		idList[idx] = val.id
-	}
-
 	entries, err := rslv.db.GetCollectionBatch(ctx, db_gen.GetCollectionBatchParams{
-		IdsSet: types.NewNullUUIDs(idList),
+		IdsSet: types.NewNullUUIDs(UnwrapSearchIndex(matchIndex, page)),
 		Limit:  page.QueryLimit(),
 	})
 
@@ -151,10 +144,21 @@ func (rslv *resolver) SearchCollections(ctx context.Context, term string, page P
 		return nil, InternalError("sqlc.GetCollectionBatch", err)
 	}
 
-	return TransformPage(page, entries, db_pkg.TransformBatchRow[rest_model.CollectionSearchResult, db_gen.GetCollectionBatchRow]), nil
+	result := TransformPage(page, entries, func(row db_gen.GetCollectionBatchRow) rest_model.CollectionSearchResult {
+		var next rest_model.CollectionSearchResult
+		next.FromBatchRow(row)
+		next.Rank = matchIndex[row.ID]
+		return next
+	})
+
+	sort.SliceStable(result.Entries, func(i, j int) bool {
+		return result.Entries[i].Rank < result.Entries[j].Rank
+	})
+
+	return result, nil
 }
 
-func (rslv *resolver) matchFuzzyCollections(ctx context.Context, term string, page PagePointers) ([]rankedSearchEntry, error) {
+func (rslv *resolver) fuzzyIndexCollection(ctx context.Context, term string) (map[uuid.UUID]int, error) {
 
 	if term = strings.ToLower(strings.TrimSpace(term)); len(term) < 2 {
 		return nil, &rest_model.Error{Message: "Search term too short"}
@@ -170,7 +174,7 @@ func (rslv *resolver) matchFuzzyCollections(ctx context.Context, term string, pa
 
 	const indexBatchSize = 100
 
-	index := map[uuid.UUID]int{}
+	matchIndex := map[uuid.UUID]int{}
 
 	for offset := 0; offset < math.MaxInt; offset += indexBatchSize {
 
@@ -189,31 +193,12 @@ func (rslv *resolver) matchFuzzyCollections(ctx context.Context, term string, pa
 		for _, item := range next {
 			doc := strings.ToLower(item.Name)
 			if rank := fuzzy.RankMatch(term, doc); rank >= 0 {
-				index[item.ID] = rank
+				matchIndex[item.ID] = rank
 			}
 		}
 	}
 
-	var indexSlice []rankedSearchEntry
-	for id, rank := range index {
-		indexSlice = append(indexSlice, rankedSearchEntry{id: id, rank: rank})
-	}
-
-	sort.SliceStable(indexSlice, func(i, j int) bool {
-		return indexSlice[i].rank < indexSlice[j].rank
-	})
-
-	priority := make(uuid.UUIDs, len(indexSlice))
-	for idx, item := range indexSlice {
-		priority[idx] = item.id
-	}
-
-	return SlicePage(indexSlice, page), nil
-}
-
-type rankedSearchEntry struct {
-	id   uuid.UUID
-	rank int
+	return matchIndex, nil
 }
 
 func (rslv *resolver) CreateContentCollection(ctx context.Context, params rest_model.CollectionPatch) (*rest_model.CollectionMetadata, error) {

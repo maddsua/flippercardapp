@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"sort"
 	"strings"
 
 	"github.com/google/uuid"
@@ -156,4 +157,30 @@ func EnforceResourceVisibility(ctx context.Context, resourceVisibility db_model.
 	default:
 		return nil
 	}
+}
+
+func UnwrapSearchIndex(index map[uuid.UUID]int, page PagePointers) []uuid.UUID {
+
+	type RankedSearchEntry struct {
+		ID   uuid.UUID
+		Rank int
+	}
+
+	var indexSlice []RankedSearchEntry
+	for id, rank := range index {
+		indexSlice = append(indexSlice, RankedSearchEntry{ID: id, Rank: rank})
+	}
+
+	sort.SliceStable(indexSlice, func(i, j int) bool {
+		return indexSlice[i].Rank < indexSlice[j].Rank
+	})
+
+	indexSlice = SliceQueriedPage(indexSlice, page)
+
+	result := make([]uuid.UUID, len(indexSlice))
+	for idx, val := range indexSlice {
+		result[idx] = val.ID
+	}
+
+	return result
 }
