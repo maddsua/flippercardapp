@@ -62,7 +62,7 @@ const goBack = () => props.backHref ? router.push(props.backHref) : null;
 				font-weight: 400;
 
 				@media (orientation: portrait) {
-					font-size: 1.75rem;
+					font-size: 1.5rem;
 				}
 			}
 	
