@@ -126,6 +126,11 @@ const isCapturedPointer = (state: DragState, event: PointerEvent): boolean => {
 	return state.pointerID === null || state.pointerID === event.pointerId;
 };
 
+const viewportEdgeDistance = (viewport: number, point: number): number => {
+	const center = viewport / 2;
+	return point > center ? viewport - point : point;
+};
+
 const handleDragStart = (event: PointerEvent) => {
 
 	// don't process right and auxilary button events
@@ -133,15 +138,22 @@ const handleDragStart = (event: PointerEvent) => {
 		return;
 	}
 
-	// ignore any other pointers
+	// only handle one pointer at the time
 	if (dragState.value) {
+		return;
+	}
+
+	const { clientX, clientY } = event;
+
+	//	don't process events right next to the screen edge
+	// as those likely are  os navigation gestures
+	const osGestureMargin = window.innerWidth * 0.1;
+	if (viewportEdgeDistance(window.innerWidth, clientX) < osGestureMargin) {
 		return;
 	}
 
 	const target = event.target as HTMLElement;
 	const interactiveTarget = target.closest<HTMLElement>('button, a, input, textarea, [data-interactive]');
-
-	const { clientX, clientY } = event;
 
 	dragState.value = {
 		initX: clientX,
