@@ -124,7 +124,7 @@ const publishNewDeck = async () => {
 		return;
 	}
 
-	state.meta = { id: data.id, collectionID: null };
+	state.meta.id = data.id;
 	state.changes = { meta: false, cards: false };
 	state.snapshotSaved = false;
 
