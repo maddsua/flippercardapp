@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, type CSSProperties } from 'vue';
+import { computed, ref, type CSSProperties } from 'vue';
 import type { CardContentElementTheme, CardPollElementOptionNode } from '../../content';
 
 const props = defineProps<{
@@ -12,29 +12,24 @@ const emit = defineEmits<{
 	(e: 'select'): void;
 }>();
 
-const state = reactive({
-	wrong: false,
-	right: false,
-	selected: false,
-});
+const answered = ref(false);
 
 const handleSelect = () => {
 
-	if (state.selected) {
+	if (answered.value) {
 		return;
 	}
-	state.selected = true;
-
-	if (props.is_quiz) {
-		if (!props.entry.is_answer) {
-			state.wrong = true;
-		} else {
-			state.right = true;
-		}
-	}
+	answered.value = true;
 
 	emit('select');
 };
+
+const applyClasses = computed((): Record<string, boolean> => ({
+	right: answered.value && props.is_quiz && !!props.entry.is_answer,
+	wrong: answered.value && props.is_quiz && !props.entry.is_answer,
+	selected: answered.value && !props.is_quiz,
+	answered: answered.value,
+}));
 
 const applyStyles = computed((): CSSProperties => ({
 	backgroundColor: props.theme?.fill_color,
@@ -44,7 +39,7 @@ const applyStyles = computed((): CSSProperties => ({
 </script>
 
 <template>
-	<button type="button" :class="state" :style="applyStyles" @click.stop="handleSelect">
+	<button type="button" :class="applyClasses" :style="applyStyles" @click.stop="handleSelect">
 		{{ entry.value }}
 	</button>
 </template>
@@ -72,9 +67,18 @@ const applyStyles = computed((): CSSProperties => ({
 			background-color: var(--app-theme-deep-lavender);
 		}
 
-		&.wrong {
+		&:disabled {
 			pointer-events: none;
-			cursor: not-allowed;
+			filter: saturate(0);
+		}
+
+		&.answered {
+			pointer-events: none;
+			cursor: default;
+			filter: unset;
+		}
+
+		&.wrong {
 			animation: horizontal-shaking 200ms 2;
 			color: var(--app-theme-snow-white) !important;
 			background-color: var(--app-theme-blood-red) !important;

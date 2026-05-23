@@ -75,6 +75,7 @@ const options = computed(() => {
 			:entry="option"
 			:is_quiz="props.entry.is_quiz"
 			:theme="theme"
+			:disabled="state.answered && !props.entry.is_quiz"
 			@select="selectAnswer(option)" />
 
 		<template v-else>
