@@ -23,7 +23,7 @@ const cardTheme = computed(() => props.entry.theme?.card);
 </script>
 
 <template>
-	<div class="card-canvas" :style="{ color: cardTheme?.mask_color }" :class="{ [`decoration-${decoration}`]: !!decoration, backfase: is3dBackface }">
+	<div class="card-canvas" :style="{ color: cardTheme?.mask_color }" :class="{ [`decoration-${decoration}`]: !!decoration, backface: is3dBackface }">
 		<div class="card-content" :style="{ backgroundColor: cardTheme?.fill_color, borderColor: cardTheme?.outline_color || cardTheme?.fill_color, color: cardTheme?.mask_color }">
 			<template v-for="node of entry.content">
 				<CardTitle v-if="node.type === 'title'">
