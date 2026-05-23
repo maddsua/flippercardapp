@@ -890,3 +890,21 @@ func (rslv *resolver) ImageMetadata(ctx context.Context, mediaID string) (*model
 	result.FromRow(entry)
 	return &result, nil
 }
+
+func (rslv *resolver) ImageBlob(ctx context.Context, mediaID string) (io.Reader, error) {
+
+	if perms, err := auth.For(ctx).Permissions(); err != nil {
+		return nil, err
+	} else if err := perms.AsTeamMember(); err != nil {
+		return nil, err
+	}
+
+	entry, err := rslv.db.GetImageById(ctx, mediaID)
+	if db_pkg.IsNull(err) {
+		return nil, &model.Error{Message: "image not found", Code: http.StatusNotFound}
+	} else if err != nil {
+		return nil, InternalError("sqlc.GetImageById", err)
+	}
+
+	return bytes.NewReader(entry.Data), nil
+}

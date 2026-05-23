@@ -55,6 +55,7 @@ const fetchMetadata = async () => {
 	}
 
 	state.data = null;
+	state.error = null;
 	state.name = 'Remote image';
 
 	const { data, error } = await client.images.metadata(model.value);

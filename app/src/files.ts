@@ -35,3 +35,21 @@ export const pickLocalFiles = async (opts?: { multiple?: boolean, accept?: strin
 
 	return files;
 };
+
+export const blobToJson = async (blob: Blob)  =>{
+	return new Promise<string>((resolve, reject) => {
+
+		const reader = new FileReader();
+
+		reader.onloadend = () => {
+			if (typeof reader.result !== 'string') {
+				reject(new Error(`FileReader returned data of unexpected type: ${typeof reader.result}`));
+				return;
+			}
+			resolve(reader.result);
+		};
+
+		reader.onerror = reject;
+		reader.readAsDataURL(blob);
+	});
+};

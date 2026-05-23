@@ -315,8 +315,11 @@ export class ApiClient {
 
 	images = {
 
-		upload: async (file: File) =>
-			this.execJSON<ImageMetadata>('PUT', '/manage/content/images/upload', { name: file.name }, file),
+		upload: async (img: File | Blob, blobName?: string) =>
+			this.execJSON<ImageMetadata>('PUT', '/manage/content/images/upload', { name: img instanceof File ? img.name : blobName }, img),
+
+		blob: async (id: string) =>
+			this.execBlob('GET', `/manage/content/images/${id}/blob`),
 
 		metadata: async (id: string) =>
 			this.execJSON<ImageMetadata>('GET', `/manage/content/images/${id}/metadata`),

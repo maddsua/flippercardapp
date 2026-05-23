@@ -3,7 +3,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { computed, onMounted, reactive, toRaw, watch } from 'vue';
 import DeckEditorStatusBar from './DeckEditorStatusBar.vue';
 import CardFaceComponent from '../Cards/CardFace.vue';
-import type { CardContentFace, CardContentNode } from '../../content';
+import type { CardContentElement, CardContentFace, CardContentNode, CardImageElement } from '../../content';
 import DeckCardFacePreviewSlot from './DeckCardFacePreviewSlot.vue';
 import EditorCanvasColumn from './EditorCanvasColumn.vue';
 import CardFaceContentEditor from './CardContentEditor/CardFaceContentEditor.vue';
@@ -15,7 +15,7 @@ import FullscreenMessage from '../App/FullscreenMessage.vue';
 import EditorErrorScreen from './EditorErrorScreen.vue';
 import EditorLoadingScreen from './EditorLoadingScreen.vue';
 import type { Card as CardType, CardDeck, ResourceVisibility } from '../../api_models';
-import { downloadBlob, escapeFileName, pickLocalFiles } from '../../files';
+import { blobToJson, downloadBlob, escapeFileName, pickLocalFiles } from '../../files';
 
 const route = useRoute();
 const router = useRouter();
@@ -370,6 +370,13 @@ interface CardDeckBundle {
 	name: string;
 	description: string | null;
 	cards: Array<Omit<CardType, 'created' | 'updated'>>;
+	image_blobs: ImageBlobBundle[];
+};
+
+interface ImageBlobBundle {
+	id: string;
+	source_name: string;
+	data_url: string;
 };
 
 const importDeckBundle = async () => {
@@ -378,14 +385,14 @@ const importDeckBundle = async () => {
 		return;
 	}
 
-	const files = await pickLocalFiles({ accept: ['.json'] });
+	const files = await pickLocalFiles({ accept: ['.carddeck'] });
 	if (!files) {
 		return;
 	}
 
-	const bundle: CardDeckBundle | null = await files[0].text()
-		.then(data => JSON.parse(data))
-		.catch(() => null);
+	const ds = new DecompressionStream('gzip');
+	const bundleStream = files[0].stream().pipeThrough(ds)
+	const bundle: CardDeckBundle | null = await new Response(bundleStream).json().catch(() => null);
 
 	if (!bundle || typeof bundle !== 'object' || bundle.type !== 'maddsua:flippercarddapp:bundle:deck') {
 		console.warn('Invalid bundle file: Invalid JSON object or unsupported bundle type');
@@ -395,6 +402,39 @@ const importDeckBundle = async () => {
 	if (isEdited.value) {
 		if (!confirm('Importing a bundle will discard current changes. Continue anyway?')) {
 			return;
+		}
+	}
+
+	const imageNodes = bundle.cards
+		.map(item => [item.front.content, item.back.content])
+		.flat()
+		.flat()
+		.filter(item => item.type === 'image' && item.media_id?.length) as CardImageElement[];
+
+	for (const image of bundle.image_blobs) {
+
+		if (!image.data_url) {
+			console.error('Image import: Data URL is missing for', image.id);
+			continue;
+		}
+
+		const blob = await fetch(image.data_url).then(res => res.blob()).catch(() => null);
+		if (!blob) {
+			console.error('Image import failed: Unable to parse blob for', image.id);
+			continue;
+		}
+
+		const { data, error } = await client.images.upload(blob, image.source_name);
+		if (!data || error) {
+			console.error('Image upload failed:', error?.message);
+			continue;
+		}
+
+		for (const node of imageNodes) {
+			if (node.media_id !== image.id) {
+				continue;
+			}
+			node.media_id = data.id;
 		}
 	}
 
@@ -413,6 +453,25 @@ const importDeckBundle = async () => {
 	};
 };
 
+const downloadImageBlob = async (node: CardContentElement) => {
+
+	if (node.type !== 'image' || !node.media_id?.length) {
+		return null;
+	}
+
+	const { data } = await client.images.metadata(node.media_id);
+	if (!data) {
+		return null;
+	}
+
+	const { blob } = await client.images.blob(node.media_id);
+	if (!blob) {
+		return null;
+	}
+
+	return { id: node.media_id, source_name: data.source_name, blob };
+};
+
 const exportDeckBundle = async () => {
 
 	const bundle: CardDeckBundle = {
@@ -422,14 +481,28 @@ const exportDeckBundle = async () => {
 		name: state.content.meta.name,
 		description: state.content.meta.description,
 		cards: state.content.cards,
+		image_blobs: await Promise.all(state.content.cards
+			.map(item => [item.front.content, item.back.content])
+			.flat()
+			.flat()
+			.filter(item => item.type === 'image' && item.media_id?.length)
+			.map(item => downloadImageBlob(item)))
+			.then(items => items.filter(item => item?.blob?.size))
+			.then(items => Promise.all(items.map(async item => ({
+				id: item!.id,
+				source_name: item!.source_name,
+				data_url: await blobToJson(item!.blob),
+			})))),
 	};
 
 	const baseName = escapeFileName(state.content.meta.name) || 'unnamed_deck';
-	const name = `${baseName}-export-${new Date().getTime()}.json`;
+	const name = `${baseName}-export-${new Date().getTime()}.carddeck`;
 
-	const blob = new Blob([JSON.stringify(bundle)]);
+	const rawBlob = new Blob([JSON.stringify(bundle)]);
+	const compressor = new CompressionStream('gzip');
+	const compressedBlob = await new Response(rawBlob.stream().pipeThrough(compressor)).blob();
 
-	downloadBlob(blob, name);
+	downloadBlob(compressedBlob, name);
 };
 
 </script>

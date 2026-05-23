@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -202,6 +203,19 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 
 	mux.Handle("GET /manage/content/images/{id}/metadata", MethodHandleFunc(func(req *http.Request) (*model.ImageMetadata, error) {
 		return rslv.ImageMetadata(req.Context(), req.PathValue("id"))
+	}))
+
+	mux.Handle("GET /manage/content/images/{id}/blob", http.HandlerFunc(func(wrt http.ResponseWriter, req *http.Request) {
+
+		blob, err := rslv.ImageBlob(req.Context(), req.PathValue("id"))
+		if err != nil {
+			NewErrorResponseStatus[any](err, http.StatusBadRequest).Write(wrt)
+			return
+		}
+
+		wrt.Header().Set("Content-Type", "application/octet-stream")
+
+		io.Copy(wrt, blob)
 	}))
 
 	return auth.Middleware(db, mux)
