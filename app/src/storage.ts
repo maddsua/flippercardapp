@@ -30,7 +30,11 @@ class SetStore<T> {
 	}
 
 	entries = async (): Promise<T[]> => {
-		return (await this.store.load()) || []
+		return (await this.store.load()) || [];
+	};
+
+	fromEntries = async (entries: T[]) => {
+		await this.store.store(entries.length ? entries : null);
 	};
 
 	contains = async (value: T): Promise<boolean> => {

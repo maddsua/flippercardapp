@@ -29,20 +29,19 @@ const client = useClient();
 
 onMounted(async () => {
 
-	const starredIDs = await store.starredDecks.entries();
-	if (!starredIDs.length) {
+	const ids = await store.starredDecks.entries();
+	if (!ids.length) {
 		state.data = [];
 		return;
 	}
 
-	const { data, error } = await client.decks.list({ ids: starredIDs });
+	const { data, error } = await client.decks.list({ ids, limit: ids.length });
 	if (!data || error) {
 		state.error = error?.message || 'Unable to load decks';
 		return;
 	}
 
 	const playStats = new Map(await store.playStats.entries());
-
 	state.data = data.entries.map(item => ({ ... item, score: playStats.get(item.id)?.score || 0 }));
 });
 

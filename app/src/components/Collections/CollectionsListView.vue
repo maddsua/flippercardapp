@@ -31,13 +31,13 @@ const state = reactive({
 
 onMounted(async () => {
 
-	const myCollections = await store.collections.entries();
-	if (!myCollections.length) {
+	const ids = await store.collections.entries();
+	if (!ids.length) {
 		state.data = [];
 		return;
 	}
 
-	const { data, error } = await client.collections.list({ ids: myCollections });
+	const { data, error } = await client.collections.list({ ids, limit: ids.length });
 	if (!data || error) {
 		state.error = error?.message || 'Unable to load collections';
 		return;
