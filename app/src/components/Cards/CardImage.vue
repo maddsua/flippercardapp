@@ -9,36 +9,40 @@ const props = defineProps<{
 
 const mediaURL = computed(() => props.entry.media_id ? `/media/images/${props.entry.media_id}` : null);
 
+enum ReadyState {
+	Idle,
+	Failed,
+	Ready
+};
+
 const state = reactive({
-	ready: false,
-	failed: false,
+	ready: ReadyState.Idle,
 	rotation: `${((Math.random() - 0.5) * 10).toFixed(0)}deg`,
 });
 
-const resetState = () => {
-	state.ready = false;
-	state.failed = false;
-};
-
-watch(() => props.entry.media_id, resetState);
+watch(() => props.entry.media_id, () => state.ready = ReadyState.Idle);
 
 </script>
 
 <template>
-	<div class="card-image" :class="{ failed: state.failed }" :style="{ rotate: state.rotation }">
+	<div class="card-image" :class="{ placeholder: state.ready !== ReadyState.Ready }" :style="{ rotate: state.rotation }">
 
-		<img v-if="mediaURL && !state.failed" :src="mediaURL" @load="state.ready = true" @error="state.failed = true" />
+		<img v-if="mediaURL" :src="mediaURL" loading="lazy" @load="state.ready = ReadyState.Ready" @error="state.ready = ReadyState.Failed" />
 
-		<div v-else-if="state.failed" class="placeholder error">
-			Unable to load image
-		</div>
+		<div v-if="state.ready !== ReadyState.Ready" class="placeholder error">
 
-		<div v-if="!mediaURL" class="placeholder empty">
-			No image selected
-		</div>
+			<template v-if="state.ready === ReadyState.Failed">
+				Unable to load image
+			</template>
 
-		<div v-else-if="!state.ready" class="placeholder loading">
-			<LoadingMessage />
+			<template v-else-if="state.ready === ReadyState.Idle">
+				<LoadingMessage />
+			</template>
+
+			<template v-else>
+				No image selected
+			</template>
+
 		</div>
 
 	</div>
