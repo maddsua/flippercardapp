@@ -15,9 +15,9 @@ func NewRandomToken(n int) []byte {
 	return buff
 }
 
-func NewRandomTokenText(n int) string {
+func NewRandomBase64Token(nbytes int) string {
 
-	buff := make([]byte, max(n, 8))
+	buff := make([]byte, max(nbytes, 8))
 	if _, err := rand.Read(buff); err != nil {
 		panic(err)
 	}

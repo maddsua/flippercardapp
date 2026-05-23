@@ -716,7 +716,7 @@ func (rslv *resolver) UploadImage(ctx context.Context, name string, reader io.Re
 	}
 
 	entry, err := rslv.db.InsertImage(ctx, db_gen.InsertImageParams{
-		ID:               utils.NewRandomTokenText(32),
+		ID:               utils.NewRandomBase64Token(64),
 		CreatedAt:        types.NewTime(time.Now()),
 		Mimetype:         "image/webp",
 		SourceName:       name,
