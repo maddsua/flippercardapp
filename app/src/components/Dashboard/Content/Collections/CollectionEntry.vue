@@ -81,6 +81,7 @@ const date = computed(() => new Date(props.entry.updated).toLocaleDateString('en
 
 		.header {
 			flex-grow: 1;
+			min-width: 0;
 
 			.name {
 				font-size: 0.95rem;
