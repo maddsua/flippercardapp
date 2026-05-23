@@ -5,6 +5,7 @@ import CardTextNode from './CardTextNode.vue';
 import CardTitle from './CardTitle.vue';
 import type { CardContentFace } from '../../content';
 import { computed } from 'vue';
+import CardImage from './CardImage.vue';
 
 const props = defineProps<{
 	entry: CardContentFace;
@@ -29,6 +30,7 @@ const cardTheme = computed(() => props.entry.theme?.card);
 				<CardTitle v-if="node.type === 'title'">
 					{{ node.content || '[Title]' }}
 				</CardTitle>
+				<CardImage v-else-if="node.type === 'image'" :entry="node" />
 				<CardTextBox v-else-if="node.type === 'textbox'">
 					<template v-for="txtnode of node.content">
 						<CardTextNode v-if="txtnode.type === 'text'" :theme="txtnode.theme">
@@ -92,7 +94,6 @@ const cardTheme = computed(() => props.entry.theme?.card);
 		flex-direction: column;
 		gap: 1.5em;
 		align-items: center;
-		justify-content: center;
 		flex-grow: 1;
 		border: 3px solid var(--app-theme-spooky-orange);
 		border-radius: 1.5em;

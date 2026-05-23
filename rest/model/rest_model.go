@@ -1,6 +1,7 @@
 package model
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -219,4 +220,24 @@ type CardPatch struct {
 type SignInParams struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+}
+
+type ImageMetadata struct {
+	ID               string    `json:"id"`
+	Created          time.Time `json:"created"`
+	Mimetype         string    `json:"mimetype"`
+	SourceName       string    `json:"source_name"`
+	SourceSha512Hash string    `json:"source_sha512_hash"`
+	DataSha512Hash   string    `json:"data_sha512_hash"`
+	DataSize         int       `json:"data_size"`
+}
+
+func (meta *ImageMetadata) FromRow(row db_gen.Image) {
+	meta.ID = row.ID
+	meta.Created = row.CreatedAt.Time
+	meta.Mimetype = row.Mimetype
+	meta.SourceName = row.SourceName
+	meta.SourceSha512Hash = hex.EncodeToString(row.SourceSha512Hash)
+	meta.DataSize = int(row.DataSize)
+	meta.DataSha512Hash = hex.EncodeToString(row.DataSha512Hash)
 }

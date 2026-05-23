@@ -57,7 +57,7 @@ func InternalError(op string, err error) error {
 		slog.String("op", op),
 		slog.String("err", err.Error()))
 
-	return &model.Error{Message: err.Error(), Code: http.StatusInternalServerError}
+	return &model.Error{Message: fmt.Sprintf("%s: %v", op, err), Code: http.StatusInternalServerError}
 }
 
 func ParseUUIDSet(val string) (uuid.UUIDs, error) {

@@ -85,3 +85,13 @@ export interface CardDeckContentPatch  {
 export interface CardPatch extends Omit<CardContentNode, 'id'> {
 	id?: string | null;
 };
+
+export interface ImageMetadata {
+	id: string;
+	created: string;
+	mimetype: string;
+	source_name: string;
+	source_sha512_hash: string;
+	data_sha512_hash: string;
+	data_size: number;
+};

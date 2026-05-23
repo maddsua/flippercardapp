@@ -167,3 +167,33 @@ where id = sqlc.arg(id);
 -- name: DeleteDeck :execrows
 delete from decks
 where id = sqlc.arg(id);
+
+-- name: InsertImage :one
+insert into images (
+	id,
+	created_at,
+	mimetype,
+	source_name,
+	source_sha512_hash,
+	data,
+	data_size,
+	data_sha512_hash
+) values (
+	sqlc.arg(id),
+	sqlc.arg(created_at),
+	sqlc.arg(mimetype),
+	sqlc.arg(source_name),
+	sqlc.arg(source_sha512_hash),
+	sqlc.arg(data),
+	sqlc.arg(data_size),
+	sqlc.arg(data_sha512_hash)
+) returning *;
+
+-- name: GetImageByHash :one
+select * from images
+where source_sha512_hash = sqlc.arg(sha512_hash)
+	or data_sha512_hash = sqlc.arg(sha512_hash);
+
+-- name: GetImageById :one
+select * from images
+where id = sqlc.arg(id);

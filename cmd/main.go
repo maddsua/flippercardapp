@@ -16,6 +16,7 @@ import (
 	"github.com/joho/godotenv"
 	db_pkg "github.com/maddsua/flippercardapp/db"
 	"github.com/maddsua/flippercardapp/justserve"
+	"github.com/maddsua/flippercardapp/media"
 	"github.com/maddsua/flippercardapp/rest"
 )
 
@@ -85,6 +86,7 @@ func main() {
 
 	mux := http.NewServeMux()
 
+	mux.Handle("/media/", http.StripPrefix("/media", media.NewHandler(dbconn)))
 	mux.Handle("/api/", http.StripPrefix("/api", rest.NewHandler(dbconn)))
 	mux.Handle("/", justserve.NewStaticAssetServer(webfs, "web/dist"))
 

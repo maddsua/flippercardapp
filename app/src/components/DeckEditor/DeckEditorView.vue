@@ -15,7 +15,7 @@ import FullscreenMessage from '../App/FullscreenMessage.vue';
 import EditorErrorScreen from './EditorErrorScreen.vue';
 import EditorLoadingScreen from './EditorLoadingScreen.vue';
 import type { Card as CardType, CardDeck, ResourceVisibility } from '../../api_models';
-import { downloadBlob, escapeFileName, pickLocalFile } from '../../files';
+import { downloadBlob, escapeFileName, pickLocalFiles } from '../../files';
 
 const route = useRoute();
 const router = useRouter();
@@ -114,7 +114,7 @@ const publishNewDeck = async () => {
 	state.meta = { id: data.id, collectionID: null };
 	state.editor = { metaChanged: false, cardsChanged: false, snapshotSaved: false };
 
-	clearStateSnapshot();
+	await clearStateSnapshot();
 };
 
 const patchDeckExisting = async (id: string) => {
@@ -135,7 +135,7 @@ const patchDeckExisting = async (id: string) => {
 	state.editor.metaChanged = false;
 	state.editor.cardsChanged = false;
 
-	clearStateSnapshot();
+	await clearStateSnapshot();
 };
 
 const publishChanges = async () => {
@@ -290,6 +290,8 @@ const applyRemoteDeckState = (deck: CardDeck) => {
 const applySnapshotState = (snapshot: ResumableState) => {
 	state.meta = snapshot.meta;
 	state.content = snapshot.content;
+	state.editor.cardsChanged = true;
+	state.editor.metaChanged = true;
 };
 
 const resolveDeckState = async (data: CardDeck) => {
@@ -376,7 +378,7 @@ const importDeckBundle = async () => {
 		return;
 	}
 
-	const files = await pickLocalFile({ accept: ['.json'] });
+	const files = await pickLocalFiles({ accept: ['.json'] });
 	if (!files) {
 		return;
 	}

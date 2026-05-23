@@ -189,5 +189,20 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return nil, rslv.DeleteDeck(req.Context(), deckID)
 	}))
 
+	mux.Handle("PUT /manage/content/images/upload", MethodHandleFunc(func(req *http.Request) (*model.ImageMetadata, error) {
+
+		if req.ContentLength <= 0 {
+			return nil, &model.Error{Message: "Image uploads must be of a known size", Code: http.StatusLengthRequired}
+		} else if req.ContentLength > 1_200_000 {
+			return nil, &model.Error{Message: "Image upload size limited to 1.2MB", Code: http.StatusRequestEntityTooLarge}
+		}
+
+		return rslv.UploadImage(req.Context(), req.URL.Query().Get("name"), req.Body)
+	}))
+
+	mux.Handle("GET /manage/content/images/{id}/metadata", MethodHandleFunc(func(req *http.Request) (*model.ImageMetadata, error) {
+		return rslv.ImageMetadata(req.Context(), req.PathValue("id"))
+	}))
+
 	return auth.Middleware(db, mux)
 }

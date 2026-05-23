@@ -379,6 +379,49 @@ func (q *Queries) GetDecksBatch(ctx context.Context, arg GetDecksBatchParams) ([
 	return items, nil
 }
 
+const getImageByHash = `-- name: GetImageByHash :one
+select id, created_at, mimetype, source_name, source_sha512_hash, data, data_size, data_sha512_hash from images
+where source_sha512_hash = ?1
+	or data_sha512_hash = ?1
+`
+
+func (q *Queries) GetImageByHash(ctx context.Context, sha512Hash []byte) (Image, error) {
+	row := q.db.QueryRowContext(ctx, getImageByHash, sha512Hash)
+	var i Image
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.Mimetype,
+		&i.SourceName,
+		&i.SourceSha512Hash,
+		&i.Data,
+		&i.DataSize,
+		&i.DataSha512Hash,
+	)
+	return i, err
+}
+
+const getImageById = `-- name: GetImageById :one
+select id, created_at, mimetype, source_name, source_sha512_hash, data, data_size, data_sha512_hash from images
+where id = ?1
+`
+
+func (q *Queries) GetImageById(ctx context.Context, id string) (Image, error) {
+	row := q.db.QueryRowContext(ctx, getImageById, id)
+	var i Image
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.Mimetype,
+		&i.SourceName,
+		&i.SourceSha512Hash,
+		&i.Data,
+		&i.DataSize,
+		&i.DataSha512Hash,
+	)
+	return i, err
+}
+
 const insertCard = `-- name: InsertCard :exec
 insert into cards (
 	id,
@@ -511,6 +554,64 @@ func (q *Queries) InsertDeck(ctx context.Context, arg InsertDeckParams) (Deck, e
 		&i.Name,
 		&i.Description,
 		&i.Visibility,
+	)
+	return i, err
+}
+
+const insertImage = `-- name: InsertImage :one
+insert into images (
+	id,
+	created_at,
+	mimetype,
+	source_name,
+	source_sha512_hash,
+	data,
+	data_size,
+	data_sha512_hash
+) values (
+	?1,
+	?2,
+	?3,
+	?4,
+	?5,
+	?6,
+	?7,
+	?8
+) returning id, created_at, mimetype, source_name, source_sha512_hash, data, data_size, data_sha512_hash
+`
+
+type InsertImageParams struct {
+	ID               string
+	CreatedAt        types.Time
+	Mimetype         string
+	SourceName       string
+	SourceSha512Hash []byte
+	Data             []byte
+	DataSize         int64
+	DataSha512Hash   []byte
+}
+
+func (q *Queries) InsertImage(ctx context.Context, arg InsertImageParams) (Image, error) {
+	row := q.db.QueryRowContext(ctx, insertImage,
+		arg.ID,
+		arg.CreatedAt,
+		arg.Mimetype,
+		arg.SourceName,
+		arg.SourceSha512Hash,
+		arg.Data,
+		arg.DataSize,
+		arg.DataSha512Hash,
+	)
+	var i Image
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.Mimetype,
+		&i.SourceName,
+		&i.SourceSha512Hash,
+		&i.Data,
+		&i.DataSize,
+		&i.DataSha512Hash,
 	)
 	return i, err
 }

@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { CardContentElement } from '../../../content';
+import { UploadReadyState, type CardContentElement } from '../../../content';
 import GenericButton from '../../App/GenericButton.vue';
 import CardTitleNodeEditor from './CardTitleNodeEditor.vue';
 import CardTextNodeEditor from './CardTextNodeEditor.vue';
 import CardPollEditor from './CardPollEditor.vue';
+import CardImageNodeEditor from './CardImageNodeEditor.vue';
 
 const props = defineProps<{
 	isFront?: boolean;
@@ -12,7 +13,9 @@ const props = defineProps<{
 
 const model = defineModel<CardContentElement[]>();
 
-type NodeType = 'title' | 'textbox' | 'poll';
+type NodeType = CardContentElement['type'];
+
+const nodeSortOrder: NodeType[] = ['title', 'image', 'textbox', 'poll'];
 
 const addNode = (type: NodeType) => {
 
@@ -20,41 +23,24 @@ const addNode = (type: NodeType) => {
 		throw new Error('Editor model binding may not be omitted');
 	}
 
-	const entries = model.value || [];
-
-	const lastTitle = entries.findLastIndex(item => item.type === 'title');
-	const lastTextbox = entries.findLastIndex(item => item.type === 'textbox');
-	const lastPoll = entries.findLastIndex(item => item.type === 'poll');
-
-	const insert = (idx: number, entry: CardContentElement) => {
-
-		if (!model.value?.length) {
-			model.value?.push(entry);
-			return
-		}
-
-		if (idx < 0) {
-			model.value?.unshift(entry);
-			return
-		} else if (idx >= model.value.length) {
-			model.value?.push(entry);
-			return
-		}
-
-		model.value?.splice(idx + 1, 0, entry);
-	};
+	const sortIndex = new Map<NodeType, number>(nodeSortOrder.map((item, idx) => ([item, idx])));
 
 	switch (type) {
 		case 'title':
-			insert(lastTitle, { type: 'title', content: '' });
+			model.value?.push({ type: 'title', content: '' });
+			break;
+		case 'image':
+			model.value?.push({ type: 'image', state: UploadReadyState.Idle });
 			break;
 		case 'textbox':
-			insert(Math.max(lastTitle, lastTextbox), { type: 'textbox', content: [] });
+			model.value?.push({ type: 'textbox', content: [] });
 			break;
 		case 'poll':
-			insert(Math.max(lastTitle, lastTextbox, lastPoll), { type: 'poll', content: [] });
+			model.value?.push({ type: 'poll', content: [] });
 			break;
 	}
+
+	model.value.sort((a, b) => (sortIndex.get(a.type) ?? sortIndex.size) - (sortIndex.get(b.type) ?? sortIndex.size));
 };
 
 const removeNode = (idx: number) => model.value?.splice(idx, 1);
@@ -63,6 +49,7 @@ const availableNodes = computed((): Record<NodeType, boolean> => {
 	const typeSet = new Set(model.value?.map(item => item.type));
 	return {
 		title: !typeSet.has('title'),
+		image: !typeSet.has('image'),
 		textbox: !typeSet.has('textbox'),
 		poll: props.isFront && !typeSet.has('poll'),
 	};
@@ -83,6 +70,10 @@ const availableNodes = computed((): Record<NodeType, boolean> => {
 					v-model="item.content"
 					@remove="removeNode(idx)" />
 
+				<CardImageNodeEditor v-else-if="item.type === 'image'"
+					v-model="item.media_id"
+					@remove="removeNode(idx)" />
+
 				<CardTextNodeEditor v-else-if="item.type === 'textbox'"
 					v-model="item.content"
 					@remove="removeNode(idx)" />
@@ -97,6 +88,10 @@ const availableNodes = computed((): Record<NodeType, boolean> => {
 
 				<GenericButton v-if="availableNodes.title" variant="thin" @click="addNode('title')">
 					+ Add title
+				</GenericButton>
+
+				<GenericButton v-if="availableNodes.image" variant="thin" @click="addNode('image')">
+					+ Add image
 				</GenericButton>
 
 				<GenericButton v-if="availableNodes.textbox" variant="thin" @click="addNode('textbox')">

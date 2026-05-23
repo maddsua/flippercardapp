@@ -89,6 +89,8 @@ func (element *CardContentElement) UnmarshalJSON(data []byte) (err error) {
 	switch nodeType {
 	case "title":
 		element.Element, err = utils.DecodeGenericJSON[CardTitleElement](data)
+	case "image":
+		element.Element, err = utils.DecodeGenericJSON[CardImageElement](data)
 	case "textbox":
 		element.Element, err = utils.DecodeGenericJSON[CardTextBoxElement](data)
 	case "poll":
@@ -212,4 +214,12 @@ func (poll CardPollElement) ContentElementType() string {
 type CardPollElementOptionNode struct {
 	Value    string `json:"value"`
 	IsAnswer bool   `json:"is_answer,omitempty"`
+}
+
+type CardImageElement struct {
+	MediaID string `json:"media_id"`
+}
+
+func (textbox CardImageElement) ContentElementType() string {
+	return "image"
 }

@@ -2,6 +2,7 @@ package utils
 
 import (
 	"crypto/rand"
+	"encoding/base64"
 )
 
 func NewRandomToken(n int) []byte {
@@ -12,6 +13,16 @@ func NewRandomToken(n int) []byte {
 	}
 
 	return buff
+}
+
+func NewRandomTokenText(n int) string {
+
+	buff := make([]byte, max(n, 8))
+	if _, err := rand.Read(buff); err != nil {
+		panic(err)
+	}
+
+	return base64.RawURLEncoding.EncodeToString(buff)
 }
 
 const passwordDict = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-"

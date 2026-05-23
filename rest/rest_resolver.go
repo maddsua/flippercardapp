@@ -1,8 +1,12 @@
 package rest
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha512"
 	"fmt"
+	"image"
+	"io"
 	"math"
 	"net/http"
 	"sort"
@@ -16,18 +20,28 @@ import (
 	db_gen "github.com/maddsua/flippercardapp/db/generated"
 	db_model "github.com/maddsua/flippercardapp/db/model"
 	"github.com/maddsua/flippercardapp/db/types"
-	rest_model "github.com/maddsua/flippercardapp/rest/model"
+	"github.com/maddsua/flippercardapp/rest/model"
+
+	"github.com/maddsua/flippercardapp/utils"
+	libwebp "github.com/pixiv/go-libwebp/webp"
+	"golang.org/x/image/draw"
+
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
+
+	_ "golang.org/x/image/webp"
 )
 
 type resolver struct {
 	db *db_pkg.Wrapper
 }
 
-func (rslv *resolver) LoadCardDeck(ctx context.Context, id uuid.UUID) (*rest_model.CardDeck, error) {
+func (rslv *resolver) LoadCardDeck(ctx context.Context, id uuid.UUID) (*model.CardDeck, error) {
 
 	deck, err := rslv.db.GetDeckById(ctx, id)
 	if db_pkg.IsNull(err) {
-		return nil, &rest_model.Error{Message: "deck not found", Code: http.StatusNotFound}
+		return nil, &model.Error{Message: "deck not found", Code: http.StatusNotFound}
 	} else if err != nil {
 		return nil, InternalError("sqlc.GetDeckById", err)
 	} else if err := EnforceResourceVisibility(ctx, deck.Visibility); err != nil {
@@ -39,10 +53,10 @@ func (rslv *resolver) LoadCardDeck(ctx context.Context, id uuid.UUID) (*rest_mod
 		return nil, InternalError("sqlc.GetDeckCards", err)
 	}
 
-	result := rest_model.CardDeck{
-		CardDeckMetadata: db_pkg.TransformRow[rest_model.CardDeckMetadata](deck),
+	result := model.CardDeck{
+		CardDeckMetadata: db_pkg.TransformRow[model.CardDeckMetadata](deck),
 		Labels:           []string{deck.Name},
-		Cards:            make([]rest_model.Card, len(cards)),
+		Cards:            make([]model.Card, len(cards)),
 	}
 
 	result.CardDeckMetadata.Size = len(cards)
@@ -60,7 +74,7 @@ func (rslv *resolver) LoadCardDeck(ctx context.Context, id uuid.UUID) (*rest_mod
 	return &result, nil
 }
 
-func (rslv *resolver) ListCardDeckPage(ctx context.Context, ids uuid.UUIDs, page PagePointers) (*Page[rest_model.CardDeckMetadata], error) {
+func (rslv *resolver) ListCardDeckPage(ctx context.Context, ids uuid.UUIDs, page PagePointers) (*Page[model.CardDeckMetadata], error) {
 
 	entries, err := rslv.db.GetDecksBatch(ctx, db_gen.GetDecksBatchParams{
 		IdsSet:        types.NewNullUUIDs(ids),
@@ -73,14 +87,14 @@ func (rslv *resolver) ListCardDeckPage(ctx context.Context, ids uuid.UUIDs, page
 		return nil, InternalError("sqlc.GetDecksBatch", err)
 	}
 
-	return TransformPage(page, entries, db_pkg.TransformBatchRow[rest_model.CardDeckMetadata, db_gen.GetDecksBatchRow]), nil
+	return TransformPage(page, entries, db_pkg.TransformBatchRow[model.CardDeckMetadata, db_gen.GetDecksBatchRow]), nil
 }
 
-func (rslv *resolver) LoadCollection(ctx context.Context, id uuid.UUID) (*rest_model.Collection, error) {
+func (rslv *resolver) LoadCollection(ctx context.Context, id uuid.UUID) (*model.Collection, error) {
 
 	collection, err := rslv.db.GetCollectionById(ctx, id)
 	if db_pkg.IsNull(err) {
-		return nil, &rest_model.Error{Message: "collection not found", Code: http.StatusNotFound}
+		return nil, &model.Error{Message: "collection not found", Code: http.StatusNotFound}
 	} else if err != nil {
 		return nil, InternalError("sqlc.GetCollectionById", err)
 	} else if err := EnforceResourceVisibility(ctx, collection.Visibility); err != nil {
@@ -97,9 +111,9 @@ func (rslv *resolver) LoadCollection(ctx context.Context, id uuid.UUID) (*rest_m
 		return nil, InternalError("sqlc.GetDecksBatch", err)
 	}
 
-	result := rest_model.Collection{
-		CollectionMetadata: db_pkg.TransformRow[rest_model.CollectionMetadata](collection),
-		Decks:              make([]rest_model.CardDeckMetadata, len(decks)),
+	result := model.Collection{
+		CollectionMetadata: db_pkg.TransformRow[model.CollectionMetadata](collection),
+		Decks:              make([]model.CardDeckMetadata, len(decks)),
 	}
 
 	result.CollectionMetadata.Size = len(decks)
@@ -111,7 +125,7 @@ func (rslv *resolver) LoadCollection(ctx context.Context, id uuid.UUID) (*rest_m
 	return &result, nil
 }
 
-func (rslv *resolver) ListCollectionsPage(ctx context.Context, ids uuid.UUIDs, page PagePointers) (*Page[rest_model.CollectionMetadata], error) {
+func (rslv *resolver) ListCollectionsPage(ctx context.Context, ids uuid.UUIDs, page PagePointers) (*Page[model.CollectionMetadata], error) {
 
 	entries, err := rslv.db.GetCollectionBatch(ctx, db_gen.GetCollectionBatchParams{
 		IdsSet:        types.NewNullUUIDs(ids),
@@ -123,16 +137,16 @@ func (rslv *resolver) ListCollectionsPage(ctx context.Context, ids uuid.UUIDs, p
 		return nil, InternalError("sqlc.GetCollectionBatch", err)
 	}
 
-	return TransformPage(page, entries, db_pkg.TransformBatchRow[rest_model.CollectionMetadata, db_gen.GetCollectionBatchRow]), nil
+	return TransformPage(page, entries, db_pkg.TransformBatchRow[model.CollectionMetadata, db_gen.GetCollectionBatchRow]), nil
 }
 
-func (rslv *resolver) SearchCollections(ctx context.Context, term string, page PagePointers) (*Page[rest_model.CollectionSearchResult], error) {
+func (rslv *resolver) SearchCollections(ctx context.Context, term string, page PagePointers) (*Page[model.CollectionSearchResult], error) {
 
 	matchIndex, err := rslv.fuzzyIndexCollection(ctx, term)
 	if err != nil {
 		return nil, err
 	} else if len(matchIndex) == 0 {
-		return WrapPage(page, []rest_model.CollectionSearchResult{}), nil
+		return WrapPage(page, []model.CollectionSearchResult{}), nil
 	}
 
 	entries, err := rslv.db.GetCollectionBatch(ctx, db_gen.GetCollectionBatchParams{
@@ -144,8 +158,8 @@ func (rslv *resolver) SearchCollections(ctx context.Context, term string, page P
 		return nil, InternalError("sqlc.GetCollectionBatch", err)
 	}
 
-	result := TransformPage(page, entries, func(row db_gen.GetCollectionBatchRow) rest_model.CollectionSearchResult {
-		var next rest_model.CollectionSearchResult
+	result := TransformPage(page, entries, func(row db_gen.GetCollectionBatchRow) model.CollectionSearchResult {
+		var next model.CollectionSearchResult
 		next.FromBatchRow(row)
 		next.Rank = matchIndex[row.ID]
 		return next
@@ -161,9 +175,9 @@ func (rslv *resolver) SearchCollections(ctx context.Context, term string, page P
 func (rslv *resolver) fuzzyIndexCollection(ctx context.Context, term string) (map[uuid.UUID]int, error) {
 
 	if term = strings.ToLower(strings.TrimSpace(term)); len(term) < 2 {
-		return nil, &rest_model.Error{Message: "Search term too short"}
+		return nil, &model.Error{Message: "Search term too short"}
 	} else if len(term) > math.MaxUint8 {
-		return nil, &rest_model.Error{Message: "Search term too long", Code: http.StatusRequestEntityTooLarge}
+		return nil, &model.Error{Message: "Search term too long", Code: http.StatusRequestEntityTooLarge}
 	}
 
 	tx, err := rslv.db.BeginTx(ctx)
@@ -201,7 +215,7 @@ func (rslv *resolver) fuzzyIndexCollection(ctx context.Context, term string) (ma
 	return matchIndex, nil
 }
 
-func (rslv *resolver) CreateContentCollection(ctx context.Context, params rest_model.CollectionPatch) (*rest_model.CollectionMetadata, error) {
+func (rslv *resolver) CreateContentCollection(ctx context.Context, params model.CollectionPatch) (*model.CollectionMetadata, error) {
 
 	if perms, err := auth.For(ctx).Permissions(); err != nil {
 		return nil, err
@@ -216,13 +230,13 @@ func (rslv *resolver) CreateContentCollection(ctx context.Context, params rest_m
 	defer tx.Rollback()
 
 	if err := params.Valid(); err != nil {
-		return nil, &rest_model.Error{Message: fmt.Sprintf("Invalid collection details: %v", err)}
+		return nil, &model.Error{Message: fmt.Sprintf("Invalid collection details: %v", err)}
 	}
 
 	if exists, err := tx.CollectionNameExists(ctx, params.Name); err != nil {
 		return nil, InternalError("sqlc.CollectionNameExists", err)
 	} else if exists {
-		return nil, &rest_model.Error{
+		return nil, &model.Error{
 			Message: "Collection name already exists",
 			Code:    http.StatusConflict,
 		}
@@ -245,11 +259,11 @@ func (rslv *resolver) CreateContentCollection(ctx context.Context, params rest_m
 		return nil, InternalError("sqlc.Commit", err)
 	}
 
-	result := db_pkg.TransformRow[rest_model.CollectionMetadata](entry)
+	result := db_pkg.TransformRow[model.CollectionMetadata](entry)
 	return &result, nil
 }
 
-func (rslv *resolver) UpdateContentCollection(ctx context.Context, id uuid.UUID, patch rest_model.CollectionPatch) (*rest_model.CollectionMetadata, error) {
+func (rslv *resolver) UpdateContentCollection(ctx context.Context, id uuid.UUID, patch model.CollectionPatch) (*model.CollectionMetadata, error) {
 
 	if perms, err := auth.For(ctx).Permissions(); err != nil {
 		return nil, err
@@ -258,7 +272,7 @@ func (rslv *resolver) UpdateContentCollection(ctx context.Context, id uuid.UUID,
 	}
 
 	if err := patch.Valid(); err != nil {
-		return nil, &rest_model.Error{Message: fmt.Sprintf("Invalid collection details: %v", err)}
+		return nil, &model.Error{Message: fmt.Sprintf("Invalid collection details: %v", err)}
 	}
 
 	entry, err := rslv.db.UpdateCollection(ctx, db_gen.UpdateCollectionParams{
@@ -269,12 +283,12 @@ func (rslv *resolver) UpdateContentCollection(ctx context.Context, id uuid.UUID,
 		UpdatedAt:   types.NewTime(time.Now()),
 	})
 	if db_pkg.IsNull(err) {
-		return nil, &rest_model.Error{Message: "Collection not found", Code: http.StatusNotFound}
+		return nil, &model.Error{Message: "Collection not found", Code: http.StatusNotFound}
 	} else if err != nil {
 		return nil, InternalError("sqlc.UpdateCollection", err)
 	}
 
-	result := db_pkg.TransformRow[rest_model.CollectionMetadata](entry)
+	result := db_pkg.TransformRow[model.CollectionMetadata](entry)
 	return &result, nil
 }
 
@@ -297,20 +311,20 @@ func (rslv *resolver) DeleteCollection(ctx context.Context, id uuid.UUID, recurs
 		if count, err := tx.CollectionSize(ctx, id); err != nil {
 
 			if db_pkg.IsNull(err) {
-				return &rest_model.Error{Message: "Collection not found", Code: http.StatusNotFound}
+				return &model.Error{Message: "Collection not found", Code: http.StatusNotFound}
 			}
 
 			return InternalError("sqlc.CollectionSize", err)
 
 		} else if count > 0 {
-			return &rest_model.Error{Message: "Collection is not empty", Code: http.StatusConflict}
+			return &model.Error{Message: "Collection is not empty", Code: http.StatusConflict}
 		}
 	}
 
 	if count, err := tx.DeleteCollection(ctx, id); err != nil {
 		return InternalError("sqlc.DeleteCollection", err)
 	} else if count == 0 {
-		return &rest_model.Error{Message: "Collectcion not found", Code: http.StatusNotFound}
+		return &model.Error{Message: "Collectcion not found", Code: http.StatusNotFound}
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -320,7 +334,7 @@ func (rslv *resolver) DeleteCollection(ctx context.Context, id uuid.UUID, recurs
 	return nil
 }
 
-func (rslv *resolver) CreateCardDeck(ctx context.Context, params rest_model.CardDeckPatch) (*rest_model.CardDeckMetadata, error) {
+func (rslv *resolver) CreateCardDeck(ctx context.Context, params model.CardDeckPatch) (*model.CardDeckMetadata, error) {
 
 	if perms, err := auth.For(ctx).Permissions(); err != nil {
 		return nil, err
@@ -329,13 +343,13 @@ func (rslv *resolver) CreateCardDeck(ctx context.Context, params rest_model.Card
 	}
 
 	if params.Meta == nil {
-		return nil, &rest_model.Error{Message: "Deck details must be provided"}
+		return nil, &model.Error{Message: "Deck details must be provided"}
 	} else if err := params.Meta.Valid(); err != nil {
-		return nil, &rest_model.Error{Message: fmt.Sprintf("Invalid deck details: %v", err)}
+		return nil, &model.Error{Message: fmt.Sprintf("Invalid deck details: %v", err)}
 	} else if params.Content == nil || len(params.Content.Cards) == 0 {
-		return nil, &rest_model.Error{Message: "Deck has no cards in it"}
+		return nil, &model.Error{Message: "Deck has no cards in it"}
 	} else if !params.CollectionID.Valid {
-		return nil, &rest_model.Error{Message: "Collection ID must be provided"}
+		return nil, &model.Error{Message: "Collection ID must be provided"}
 	}
 
 	tx, err := rslv.db.BeginTx(ctx)
@@ -346,8 +360,8 @@ func (rslv *resolver) CreateCardDeck(ctx context.Context, params rest_model.Card
 
 	if exists, err := tx.CollectionIDExists(ctx, params.CollectionID.UUID); err != nil {
 		return nil, InternalError("sqlc.CollectionIDExists", err)
-	} else if exists {
-		return nil, &rest_model.Error{Message: "Collection ID not found", Code: http.StatusNotFound}
+	} else if !exists {
+		return nil, &model.Error{Message: "Collection ID not found", Code: http.StatusNotFound}
 	}
 
 	deck, err := tx.InsertDeck(ctx, db_gen.InsertDeckParams{
@@ -380,12 +394,12 @@ func (rslv *resolver) CreateCardDeck(ctx context.Context, params rest_model.Card
 		return nil, InternalError("sqlc.Commit", err)
 	}
 
-	result := db_pkg.TransformRow[rest_model.CardDeckMetadata](deck)
+	result := db_pkg.TransformRow[model.CardDeckMetadata](deck)
 	result.Size = len(params.Content.Cards)
 	return &result, nil
 }
 
-func (rslv *resolver) UpdateCardDeck(ctx context.Context, id uuid.UUID, patch rest_model.CardDeckPatch) (*rest_model.CardDeckMetadata, error) {
+func (rslv *resolver) UpdateCardDeck(ctx context.Context, id uuid.UUID, patch model.CardDeckPatch) (*model.CardDeckMetadata, error) {
 
 	if perms, err := auth.For(ctx).Permissions(); err != nil {
 		return nil, err
@@ -405,7 +419,7 @@ func (rslv *resolver) UpdateCardDeck(ctx context.Context, id uuid.UUID, patch re
 	})
 
 	if db_pkg.IsNull(err) {
-		return nil, &rest_model.Error{Message: "Deck ID not found", Code: http.StatusNotFound}
+		return nil, &model.Error{Message: "Deck ID not found", Code: http.StatusNotFound}
 	} else if err != nil {
 		return nil, InternalError("sqlc.SetDeckUpdateTime", err)
 	}
@@ -413,15 +427,15 @@ func (rslv *resolver) UpdateCardDeck(ctx context.Context, id uuid.UUID, patch re
 	if patch.CollectionID.Valid {
 		if exists, err := tx.CollectionIDExists(ctx, patch.CollectionID.UUID); err != nil {
 			return nil, InternalError("sqlc.CollectionIDExists", err)
-		} else if exists {
-			return nil, &rest_model.Error{Message: "Collection ID not found", Code: http.StatusNotFound}
+		} else if !exists {
+			return nil, &model.Error{Message: "Collection ID not found", Code: http.StatusNotFound}
 		}
 	}
 
 	if patch.Meta != nil {
 
 		if err := patch.Meta.Valid(); err != nil {
-			return nil, &rest_model.Error{Message: fmt.Sprintf("Invalid deck details: %v", err)}
+			return nil, &model.Error{Message: fmt.Sprintf("Invalid deck details: %v", err)}
 		}
 
 		if deck, err = tx.UpdateDeckMetadata(ctx, db_gen.UpdateDeckMetadataParams{
@@ -435,7 +449,7 @@ func (rslv *resolver) UpdateCardDeck(ctx context.Context, id uuid.UUID, patch re
 		}
 	}
 
-	result := db_pkg.TransformRow[rest_model.CardDeckMetadata](deck)
+	result := db_pkg.TransformRow[model.CardDeckMetadata](deck)
 
 	if patch.Content != nil {
 
@@ -502,13 +516,13 @@ func (rslv *resolver) DeleteDeck(ctx context.Context, id uuid.UUID) error {
 	if count, err := rslv.db.DeleteDeck(ctx, id); err != nil {
 		return InternalError("sqlc.DeleteDeck", err)
 	} else if count == 0 {
-		return &rest_model.Error{Message: "Deck not found", Code: http.StatusNotFound}
+		return &model.Error{Message: "Deck not found", Code: http.StatusNotFound}
 	}
 
 	return nil
 }
 
-func (rslv *resolver) ExportCollectionBundle(ctx context.Context, id uuid.UUID) (*rest_model.CollectionBundle, error) {
+func (rslv *resolver) ExportCollectionBundle(ctx context.Context, id uuid.UUID) (*model.CollectionBundle, error) {
 
 	if perms, err := auth.For(ctx).Permissions(); err != nil {
 		return nil, err
@@ -524,7 +538,7 @@ func (rslv *resolver) ExportCollectionBundle(ctx context.Context, id uuid.UUID) 
 
 	collection, err := tx.GetCollectionById(ctx, id)
 	if db_pkg.IsNull(err) {
-		return nil, &rest_model.Error{Message: "collection not found", Code: http.StatusNotFound}
+		return nil, &model.Error{Message: "collection not found", Code: http.StatusNotFound}
 	} else if err != nil {
 		return nil, InternalError("sqlc.GetCollectionById", err)
 	}
@@ -538,9 +552,9 @@ func (rslv *resolver) ExportCollectionBundle(ctx context.Context, id uuid.UUID) 
 		return nil, InternalError("sqlc.GetDecksBatch", err)
 	}
 
-	bundle := rest_model.CollectionBundle{
-		CollectionMetadata: db_pkg.TransformRow[rest_model.CollectionMetadata](collection),
-		Decks:              make([]rest_model.CardDeckBundle, len(decks)),
+	bundle := model.CollectionBundle{
+		CollectionMetadata: db_pkg.TransformRow[model.CollectionMetadata](collection),
+		Decks:              make([]model.CardDeckBundle, len(decks)),
 	}
 
 	for idx, deck := range decks {
@@ -550,9 +564,9 @@ func (rslv *resolver) ExportCollectionBundle(ctx context.Context, id uuid.UUID) 
 			return nil, InternalError("sqlc.GetDeckCards", err)
 		}
 
-		deckBundle := rest_model.CardDeckBundle{
-			CardDeckMetadata: db_pkg.TransformBatchRow[rest_model.CardDeckMetadata](deck),
-			Cards:            make([]rest_model.Card, len(cards)),
+		deckBundle := model.CardDeckBundle{
+			CardDeckMetadata: db_pkg.TransformBatchRow[model.CardDeckMetadata](deck),
+			Cards:            make([]model.Card, len(cards)),
 		}
 
 		for idx, val := range cards {
@@ -565,7 +579,7 @@ func (rslv *resolver) ExportCollectionBundle(ctx context.Context, id uuid.UUID) 
 	return &bundle, nil
 }
 
-func (rslv *resolver) ImportCollectionBundle(ctx context.Context, bundle *rest_model.CollectionBundle) (*rest_model.CollectionMetadata, error) {
+func (rslv *resolver) ImportCollectionBundle(ctx context.Context, bundle *model.CollectionBundle) (*model.CollectionMetadata, error) {
 
 	if perms, err := auth.For(ctx).Permissions(); err != nil {
 		return nil, err
@@ -574,7 +588,7 @@ func (rslv *resolver) ImportCollectionBundle(ctx context.Context, bundle *rest_m
 	}
 
 	if err := bundle.Valid(); err != nil {
-		return nil, &rest_model.Error{Message: fmt.Sprintf("Invalid collection bundle: %v", err)}
+		return nil, &model.Error{Message: fmt.Sprintf("Invalid collection bundle: %v", err)}
 	}
 
 	tx, err := rslv.db.BeginTx(ctx)
@@ -628,8 +642,115 @@ func (rslv *resolver) ImportCollectionBundle(ctx context.Context, bundle *rest_m
 		return nil, InternalError("sqlc.Commit", err)
 	}
 
-	result := db_pkg.TransformRow[rest_model.CollectionMetadata](collectionEntry)
+	result := db_pkg.TransformRow[model.CollectionMetadata](collectionEntry)
 	result.Size = len(bundle.Decks)
 
+	return &result, nil
+}
+
+func (rslv *resolver) UploadImage(ctx context.Context, name string, reader io.Reader) (*model.ImageMetadata, error) {
+
+	if perms, err := auth.For(ctx).Permissions(); err != nil {
+		return nil, err
+	} else if err := perms.AsContentEditor(); err != nil {
+		return nil, err
+	}
+
+	const maxCanvasSize = 1440
+
+	sourceHash := sha512.New()
+	source, _, err := image.Decode(io.TeeReader(reader, sourceHash))
+	if err != nil {
+		return nil, &model.Error{Message: "Unable to decode image: " + err.Error(), Code: http.StatusUnprocessableEntity}
+	}
+
+	if entry, err := rslv.db.GetImageByHash(ctx, sourceHash.Sum(nil)); err == nil {
+		var result model.ImageMetadata
+		result.FromRow(entry)
+		return &result, nil
+	} else if !db_pkg.IsNull(err) {
+		return nil, InternalError("sqlc.GetImageByHash", err)
+	}
+
+	sourceSize := source.Bounds().Size()
+	if min(sourceSize.X, sourceSize.Y) < 100 || max(sourceSize.X, sourceSize.Y) > 10_000 {
+		return nil, &model.Error{Message: "Invalid image dimensions", Code: http.StatusUnprocessableEntity}
+	}
+
+	if sourceAspect := float64(sourceSize.X) / float64(sourceSize.Y); sourceAspect > 3 || sourceAspect < 0.65 {
+		return nil, &model.Error{Message: "Invalid image aspect ratio", Code: http.StatusUnprocessableEntity}
+	}
+
+	targetBounds := image.Rect(0, 0, sourceSize.X, sourceSize.Y)
+
+	if size := targetBounds.Size(); size.X > maxCanvasSize {
+		targetBounds = image.Rect(0, 0, maxCanvasSize, int(float64(size.Y)*(float64(maxCanvasSize)/float64(size.X))))
+	}
+
+	if size := targetBounds.Size(); size.Y > maxCanvasSize {
+		targetBounds = image.Rect(0, 0, int(float64(size.X)*(float64(maxCanvasSize)/float64(size.Y))), maxCanvasSize)
+	}
+
+	canvas := image.NewRGBA(targetBounds)
+	draw.CatmullRom.Scale(canvas, canvas.Rect, source, source.Bounds(), draw.Over, nil)
+
+	var buffer bytes.Buffer
+
+	encoderConfig, err := libwebp.ConfigPreset(libwebp.PresetDefault, 90)
+	if err != nil {
+		return nil, InternalError("webp.ConfigPreset", err)
+	}
+
+	if err := libwebp.EncodeRGBA(&buffer, canvas, encoderConfig); err != nil {
+		return nil, InternalError("webp.EncodeRGBA", err)
+	}
+
+	dataHash := sha512.New()
+	data, err := io.ReadAll(io.TeeReader(&buffer, dataHash))
+	if err != nil {
+		return nil, InternalError("io.TeeReader -> sha512", err)
+	}
+
+	if name == "" {
+		name = "Image upload"
+	}
+
+	entry, err := rslv.db.InsertImage(ctx, db_gen.InsertImageParams{
+		ID:               utils.NewRandomTokenText(32),
+		CreatedAt:        types.NewTime(time.Now()),
+		Mimetype:         "image/webp",
+		SourceName:       name,
+		SourceSha512Hash: sourceHash.Sum(nil),
+		DataSha512Hash:   dataHash.Sum(nil),
+		DataSize:         int64(len(data)),
+		Data:             data,
+	})
+
+	if err != nil {
+		return nil, InternalError("sqlc.InsertImage", err)
+	}
+
+	var result model.ImageMetadata
+	result.FromRow(entry)
+	return &result, nil
+}
+
+func (rslv *resolver) ImageMetadata(ctx context.Context, mediaID string) (*model.ImageMetadata, error) {
+
+	if perms, err := auth.For(ctx).Permissions(); err != nil {
+		return nil, err
+	} else if err := perms.AsTeamMember(); err != nil {
+		return nil, err
+	}
+
+	entry, err := rslv.db.GetImageById(ctx, mediaID)
+	if db_pkg.IsNull(err) {
+		return nil, &model.Error{Message: "image not found", Code: http.StatusNotFound}
+	} else if err != nil {
+		return nil, InternalError("sqlc.GetImageById", err)
+	}
+
+	var result model.ImageMetadata
+	result.FromRow(entry)
 	return &result, nil
 }

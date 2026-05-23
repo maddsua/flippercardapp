@@ -10,6 +10,10 @@ export default defineConfig({
 			'/api': {
 				target: 'http://localhost:8280/api',
 				rewrite: (path) => path.replace(/^\/api\//, '/'),
+			},
+			'/media': {
+				target: 'http://localhost:8280/media',
+				rewrite: (path) => path.replace(/^\/media\//, '/'),
 			}
 		}
 	}

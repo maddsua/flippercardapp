@@ -39,6 +39,17 @@ type Deck struct {
 	Visibility   model.ResourceVisibility
 }
 
+type Image struct {
+	ID               string
+	CreatedAt        types.Time
+	Mimetype         string
+	SourceName       string
+	SourceSha512Hash []byte
+	Data             []byte
+	DataSize         int64
+	DataSha512Hash   []byte
+}
+
 type User struct {
 	ID           uuid.UUID
 	CreatedAt    types.Time

@@ -10,7 +10,7 @@ import GenericInput from '../../../App/GenericInput.vue';
 import InlineErorrMessage from '../../../App/InlineErorrMessage.vue';
 import GenericButton from '../../../App/GenericButton.vue';
 import InputRow from '../../../App/InputRow.vue';
-import { pickLocalFile } from '../../../../files';
+import { pickLocalFiles } from '../../../../files';
 import GenericDropdown from '../../../App/GenericDropdown.vue';
 import type { ResourceVisibility } from '../../../../api_models';
 import { resourceVisibilityOptions } from '../../../../inputs';
@@ -48,7 +48,7 @@ const createCollection = async () => {
 
 const uploadFile = async () => {
 
-	const files = await pickLocalFile({ accept: ['.cardbundle'] });
+	const files = await pickLocalFiles({ accept: ['.cardbundle'] });
 	if (!files?.length) {
 		return;
 	}

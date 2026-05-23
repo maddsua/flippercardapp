@@ -24,28 +24,26 @@ export interface CardContentElementTheme {
 	mask_color?: string;
 }
 
-//	todo: add images
-
-export type CardContentElement = CardTitleElement | CardTextBoxElement | CardPollElement;
+export type CardContentElement = CardTitleElement | CardTextBoxElement | CardPollElement | CardImageElement;
 
 interface BaseCardContentElement {
 	type: string;
 };
 
 export interface CardTitleElement extends BaseCardContentElement {
-	type: 'title';
+	readonly type: 'title';
 	content: string;
 };
 
 export interface CardTextBoxElement extends BaseCardContentElement {
-	type: 'textbox';
+	readonly type: 'textbox';
 	content: Array<CardTextboxElementTextNode | CardTextboxElementNewlineNode>;
 };
 
 export interface BaseCardTextboxElement extends BaseCardContentElement {};
 
 export interface CardTextboxElementTextNode extends BaseCardTextboxElement {
-	type: 'text';
+	readonly type: 'text';
 	content: string;
 	theme?: CardTextboxElementTextNodeTheme;
 };
@@ -63,11 +61,11 @@ export interface CardTextboxElementTextNodeHighlight {
 }
 
 export interface CardTextboxElementNewlineNode extends BaseCardTextboxElement {
-	type: 'newline';
+	readonly type: 'newline';
 };
 
 export interface CardPollElement extends BaseCardContentElement {
-	type: 'poll';
+	readonly type: 'poll';
 	is_quiz?: boolean;
 	content: CardPollElementOptionNode[];
 };
@@ -75,4 +73,16 @@ export interface CardPollElement extends BaseCardContentElement {
 export interface CardPollElementOptionNode {
 	value: string;
 	is_answer?: boolean;
+};
+
+export interface CardImageElement {
+	readonly type: 'image';
+	media_id?: string | null;
+	state?: UploadReadyState | null;
+};
+
+export enum UploadReadyState {
+	Idle,
+	Uploading,
+	Done
 };

@@ -7,6 +7,7 @@ import type {
 	CollectionMetadata,
 	CollectionPatch,
 	CollectionSearchResult,
+	ImageMetadata,
 	SignInParams,
 } from "./api_models";
 
@@ -310,6 +311,15 @@ export class ApiClient {
 
 		remove: async (id: string) =>
 			this.execJSON<null>('DELETE', `/manage/content/deck/${id}`),
+	};
+
+	images = {
+
+		upload: async (file: File) =>
+			this.execJSON<ImageMetadata>('PUT', '/manage/content/images/upload', { name: file.name }, file),
+
+		metadata: async (id: string) =>
+			this.execJSON<ImageMetadata>('GET', `/manage/content/images/${id}/metadata`),
 	};
 };
 

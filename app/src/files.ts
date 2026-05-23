@@ -17,7 +17,7 @@ export const downloadBlob = (blob: Blob, name?: string) => {
 	window.URL.revokeObjectURL(url);
 };
 
-export const pickLocalFile = async (opts?: { multiple?: boolean, accept?: string[] }) => {
+export const pickLocalFiles = async (opts?: { multiple?: boolean, accept?: string[] }) => {
 
 	const input = document.createElement('input');
 	input.type = 'file';
