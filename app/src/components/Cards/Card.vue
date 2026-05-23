@@ -147,6 +147,7 @@ const handleSwipeGesture = (state: DragState) => {
 
 	// if swiped vertically more than the threshold
 	if (Math.abs(dy) > (height * 0.25)) {
+		console.debug('swiped')
 		dy > 1 ? emit('prev') : emit('next');
 		return;
 	}
@@ -190,8 +191,21 @@ const handleDragDone = (event: PointerEvent) => {
 		@pointercancel="handleDragDone"
 		@pointerleave.self="handleDragDone"
 		ref="containerRef">
-		<CardFace :entry="card.front" decoration="question-mark" @flip="flip" @score="(score) => emit('score', score)" @next="emit('next')" />
-		<CardFace :entry="card.back" :is3dBackface="true" @flip="flip" @score="(score) => emit('score', score)" @next="emit('next')" />
+
+		<CardFace
+			:entry="card.front"
+			decoration="question-mark"
+			@flip="flip"
+			@score="(score) => emit('score', score)"
+			@next="emit('next')" />
+
+		<CardFace
+			:entry="card.back"
+			:is3dBackface="true"
+			@flip="flip"
+			@score="(score) => emit('score', score)"
+			@next="emit('next')" />
+
 	</div>
 </template>
 

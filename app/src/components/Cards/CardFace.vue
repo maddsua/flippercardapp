@@ -4,7 +4,7 @@ import CardTextBox from './CardTextBox.vue';
 import CardTextNode from './CardTextNode.vue';
 import CardTitle from './CardTitle.vue';
 import type { CardContentFace } from '../../content';
-import { computed } from 'vue';
+import { computed, type CSSProperties } from 'vue';
 import CardImage from './CardImage.vue';
 
 const props = defineProps<{
@@ -19,18 +19,41 @@ const emit = defineEmits<{
 	(e: 'score', score: number): void;
 }>();
 
-const cardTheme = computed(() => props.entry.theme?.card);
+const canvasStyle = computed((): CSSProperties => ({
+	color: props.entry.theme?.card?.mask_color
+}));
+
+const canvasClasses = computed(() => ({
+	[`decoration-${props.decoration}`]: !!props.decoration,
+	backface: props.is3dBackface,
+}));
+
+const contentStyle = computed((): CSSProperties => {
+
+	const { card } = props.entry.theme || {};
+
+	return {
+		backgroundColor: card?.fill_color,
+		borderColor: card?.outline_color || card?.fill_color,
+		color: card?.mask_color,
+	};
+});
 
 </script>
 
 <template>
-	<div class="card-canvas" :style="{ color: cardTheme?.mask_color }" :class="{ [`decoration-${decoration}`]: !!decoration, backface: is3dBackface }">
-		<div class="card-content" :style="{ backgroundColor: cardTheme?.fill_color, borderColor: cardTheme?.outline_color || cardTheme?.fill_color, color: cardTheme?.mask_color }">
+	<div class="card-canvas" :style="canvasStyle" :class="canvasClasses">
+
+		<div class="card-content" :style="contentStyle">
+
 			<template v-for="node of entry.content">
+
 				<CardTitle v-if="node.type === 'title'">
 					{{ node.content || '[Title]' }}
 				</CardTitle>
+
 				<CardImage v-else-if="node.type === 'image'" :entry="node" />
+
 				<CardTextBox v-else-if="node.type === 'textbox'">
 					<template v-for="txtnode of node.content">
 						<CardTextNode v-if="txtnode.type === 'text'" :theme="txtnode.theme">
@@ -39,7 +62,14 @@ const cardTheme = computed(() => props.entry.theme?.card);
 						<br v-else-if="txtnode.type === 'newline'" />
 					</template>
 				</CardTextBox>
-				<CardPoll v-else-if="node.type === 'poll'" :entry="node" :theme="entry.theme?.interactives" @score="(score) => emit('score', score)" @flip="emit('flip')" @next="emit('next')" />
+
+				<CardPoll v-else-if="node.type === 'poll'"
+					:entry="node"
+					:theme="entry.theme?.interactives"
+					@score="(score) => emit('score', score)"
+					@flip="emit('flip')"
+					@next="emit('next')" />
+
 			</template>
 		</div>
 	</div>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, reactive } from 'vue';
 import CardPollOption from './CardPollOption.vue';
 import type { CardContentElementTheme, CardPollElement, CardPollElementOptionNode } from '../../content';
 import { shuffleArray } from '../../arrays';
@@ -15,32 +15,49 @@ const emit = defineEmits<{
 	(e: 'score', score: number): void;
 }>();
 
-let wrongQuizTakes = 0;
+const state = reactive({
+	answered: false,
+	givenAnswers: new Set<CardPollElementOptionNode>(),
+	wrongAnswers: 0,
+});
 
-const handleOptionSelect = (opt: CardPollElementOptionNode) => {
+const selectAnswer = (answer: CardPollElementOptionNode) => {
 
-	if (!props.entry.is_quiz) {
-		emit('next');
+	if (state.givenAnswers.has(answer)) {
 		return;
 	}
 
-	if (!opt.is_answer) {
-		wrongQuizTakes++;
-		emit('score', 0);
+	state.givenAnswers.add(answer);
+
+	if (!props.entry.is_quiz) {
+
+		if (!state.answered) {
+			emit('next');
+		}
+		state.answered = true;
+
+		return;
 	}
 
-	if (opt.is_answer) {
+	if (answer.is_answer) {
 
-		emit('score', 1);
+		if (!state.answered) {
 
-		if (wrongQuizTakes === 0) {
-			setTimeout(() => emit('next'), 300);
-		} else {
-			setTimeout(() => emit('flip'), 500);
+			if (state.wrongAnswers === 0) {
+				emit('score', 1);
+				setTimeout(() => emit('next'), 300);
+			} else {
+				setTimeout(() => emit('flip'), 500);
+			}
+
+			state.answered = true;
 		}
 
 		return
 	}
+
+	state.wrongAnswers++;
+	emit('score', 0);
 };
 
 const options = computed(() => {
@@ -52,12 +69,12 @@ const options = computed(() => {
 </script>
 
 <template>
-	<div class="card-poll" data-interactive="">
+	<div class="card-poll" data-interactive="" :disabled="state.answered">
 		<CardPollOption v-if="options.length" v-for="option of options"
 			:entry="option"
 			:is_quiz="props.entry.is_quiz"
 			:theme="theme"
-			@select="handleOptionSelect(option)" />
+			@select="selectAnswer(option)" />
 		<template v-else>
 			[Poll options]
 		</template>
@@ -72,5 +89,10 @@ const options = computed(() => {
 		gap: 0.5em;
 		width: 100%;
 		margin-top: auto;
+
+		&:disabled {
+			pointer-events: none;
+			filter: saturate(0.25);
+		}
 	}
 </style>
