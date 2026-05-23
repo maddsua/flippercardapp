@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive } from 'vue';
+import { computed, onMounted, reactive, watch } from 'vue';
 import GenericButton from '../../App/GenericButton.vue';
 import CardNodeHarness from './CardNodeHarness.vue';
 import type { ImageMetadata } from '../../../api_models';
@@ -48,12 +48,13 @@ const uploadFile = async () => {
 	model.value = data.id;
 };
 
-onMounted(async () => {
+const fetchMetadata = async () => {
 
-	if (!model.value) {
+	if (!model.value || model.value === state.data?.id) {
 		return
 	}
 
+	state.data = null;
 	state.name = 'Remote image';
 
 	const { data, error } = await client.images.metadata(model.value);
@@ -64,7 +65,10 @@ onMounted(async () => {
 
 	state.name = data.source_name;
 	state.data = data;
-});
+};
+
+onMounted(fetchMetadata);
+watch(model, fetchMetadata);
 
 </script>
 
