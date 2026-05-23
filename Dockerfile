@@ -7,7 +7,7 @@ copy ./app .
 run npm i
 run npm run build
 
-from golang:1.24.4-alpine as svc-builder
+from golang:1.26.3-alpine as svc-builder
 
 workdir /app
 
@@ -15,7 +15,7 @@ copy . .
 
 copy --from=app-builder /app/dist /app/cmd/web/dist
 
-run apk add --no-cache make build-base
+run apk add --no-cache make build-base libwebp-dev
 
 arg CGO_ENABLED=1
 
@@ -27,6 +27,6 @@ workdir /app
 
 copy --from=svc-builder /app/service /app
 
-run apk add --no-cache ca-certificates
+run apk add --no-cache ca-certificates libwebp
 
 cmd  ["/app/service"]
