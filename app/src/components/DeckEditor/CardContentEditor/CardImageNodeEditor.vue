@@ -91,7 +91,11 @@ onMounted(async () => {
 
 				<div class="status" :class="{ error: !!state.error }">
 
-					<template v-if="uploading">
+					<template v-if="state.error">
+						{{ state.error }}
+					</template>
+
+					<template v-else-if="uploading">
 						Uploading {{ state.name }}
 					</template>
 
