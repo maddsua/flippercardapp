@@ -29,6 +29,7 @@ const props = defineProps<{
 		outline: none;
 		transition: all 200ms ease;
 		width: fit-content;
+		flex-shrink: 0;
 
 		&:hover {
 			cursor: pointer;
