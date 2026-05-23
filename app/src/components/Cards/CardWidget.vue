@@ -93,7 +93,7 @@ const state = reactive({
 		a: newAnimatedState(),
 		b: null as CardState | null,
 	},
-	interactive: true,
+	animating: false,
 })
 
 const cardSlots = computed(() => ([state.slots.a, state.slots.b]))
@@ -145,11 +145,11 @@ const switchCards = (direction?: SlideInDirection) => {
 };
 
 const withAnimationLock = (): boolean => {
-	if (!state.interactive) {
+	if (state.animating) {
 		return false;
 	}
-	state.interactive = false;
-	setTimeout(() => state.interactive = true, 500);
+	state.animating = true;
+	setTimeout(() => state.animating = false, 500);
 	return true;
 };
 
@@ -238,7 +238,7 @@ const handleExitPrompt = (confirmed?: boolean) => {
 			@toggleMarked="emit('toggleMarked')"
 			@exit="triggerExit" />
 
-		<div class="card-screen-container" :class="{ readonly: !state.interactive }">
+		<div class="card-screen-container" :class="{ noinput: state.animating }">
 			<div class="card-transition-slot" v-for="(item, idx) of cardSlots" :key="cardSlotKey(item, idx)" :class="item?.flags">
 				<Card v-if="item" :key="item.card.id" :card="item.card" @score="countScore" @next="nextCard" @prev="prevCard" />
 			</div>
@@ -278,7 +278,7 @@ const handleExitPrompt = (confirmed?: boolean) => {
 			height: 100%;
 			overflow: visible;
 
-			&.readonly {
+			&.noinput {
 				pointer-events: none;
 			}
 

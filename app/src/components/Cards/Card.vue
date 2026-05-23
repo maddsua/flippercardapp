@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, reactive, ref, type CSSProperties } from 'vue';
 import type { CardContentNode } from '../../content';
 import CardFace from './CardFace.vue';
 
@@ -13,11 +13,25 @@ const emit = defineEmits<{
 	(e: 'score', score: number): void;
 }>();
 
-const flipped = ref(false);
-const randomRotate = computed(() => (Math.random() - 0.5) * 6);
+const state = reactive({
+	flipped: false,
+	rotation: (Math.random() - 0.5) * 6,
+	animating: false,
+});
+
 const containerRef = ref<HTMLElement | null>(null);
 
-const flip = () => flipped.value = !flipped.value;
+const flip = () => {
+
+	if (state.animating) {
+		return;
+	}
+
+	state.animating = true;
+	setTimeout(() => state.animating = false, 500);
+
+	state.flipped = !state.flipped
+};
 
 interface DragState {
 	initX: number;
@@ -49,15 +63,34 @@ const dragDelta = computed((): Delta2D | null => {
 
 const dragging = computed(() => dragDelta.value ? Math.abs(dragDelta.value.x) + Math.abs(dragDelta.value.y) > 1 : false);
 
-const transformStyle = computed(() => ({
-	rotate: dragDelta.value && dragging.value ? `${((dragDelta.value.x) / 25).toFixed(1)}deg` : `${randomRotate.value.toFixed(1)}deg`,
-	transform: dragDelta.value ? `translateX(${dragDelta.value.x}px) translateY(${dragDelta.value.y}px) rotateY(${flipped.value ? 180 : 0}deg)` : undefined,
+const containerClasses = computed((): Record<string, boolean> => ({
+	flipped: state.flipped,
+	noinput: state.animating,
+	dragging: dragging.value,
 }));
+
+const containterTransforms = computed((): CSSProperties => {
+
+	const baseR = state.rotation;
+
+	if (!dragDelta.value) {
+		return { rotate: `${baseR.toFixed(1)}deg` };
+	}
+
+	const { x: deltaX, y: deltaY } = dragDelta.value;
+
+	const deltaR = (deltaX / 25);
+
+	return {
+		rotate: `${(deltaR + baseR).toFixed(1)}deg`,
+		transform: `translateX(${deltaX}px) translateY(${deltaY}px) rotateY(${state.flipped ? 180 : 0}deg)`,
+	};
+});
 
 interface BoxSize {
 	width: number;
 	height: number;
-}
+};
 
 const dragBoundBoxSize = (): BoxSize => {
 
@@ -178,7 +211,9 @@ const handleDragDone = (event: PointerEvent) => {
 </script>
 
 <template>
-	<div class="card-container" :class="{ flipped, dragging }" :style="transformStyle"
+	<div class="card-container"
+		:class="containerClasses"
+		:style="containterTransforms"
 		@pointerdown="handleDragStart"
 		@pointermove="handleDragUpdate"
 		@pointerup="handleDragDone"
@@ -224,6 +259,10 @@ const handleDragDone = (event: PointerEvent) => {
 
 		scale: 0.95;
 		transition: transform 400ms ease;
+
+		&.noinput {
+			pointer-events: none;
+		}
 
 		&.flipped {
 			transform: rotateY(180deg);
