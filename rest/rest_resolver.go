@@ -657,6 +657,7 @@ func (rslv *resolver) ImportCollectionBundle(ctx context.Context, bundle *model.
 		UpdatedAt:   types.NewTime(time.Now()),
 		Name:        fmt.Sprintf("%v - import %d", bundle.Name, time.Now().Unix()),
 		Description: types.NewNullString(bundle.Description),
+		Visibility:  bundle.Visibility,
 	})
 
 	if err != nil {
@@ -743,7 +744,7 @@ func (rslv *resolver) ImportCollectionBundle(ctx context.Context, bundle *model.
 			CollectionID: collectionEntry.ID,
 			Name:         deck.Name,
 			Description:  types.NewNullString(deck.Description),
-			Visibility:   db_model.ResourceVisibilityPrivate,
+			Visibility:   deck.Visibility,
 			CreatedAt:    types.NewTime(deck.Created),
 			UpdatedAt:    types.NewTime(deck.Updated),
 		})
