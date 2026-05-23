@@ -82,26 +82,19 @@ const visibility = computed(() => props.visibility !== 'PUBLIC' ? (props.visibil
 		.flex-group {
 			display: flex;
 			flex-flow: row nowrap;
-			align-items: center;
-			justify-content: space-between;
+			align-items: start;
 			width: 100%;
 		}
 
 		.title {
 			font-size: 1rem;
 			font-weight: 600;
-			white-space: nowrap;
-			overflow: hidden;
-			text-overflow: ellipsis;
 			width: 100%;
 		}
 
 		.summary {
 			font-size: 0.85rem;
 			font-weight: 400;
-			white-space: nowrap;
-			overflow: hidden;
-			text-overflow: ellipsis;
 			width: 100%;
 		}
 
