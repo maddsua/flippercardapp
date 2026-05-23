@@ -58,19 +58,14 @@ const initRound = () => {
 		return null;
 	}
 
-	let questionCount = 0;
-
-	for (const item of state.cards) {
-		for (const side of [item.back, item.front]) {
-			if (side.content.some(item => item.type === 'poll')) {
-				questionCount++;
-				break;
-			}
-		}
-	}
-
 	state.round = {
-		questions: questionCount,
+		questions: state.cards.map(item => [item.front, item.back])
+			.flat()
+			.map(item => item.content)
+			.flat()
+			.filter(item => item.type === 'poll')
+			.filter(item => item.is_quiz || item.content.some(item => item.is_answer))
+			.length,
 		totalScore: 0,
 		playTime: 0,
 		isFinished: false,
