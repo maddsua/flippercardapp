@@ -3,7 +3,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { computed, onMounted, reactive, toRaw, watch } from 'vue';
 import DeckEditorStatusBar from './DeckEditorStatusBar.vue';
 import CardFaceComponent from '../Cards/CardFace.vue';
-import type { CardContentFace, CardNode, CardImageElement, CardContentNode } from '../../content';
+import type { CardContentFace, CardNode, CardImageNode, CardContentNode } from '../../content';
 import DeckCardFacePreviewSlot from './DeckCardFacePreviewSlot.vue';
 import EditorCanvasColumn from './EditorCanvasColumn.vue';
 import CardFaceContentEditor from './CardContentEditor/CardFaceContentEditor.vue';
@@ -485,7 +485,7 @@ const importCompressedDeckBundle = async (file: File) => {
 		.map(item => [item.front.content, item.back.content])
 		.flat()
 		.flat()
-		.filter(item => item.type === 'image' && item.media_id?.length) as CardImageElement[];
+		.filter(item => item.type === 'image' && item.media_id?.length) as CardImageNode[];
 
 	for (const image of bundle.image_blobs) {
 

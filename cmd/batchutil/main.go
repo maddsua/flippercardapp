@@ -69,34 +69,19 @@ func main() {
 		}
 
 		frontContent := []db_model.CardContentNode{
-			db_model.NewCardTitleNode(title),
-			db_model.NewCardTextNode(question),
+			&db_model.CardTitleNode{Content: title},
+			cardTextNodeFromString(question),
 		}
 
 		if opts, _ := mapper.Get(row, "poll_options"); opts != "" {
 
-			var poll db_model.CardPollElement
-
-			for idx, option := range strings.Split(opts, ",") {
-
-				if option = strings.TrimSpace(option); option == "" {
-					fmt.Printf("WARN: Empty poll options")
-					continue
-				}
-
-				poll.Content = append(poll.Content, db_model.CardPollElementOptionNode{
-					Value:    option,
-					IsAnswer: idx == 0,
-				})
+			node, err := cardPollNodeFromString(opts)
+			if err != nil {
+				fmt.Println("WARN: Empty poll options; Skipped")
+				continue
 			}
 
-			if len(poll.Content) >= 2 {
-				frontContent = append(frontContent, db_model.CardContentNode{
-					Element: poll,
-				})
-			} else {
-				fmt.Printf("WARN: Empty poll options")
-			}
+			frontContent = append(frontContent, node)
 		}
 
 		cards = append(cards, db_model.CardNodeContent{
@@ -107,7 +92,7 @@ func main() {
 
 			Back: db_model.CardContentFace{
 				Content: []db_model.CardContentNode{
-					db_model.NewCardTextNode(answer),
+					cardTextNodeFromString(answer),
 				},
 			},
 		})

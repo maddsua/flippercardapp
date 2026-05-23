@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, type CSSProperties } from 'vue';
-import type { CardContentElementTheme, CardPollElementOptionNode } from '../../content';
+import type { CardContentElementTheme, CardPollNodeOption } from '../../content';
 
 const props = defineProps<{
-	entry: CardPollElementOptionNode;
+	entry: CardPollNodeOption;
 	is_quiz?: boolean;
 	theme?: CardContentElementTheme;
 }>();

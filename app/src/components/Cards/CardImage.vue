@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue';
-import type { CardImageElement } from '../../content';
+import type { CardImageNode } from '../../content';
 import LoadingMessage from '../App/LoadingMessage.vue';
 
 const props = defineProps<{
-	entry: CardImageElement;
+	entry: CardImageNode;
 }>();
 
 const mediaURL = computed(() => props.entry.media_id ? `/media/images/${props.entry.media_id}` : null);

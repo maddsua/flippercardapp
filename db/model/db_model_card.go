@@ -4,9 +4,6 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
-	"strings"
-
-	"github.com/maddsua/flippercardapp/utils"
 )
 
 type CardNodeContent struct {
@@ -30,8 +27,78 @@ func (perms *CardNodeContent) Scan(src any) error {
 }
 
 type CardContentFace struct {
-	Theme   *CardFaceTheme    `json:"theme,omitempty"`
-	Content []CardContentNode `json:"content"`
+	Theme   *CardFaceTheme      `json:"theme,omitempty"`
+	Content CardContentNodeList `json:"content"`
+}
+
+type CardContentNode interface {
+	CardContentNodeType() string
+}
+
+type CardContentNodeBase struct {
+	Type string `json:"type"`
+}
+
+type CardContentNodeList []CardContentNode
+
+func (list CardContentNodeList) MarshalJSON() ([]byte, error) {
+
+	for _, node := range list {
+		switch node := node.(type) {
+		case *CardTitleNode:
+			node.CardContentNodeBase.Type = node.CardContentNodeType()
+		case *CardTextBoxNode:
+			node.CardContentNodeBase.Type = node.CardContentNodeType()
+		case *CardPollNode:
+			node.CardContentNodeBase.Type = node.CardContentNodeType()
+			node.IsQuiz = node.IsReallyQuiz()
+		case *CardImageNode:
+			node.CardContentNodeBase.Type = node.CardContentNodeType()
+		}
+	}
+
+	return json.Marshal([]CardContentNode(list))
+}
+
+func (list *CardContentNodeList) UnmarshalJSON(data []byte) (err error) {
+
+	var entries []json.RawMessage
+	if err := json.Unmarshal(data, &entries); err != nil {
+		return fmt.Errorf("decode slice: %v", err)
+	}
+
+	*list = make(CardContentNodeList, len(entries))
+
+	for idx, nodeData := range entries {
+
+		var base CardContentNodeBase
+		if err := json.Unmarshal(nodeData, &base); err != nil {
+			return fmt.Errorf("decode base node: %v", err)
+		}
+
+		var node CardContentNode
+
+		switch base.Type {
+		case "title":
+			node = &CardTitleNode{}
+		case "image":
+			node = &CardImageNode{}
+		case "textbox":
+			node = &CardTextBoxNode{}
+		case "poll":
+			node = &CardPollNode{}
+		default:
+			return fmt.Errorf("unsupported element type: '%v'", base.Type)
+		}
+
+		if err := json.Unmarshal(nodeData, node); err != nil {
+			return fmt.Errorf("decode node: %v", err)
+		}
+
+		(*list)[idx] = node
+	}
+
+	return
 }
 
 type CardFaceTheme struct {
@@ -49,212 +116,147 @@ type CardCanvasTheme struct {
 	OutlineColor string `json:"outline_color,omitempty"`
 }
 
-type BaseCardContentElement interface {
-	ContentElementType() string
-}
-
-type CardContentNode struct {
-	Element BaseCardContentElement
-}
-
-func (node *CardContentNode) Type() string {
-	if node.Element == nil {
-		return ""
-	}
-	return node.Element.ContentElementType()
-}
-
-func (node CardContentNode) MarshalJSON() ([]byte, error) {
-
-	if node.Element == nil {
-		return nil, nil
-	}
-
-	fields, err := utils.ExtractStructJSONFields(node.Element)
-	if err != nil {
-		return nil, fmt.Errorf("extract struct fields: %v", err)
-	}
-
-	fields["type"] = node.Element.ContentElementType()
-
-	return json.Marshal(fields)
-}
-
-func (node *CardContentNode) UnmarshalJSON(data []byte) (err error) {
-
-	nodeType, err := utils.ExtractJSONField[string](data, "type")
-	if err != nil {
-		return err
-	}
-
-	switch nodeType {
-	case "title":
-		node.Element, err = utils.DecodeGenericJSON[CardTitleElement](data)
-	case "image":
-		node.Element, err = utils.DecodeGenericJSON[CardImageElement](data)
-	case "textbox":
-		node.Element, err = utils.DecodeGenericJSON[CardTextBoxElement](data)
-	case "poll":
-		node.Element, err = utils.DecodeGenericJSON[CardPollElement](data)
-	default:
-		return fmt.Errorf("unsupported element type: '%v'", nodeType)
-	}
-
-	return
-}
-
-func NewCardTitleNode(title string) CardContentNode {
-	return CardContentNode{
-		Element: CardTitleElement{
-			Content: title,
-		},
-	}
-}
-
-type CardTitleElement struct {
+type CardTitleNode struct {
+	CardContentNodeBase
 	Content string `json:"content"`
 }
 
-func (title CardTitleElement) ContentElementType() string {
+func (elem *CardTitleNode) CardContentNodeType() string {
 	return "title"
 }
 
-func NewCardTextNode(text string) CardContentNode {
+type CardTextBoxNode struct {
+	CardContentNodeBase
+	Content CardTextboxNodeList `json:"content"`
+}
 
-	var spans []CardTextboxElement
+type CardTextboxNode interface {
+	CardTextboxNodeType() string
+}
 
-	for idx, content := range strings.Split(text, "\n") {
+type CardTextboxNodeList []CardTextboxNode
 
-		spans = append(spans, CardTextboxElement{
-			Element: CardTextboxElementTextNode{
-				Content: content,
-			},
-		})
+func (list CardTextboxNodeList) MarshalJSON() ([]byte, error) {
 
-		if idx > 0 {
-			spans = append(spans, CardTextboxElement{
-				Element: CardTextboxElementNewlineNode{},
-			})
+	for _, node := range list {
+		switch node := node.(type) {
+		case *CardTextboxTextNode:
+			node.CardContentNodeBase.Type = node.CardTextboxNodeType()
+		case *CardTextboxNewlineNode:
+			node.CardContentNodeBase.Type = node.CardTextboxNodeType()
 		}
 	}
 
-	return CardContentNode{
-		Element: CardTextBoxElement{
-			Content: spans,
-		},
-	}
+	return json.Marshal([]CardTextboxNode(list))
 }
 
-type CardTextBoxElement struct {
-	Content []CardTextboxElement `json:"content"`
-}
+func (list *CardTextboxNodeList) UnmarshalJSON(data []byte) (err error) {
 
-func (textbox CardTextBoxElement) ContentElementType() string {
-	return "textbox"
-}
-
-type BaseCardTextboxElement interface {
-	TextElementNodeType() string
-}
-
-type CardTextboxElement struct {
-	Element BaseCardTextboxElement
-}
-
-func (element *CardTextboxElement) Type() string {
-	if element.Element == nil {
-		return ""
-	}
-	return element.Element.TextElementNodeType()
-}
-
-func (element CardTextboxElement) MarshalJSON() ([]byte, error) {
-
-	if element.Element == nil {
-		return nil, nil
+	var entries []json.RawMessage
+	if err := json.Unmarshal(data, &entries); err != nil {
+		return fmt.Errorf("decode slice: %v", err)
 	}
 
-	fields, err := utils.ExtractStructJSONFields(element.Element)
-	if err != nil {
-		return nil, fmt.Errorf("extract struct fields: %v", err)
-	}
+	*list = make(CardTextboxNodeList, len(entries))
 
-	fields["type"] = element.Element.TextElementNodeType()
+	for idx, nodeData := range entries {
 
-	return json.Marshal(fields)
-}
+		var base CardContentNodeBase
+		if err := json.Unmarshal(nodeData, &base); err != nil {
+			return fmt.Errorf("decode base node: %v", err)
+		}
 
-func (element *CardTextboxElement) UnmarshalJSON(data []byte) (err error) {
+		var node CardTextboxNode
 
-	nodeType, err := utils.ExtractJSONField[string](data, "type")
-	if err != nil {
-		return err
-	}
+		switch base.Type {
+		case "text":
+			node = &CardTextboxTextNode{}
+		case "newline":
+			node = &CardTextboxNewlineNode{}
+		default:
+			return fmt.Errorf("unsupported element type: '%v'", base.Type)
+		}
 
-	switch nodeType {
-	case "text":
-		element.Element, err = utils.DecodeGenericJSON[CardTextboxElementTextNode](data)
-	case "newline":
-		element.Element, err = utils.DecodeGenericJSON[CardTextboxElementNewlineNode](data)
-	default:
-		return fmt.Errorf("unsupported element type: '%v'", nodeType)
+		if err := json.Unmarshal(nodeData, node); err != nil {
+			return fmt.Errorf("decode node: %v", err)
+		}
+
+		(*list)[idx] = node
 	}
 
 	return
 }
 
-type CardTextboxElementTextNode struct {
-	Content string                           `json:"content"`
-	Theme   *CardTextboxElementTextNodeTheme `json:"theme,omitempty"`
+func (elem *CardTextBoxNode) CardContentNodeType() string {
+	return "textbox"
 }
 
-func (text CardTextboxElementTextNode) TextElementNodeType() string {
+type CardTextboxTextNode struct {
+	CardContentNodeBase
+	Content string                   `json:"content"`
+	Theme   *CardTextboxElementTheme `json:"theme,omitempty"`
+}
+
+func (text *CardTextboxTextNode) CardTextboxNodeType() string {
 	return "text"
 }
 
-type CardTextboxElementTextNodeTheme struct {
-	Highlight  *CardTextboxElementTextNodeHighlight `json:"highlight,omitempty"`
-	Bold       bool                                 `json:"bold,omitempty"`
-	Italic     bool                                 `json:"italic,omitempty"`
-	Decoration CardTextboxElementTextDecoration     `json:"decoration,omitempty"`
+type CardTextboxElementTheme struct {
+	Highlight  *CardTextboxElementTextHighlight `json:"highlight,omitempty"`
+	Bold       bool                             `json:"bold,omitempty"`
+	Italic     bool                             `json:"italic,omitempty"`
+	Decoration CardTextboxElementDecoration     `json:"decoration,omitempty"`
 }
 
-type CardTextboxElementTextNodeHighlight struct {
+type CardTextboxElementTextHighlight struct {
 	TextColor string `json:"text_color"`
 	FillColor string `json:"fill_color"`
 }
 
-type CardTextboxElementTextDecoration string
+type CardTextboxElementDecoration string
 
 const (
-	CardTextboxElementTextDecorationUnderline     = CardTextboxElementTextDecoration("underline")
-	CardTextboxElementTextDecorationStrikethrough = CardTextboxElementTextDecoration("strikethrough")
+	CardTextboxElementDecorationUnderline     = CardTextboxElementDecoration("underline")
+	CardTextboxElementDecorationStrikethrough = CardTextboxElementDecoration("strikethrough")
 )
 
-type CardTextboxElementNewlineNode struct{}
+type CardTextboxNewlineNode struct {
+	CardContentNodeBase
+}
 
-func (newline CardTextboxElementNewlineNode) TextElementNodeType() string {
+func (newline *CardTextboxNewlineNode) CardTextboxNodeType() string {
 	return "newline"
 }
 
-type CardPollElement struct {
-	IsQuiz  bool                        `json:"is_quiz,omitempty"`
-	Content []CardPollElementOptionNode `json:"content"`
+type CardPollNode struct {
+	CardContentNodeBase
+	IsQuiz  bool                 `json:"is_quiz,omitempty"`
+	Content []CardPollNodeOption `json:"content"`
 }
 
-func (poll CardPollElement) ContentElementType() string {
+func (poll *CardPollNode) CardContentNodeType() string {
 	return "poll"
 }
 
-type CardPollElementOptionNode struct {
+func (poll *CardPollNode) IsReallyQuiz() bool {
+	for _, opt := range poll.Content {
+		if opt.IsAnswer {
+			return true
+		}
+	}
+	return false
+}
+
+type CardPollNodeOption struct {
 	Value    string `json:"value"`
 	IsAnswer bool   `json:"is_answer,omitempty"`
 }
 
-type CardImageElement struct {
+type CardImageNode struct {
+	CardContentNodeBase
 	MediaID string `json:"media_id,omitempty"`
 }
 
-func (textbox CardImageElement) ContentElementType() string {
+func (image *CardImageNode) CardContentNodeType() string {
 	return "image"
 }

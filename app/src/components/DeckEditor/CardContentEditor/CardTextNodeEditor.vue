@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from 'vue';
-import type { CardTextBoxElementContentNode } from '../../../content';
+import type { CardTextBoxElementNode } from '../../../content';
 import CardNodeHarness from './CardNodeHarness.vue';
 
-const model = defineModel<CardTextBoxElementContentNode[]>();
+const model = defineModel<CardTextBoxElementNode[]>();
 
 //	todo: make it the proper way
 //	todo: implement text formatting
@@ -14,7 +14,7 @@ const modelToRaw = () => {
 	return model.value?.map(item => item.type === 'text' ? item.content : '\n').join('') || '';
 };
 
-const rawToModel = (): CardTextBoxElementContentNode[] => {
+const rawToModel = (): CardTextBoxElementNode[] => {
 
 	const newTextNode = (content: string) => ({ type: 'text' as const, content });
 	const newNewline = () => ({ type: 'newline' as const });

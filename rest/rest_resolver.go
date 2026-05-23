@@ -558,7 +558,7 @@ func (rslv *resolver) ExportCollectionBundle(ctx context.Context, id uuid.UUID) 
 		Decks:              make([]model.CardDeckBundle, len(decks)),
 	}
 
-	var bundleImage = func(deck *model.CardDeckBundle, image *db_model.CardImageElement) error {
+	var bundleImage = func(deck *model.CardDeckBundle, image *db_model.CardImageNode) error {
 
 		if image.MediaID == "" {
 			return nil
@@ -585,9 +585,7 @@ func (rslv *resolver) ExportCollectionBundle(ctx context.Context, id uuid.UUID) 
 
 		for _, node := range face.Content {
 
-			if image, ok := node.Element.(db_model.CardImageElement); ok {
-				err = bundleImage(deck, &image)
-			} else if image, ok := node.Element.(*db_model.CardImageElement); ok {
+			if image, ok := node.(*db_model.CardImageNode); ok {
 				err = bundleImage(deck, image)
 			}
 
@@ -664,7 +662,7 @@ func (rslv *resolver) ImportCollectionBundle(ctx context.Context, bundle *model.
 		return nil, InternalError("sqlc.InsertCollection", err)
 	}
 
-	var unpackImage = func(deck *model.CardDeckBundle, image *db_model.CardImageElement) error {
+	var unpackImage = func(deck *model.CardDeckBundle, image *db_model.CardImageNode) error {
 
 		if image.MediaID == "" {
 			image.MediaID = ""
@@ -718,14 +716,9 @@ func (rslv *resolver) ImportCollectionBundle(ctx context.Context, bundle *model.
 
 	var importFaceImages = func(deck *model.CardDeckBundle, face *db_model.CardContentFace) (err error) {
 
-		for idx := range face.Content {
+		for _, node := range face.Content {
 
-			node := &face.Content[idx]
-
-			if image, ok := node.Element.(db_model.CardImageElement); ok {
-				err = unpackImage(deck, &image)
-				node.Element = image
-			} else if image, ok := node.Element.(*db_model.CardImageElement); ok {
+			if image, ok := node.(*db_model.CardImageNode); ok {
 				err = unpackImage(deck, image)
 			}
 

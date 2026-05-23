@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { CardPollElementOptionNode } from '../../../content';
+import type { CardPollNodeOption } from '../../../content';
 import CardNodeHarness from './CardNodeHarness.vue';
 import CardPollOptionEditor from './CardPollOptionEditor.vue';
 
-const model = defineModel<CardPollElementOptionNode[]>();
+const model = defineModel<CardPollNodeOption[]>();
 
 const emit = defineEmits<{
 	(e: 'setQuizFlag', flag: boolean): void;

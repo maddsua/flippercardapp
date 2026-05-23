@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import type { CardTextboxElementTextNodeTheme } from '../../content';
+import type { CardTextboxElementTheme } from '../../content';
 
 const props = defineProps<{
-	theme?: CardTextboxElementTextNodeTheme;
+	theme?: CardTextboxElementTheme;
 }>();
 </script>
 

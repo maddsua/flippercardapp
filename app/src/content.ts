@@ -24,60 +24,58 @@ export interface CardContentElementTheme {
 	mask_color?: string;
 }
 
-export type CardContentNode = CardTitleElement | CardTextBoxElement | CardPollElement | CardImageElement;
+export type CardContentNode = CardTitleNode | CardTextBoxNode | CardPollNode | CardImageNode;
 
-interface BaseCardContentElement {
+interface CardContentNodeBase {
 	type: string;
 };
 
-export interface CardTitleElement extends BaseCardContentElement {
+export interface CardTitleNode extends CardContentNodeBase {
 	readonly type: 'title';
 	content: string;
 };
 
-export interface CardTextBoxElement extends BaseCardContentElement {
+export interface CardTextBoxNode extends CardContentNodeBase {
 	readonly type: 'textbox';
-	content: CardTextBoxElementContentNode[];
+	content: CardTextBoxElementNode[];
 };
 
-export type CardTextBoxElementContentNode = CardTextboxElementTextNode | CardTextboxElementNewlineNode;
+export type CardTextBoxElementNode = CardTextboxTextNode | CardTextboxNewlineNode;
 
-export interface BaseCardTextboxElement extends BaseCardContentElement {};
-
-export interface CardTextboxElementTextNode extends BaseCardTextboxElement {
+export interface CardTextboxTextNode extends CardContentNodeBase {
 	readonly type: 'text';
 	content: string;
-	theme?: CardTextboxElementTextNodeTheme;
+	theme?: CardTextboxElementTheme;
 };
 
-export interface CardTextboxElementTextNodeTheme {
-	highlight?: CardTextboxElementTextNodeHighlight;
+export interface CardTextboxElementTheme {
+	highlight?: CardTextboxElementTextHighlight;
 	bold?: boolean;
 	italic?: boolean;
 	decoration?: 'underline' | 'strikethrough';
 }
 
-export interface CardTextboxElementTextNodeHighlight {
+export interface CardTextboxElementTextHighlight {
 	text_color: string;
 	fill_color: string;
 }
 
-export interface CardTextboxElementNewlineNode extends BaseCardTextboxElement {
+export interface CardTextboxNewlineNode extends CardContentNodeBase {
 	readonly type: 'newline';
 };
 
-export interface CardPollElement extends BaseCardContentElement {
+export interface CardPollNode extends CardContentNodeBase {
 	readonly type: 'poll';
 	is_quiz?: boolean;
-	content: CardPollElementOptionNode[];
+	content: CardPollNodeOption[];
 };
 
-export interface CardPollElementOptionNode {
+export interface CardPollNodeOption {
 	value: string;
 	is_answer?: boolean;
 };
 
-export interface CardImageElement {
+export interface CardImageNode {
 	readonly type: 'image';
 	media_id?: string | null;
 	state?: UploadReadyState | null;

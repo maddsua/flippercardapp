@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, reactive } from 'vue';
 import CardPollOption from './CardPollOption.vue';
-import type { CardContentElementTheme, CardPollElement, CardPollElementOptionNode } from '../../content';
+import type { CardContentElementTheme, CardPollNode, CardPollNodeOption } from '../../content';
 import { shuffleArray } from '../../arrays';
 
 const props = defineProps<{
-	entry: CardPollElement;
+	entry: CardPollNode;
 	theme?: CardContentElementTheme;
 }>();
 
@@ -17,11 +17,11 @@ const emit = defineEmits<{
 
 const state = reactive({
 	answered: false,
-	givenAnswers: new Set<CardPollElementOptionNode>(),
+	givenAnswers: new Set<CardPollNodeOption>(),
 	wrongAnswers: 0,
 });
 
-const selectAnswer = (answer: CardPollElementOptionNode) => {
+const selectAnswer = (answer: CardPollNodeOption) => {
 
 	if (state.givenAnswers.has(answer)) {
 		return;
