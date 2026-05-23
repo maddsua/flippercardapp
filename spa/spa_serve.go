@@ -1,4 +1,4 @@
-package justserve
+package spa
 
 import (
 	"io"
@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func NewStaticAssetServer(fsys fs.FS, prefix string) http.Handler {
+func NewServerSPA(fsys fs.FS, prefix string) http.Handler {
 	return http.HandlerFunc(func(wrt http.ResponseWriter, req *http.Request) {
 
 		pathname := req.URL.Path

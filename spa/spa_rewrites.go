@@ -1,4 +1,4 @@
-package justserve
+package spa
 
 import "strings"
 

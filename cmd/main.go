@@ -15,9 +15,9 @@ import (
 
 	"github.com/joho/godotenv"
 	db_pkg "github.com/maddsua/flippercardapp/db"
-	"github.com/maddsua/flippercardapp/justserve"
 	"github.com/maddsua/flippercardapp/media"
 	"github.com/maddsua/flippercardapp/rest"
+	"github.com/maddsua/flippercardapp/spa"
 )
 
 //go:embed web/*
@@ -88,7 +88,7 @@ func main() {
 
 	mux.Handle("/media/", http.StripPrefix("/media", media.NewHandler(dbconn)))
 	mux.Handle("/api/", http.StripPrefix("/api", rest.NewHandler(dbconn)))
-	mux.Handle("/", justserve.NewStaticAssetServer(webfs, "web/dist"))
+	mux.Handle("/", spa.NewServerSPA(webfs, "web/dist"))
 
 	srv := http.Server{
 		Addr:    fmt.Sprintf(":%d", envServePort(8280)),
