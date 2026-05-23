@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, reactive, watch } from 'vue';
 import type { CardImageElement } from '../../content';
 import LoadingMessage from '../App/LoadingMessage.vue';
 
@@ -7,26 +7,37 @@ const props = defineProps<{
 	entry: CardImageElement;
 }>();
 
-const url = computed(() => props.entry.media_id ? `/media/images/${props.entry.media_id}` : null);
+const mediaURL = computed(() => props.entry.media_id ? `/media/images/${props.entry.media_id}` : null);
 
-const randomRotation = computed(() => `${((Math.random() - 0.5) * 10).toFixed(0)}deg`);
+const state = reactive({
+	ready: false,
+	failed: false,
+	rotation: `${((Math.random() - 0.5) * 10).toFixed(0)}deg`,
+});
 
-const ready = ref(false);
+const resetState = () => {
+	state.ready = false;
+	state.failed = false;
+};
 
-watch(() => props.entry.media_id, () => ready.value = false);
+watch(() => props.entry.media_id, resetState);
 
 </script>
 
 <template>
-	<div class="card-image" :style="{ rotate: randomRotation }">
+	<div class="card-image" :class="{ failed: state.failed }" :style="{ rotate: state.rotation }">
 
-		<img v-if="url" :src="url" @load="ready = true" />
+		<img v-if="mediaURL && !state.failed" :src="mediaURL" @load="state.ready = true" @error="state.failed = true" />
 
-		<div v-if="!url" class="placeholder empty">
+		<div v-else-if="state.failed" class="placeholder error">
+			Unable to load image
+		</div>
+
+		<div v-if="!mediaURL" class="placeholder empty">
 			No image selected
 		</div>
 
-		<div v-else-if="!ready" class="placeholder loading">
+		<div v-else-if="!state.ready" class="placeholder loading">
 			<LoadingMessage />
 		</div>
 
@@ -42,6 +53,11 @@ watch(() => props.entry.media_id, () => ready.value = false);
 		border: 0.25em solid var(--app-theme-snow-white);
 		box-shadow: 0 0 1.5em rgba(0, 0, 0, 0.25);
 
+		&.failed {
+			width: 15em;
+			height: 6em;
+		}
+
 		.placeholder {
 			position: absolute;
 			z-index: 1;
@@ -53,7 +69,8 @@ watch(() => props.entry.media_id, () => ready.value = false);
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			font-size: 0.85rem;
+			font-size: 0.65rem;
+			color: var(--app-theme-snow-white);
 		}
 
 		img {
