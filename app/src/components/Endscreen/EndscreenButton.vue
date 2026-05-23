@@ -17,6 +17,9 @@ const props = defineProps<{
 </template>
 
 <style lang="scss" scoped>
+
+	@use '../../media.scss';
+
 	button {
 		display: flex;
 		flex-flow: row nowrap;
@@ -60,8 +63,7 @@ const props = defineProps<{
 			}
 		}
 
-		&:hover {
-			cursor: pointer;
+		@include media.non-sticky-hover {
 			background-color: var(--app-theme-deep-lavender);
 		}
 	}

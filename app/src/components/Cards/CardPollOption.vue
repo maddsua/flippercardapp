@@ -37,6 +37,9 @@ const handleSelect = () => {
 </template>
 
 <style lang="scss" scoped>
+
+	@use '../../media.scss';
+
 	button {
 		display: block;
 		width: 100%;
@@ -51,8 +54,7 @@ const handleSelect = () => {
 		border: none;
 		transition: color, background-color, transform 150ms ease;
 
-		&:hover {
-			cursor: pointer;
+		@include media.non-sticky-hover {
 			transform: scale(1.025);
 			background-color: var(--app-theme-deep-lavender);
 		}

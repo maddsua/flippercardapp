@@ -55,6 +55,9 @@ const visibility = computed(() => props.visibility !== 'PUBLIC' ? (props.visibil
 </template>
 
 <style lang="scss" scoped>
+
+	@use '../../media.scss';
+
 	.content-list-entry {
 		display: flex;
 		display: flex;
@@ -174,8 +177,7 @@ const visibility = computed(() => props.visibility !== 'PUBLIC' ? (props.visibil
 			}
 		}
 
-		&:hover {
-			cursor: pointer;
+		@include media.non-sticky-hover {
 			background-color: var(--app-theme-spooky-orange);
 		}
 	}

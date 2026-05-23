@@ -1,0 +1,14 @@
+
+@mixin non-sticky-hover {
+
+	@media (hover: hover) {
+		&:hover {
+			@content;
+			cursor: pointer;
+		}
+	}
+
+	&:active {
+		@content;
+	}
+};
