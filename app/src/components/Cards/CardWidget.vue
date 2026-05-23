@@ -86,14 +86,17 @@ const newAnimatedState = (direction?: SlideInDirection): CardState => {
 	}
 
 	return state;
-}
+};
 
-const cardPairs = reactive({
-	a: newAnimatedState(),
-	b: null as CardState | null,
-});
+const state = reactive({
+	slots: {
+		a: newAnimatedState(),
+		b: null as CardState | null,
+	},
+	interactive: true,
+})
 
-const cardSlots = computed(() => ([cardPairs.a, cardPairs.b]))
+const cardSlots = computed(() => ([state.slots.a, state.slots.b]))
 
 const cardSlotKey = (slot: CardState | null, idx: number) => `${idx}:${slot?.card.id || 'null'}`;
 
@@ -120,48 +123,62 @@ const ejectAnimatedState = async (state: CardState, direction?: SlideOutDirectio
 				break;
 		}
 
-		setTimeout(() => state.flags.fade = true, 200);
+		setTimeout(() => state.flags.fade = true, 50);
 	});
 };
 
 const switchCards = (direction?: SlideInDirection) => {
 
-	if (!cardPairs.b) {
-		ejectAnimatedState(cardPairs.a, slideOut(direction));
-		cardPairs.b = newAnimatedState(direction);
+	if (!state.slots.b) {
+		ejectAnimatedState(state.slots.a, slideOut(direction));
+		state.slots.b = newAnimatedState(direction);
 		return
 	}
 
-	if (cardPairs.a.flags.active) {
-		ejectAnimatedState(cardPairs.a, slideOut(direction));
-		cardPairs.b = newAnimatedState(direction);
+	if (state.slots.a.flags.active) {
+		ejectAnimatedState(state.slots.a, slideOut(direction));
+		state.slots.b = newAnimatedState(direction);
 	} else {
-		ejectAnimatedState(cardPairs.b, slideOut(direction));
-		cardPairs.a = newAnimatedState(direction);
+		ejectAnimatedState(state.slots.b, slideOut(direction));
+		state.slots.a = newAnimatedState(direction);
 	}
 };
 
-const nextCard = (): boolean => {
+const withAnimationLock = (): boolean => {
+	if (!state.interactive) {
+		return false;
+	}
+	state.interactive = false;
+	setTimeout(() => state.interactive = true, 500);
+	return true;
+};
+
+const nextCard = () => {
+
+	if (!withAnimationLock()) {
+		return;
+	}
 
 	if (activeIdx.value < props.entries.length - 1) {
 		activeIdx.value++
 		switchCards('from-bottom');
-		return true;
+		return;
 	}
 
 	emit('finish');
-	return false;
 };
 
-const prevCard = (): boolean => {
+const prevCard = () => {
+
+	if (!withAnimationLock()) {
+		return;
+	}
 
 	if (activeIdx.value > 0) {
 		activeIdx.value--
 		switchCards('from-top');
-		return true;
+		return;
 	}
-
-	return false
 };
 
 const scoreState = reactive({
@@ -184,7 +201,9 @@ const countScore = (score: number) => {
 const showExitPrompt = ref(false);
 
 const handleCtrlBack = () => {
-	if (!prevCard()) {
+	if (activeIdx.value > 0) {
+		prevCard();
+	} else {
 		triggerExit();
 	}
 };
@@ -219,7 +238,7 @@ const handleExitPrompt = (confirmed?: boolean) => {
 			@toggleMarked="emit('toggleMarked')"
 			@exit="triggerExit" />
 
-		<div class="card-screen-container">
+		<div class="card-screen-container" :class="{ readonly: !state.interactive }">
 			<div class="card-transition-slot" v-for="(item, idx) of cardSlots" :key="cardSlotKey(item, idx)" :class="item?.flags">
 				<Card v-if="item" :key="item.card.id" :card="item.card" @score="countScore" @next="nextCard" @prev="prevCard" />
 			</div>
@@ -247,6 +266,7 @@ const handleExitPrompt = (confirmed?: boolean) => {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+		user-select: none;
 
 		@media (orientation: landscape) {
 			max-width: 50rem;
@@ -257,6 +277,10 @@ const handleExitPrompt = (confirmed?: boolean) => {
 			width: 55vh;
 			height: 100%;
 			overflow: visible;
+
+			&.readonly {
+				pointer-events: none;
+			}
 
 			@media (orientation: portrait) {
 				width: 45vh;
