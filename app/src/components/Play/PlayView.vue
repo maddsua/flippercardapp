@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive } from 'vue';
-import type { CardContentNode } from '../../content';
+import type { CardNode } from '../../content';
 import CardWidget from '../Cards/CardWidget.vue';
 import Endscreen from '../Endscreen/Endscreen.vue';
 import FullscreenMessage from '../App/FullscreenMessage.vue';
@@ -26,7 +26,7 @@ interface RoundState {
 };
 
 const state = reactive({
-	cards: null as CardContentNode[] | null,
+	cards: null as CardNode[] | null,
 	labels: [] as string[],
 	collectionID: null as string | null,
 	deckID: null as string | null,

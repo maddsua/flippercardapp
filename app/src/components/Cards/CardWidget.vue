@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref } from 'vue';
-import type { CardContentNode } from '../../content';
+import type { CardNode } from '../../content';
 import Card from './Card.vue';
 import CardControls from './CardControls.vue';
 import CardDeckInfo from './CardDeckInfo.vue';
@@ -8,7 +8,7 @@ import UIPrompt from '../App/UIPrompt.vue';
 
 const props = defineProps<{
 	labels: string[];
-	entries: CardContentNode[];
+	entries: CardNode[];
 	isMarked?: boolean;
 }>();
 
@@ -22,7 +22,7 @@ const emit = defineEmits<{
 const activeIdx = ref(0);
 
 interface CardState {
-	card: CardContentNode;
+	card: CardNode;
 	flags: {
 		active: boolean;
 		animate?: boolean;

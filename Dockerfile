@@ -13,13 +13,13 @@ workdir /app
 
 copy . .
 
-copy --from=app-builder /app/dist /app/cmd/web/dist
+copy --from=app-builder /app/dist /app/cmd/service/web/dist
 
 run apk add --no-cache make build-base libwebp-dev
 
 arg CGO_ENABLED=1
 
-run go build -v -ldflags "-s -w" -o service ./cmd
+run go build -v -ldflags "-s -w" -o service ./cmd/service
 
 from alpine:3.23.4
 

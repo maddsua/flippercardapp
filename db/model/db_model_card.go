@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/maddsua/flippercardapp/utils"
 )
@@ -29,8 +30,8 @@ func (perms *CardNodeContent) Scan(src any) error {
 }
 
 type CardContentFace struct {
-	Theme   *CardFaceTheme       `json:"theme,omitempty"`
-	Content []CardContentElement `json:"content"`
+	Theme   *CardFaceTheme    `json:"theme,omitempty"`
+	Content []CardContentNode `json:"content"`
 }
 
 type CardFaceTheme struct {
@@ -52,34 +53,34 @@ type BaseCardContentElement interface {
 	ContentElementType() string
 }
 
-type CardContentElement struct {
+type CardContentNode struct {
 	Element BaseCardContentElement
 }
 
-func (element *CardContentElement) Type() string {
-	if element.Element == nil {
+func (node *CardContentNode) Type() string {
+	if node.Element == nil {
 		return ""
 	}
-	return element.Element.ContentElementType()
+	return node.Element.ContentElementType()
 }
 
-func (element CardContentElement) MarshalJSON() ([]byte, error) {
+func (node CardContentNode) MarshalJSON() ([]byte, error) {
 
-	if element.Element == nil {
+	if node.Element == nil {
 		return nil, nil
 	}
 
-	fields, err := utils.ExtractStructJSONFields(element.Element)
+	fields, err := utils.ExtractStructJSONFields(node.Element)
 	if err != nil {
 		return nil, fmt.Errorf("extract struct fields: %v", err)
 	}
 
-	fields["type"] = element.Element.ContentElementType()
+	fields["type"] = node.Element.ContentElementType()
 
 	return json.Marshal(fields)
 }
 
-func (element *CardContentElement) UnmarshalJSON(data []byte) (err error) {
+func (node *CardContentNode) UnmarshalJSON(data []byte) (err error) {
 
 	nodeType, err := utils.ExtractJSONField[string](data, "type")
 	if err != nil {
@@ -88,18 +89,26 @@ func (element *CardContentElement) UnmarshalJSON(data []byte) (err error) {
 
 	switch nodeType {
 	case "title":
-		element.Element, err = utils.DecodeGenericJSON[CardTitleElement](data)
+		node.Element, err = utils.DecodeGenericJSON[CardTitleElement](data)
 	case "image":
-		element.Element, err = utils.DecodeGenericJSON[CardImageElement](data)
+		node.Element, err = utils.DecodeGenericJSON[CardImageElement](data)
 	case "textbox":
-		element.Element, err = utils.DecodeGenericJSON[CardTextBoxElement](data)
+		node.Element, err = utils.DecodeGenericJSON[CardTextBoxElement](data)
 	case "poll":
-		element.Element, err = utils.DecodeGenericJSON[CardPollElement](data)
+		node.Element, err = utils.DecodeGenericJSON[CardPollElement](data)
 	default:
 		return fmt.Errorf("unsupported element type: '%v'", nodeType)
 	}
 
 	return
+}
+
+func NewCardTitleNode(title string) CardContentNode {
+	return CardContentNode{
+		Element: CardTitleElement{
+			Content: title,
+		},
+	}
 }
 
 type CardTitleElement struct {
@@ -108,6 +117,32 @@ type CardTitleElement struct {
 
 func (title CardTitleElement) ContentElementType() string {
 	return "title"
+}
+
+func NewCardTextNode(text string) CardContentNode {
+
+	var spans []CardTextboxElement
+
+	for idx, content := range strings.Split(text, "\n") {
+
+		spans = append(spans, CardTextboxElement{
+			Element: CardTextboxElementTextNode{
+				Content: content,
+			},
+		})
+
+		if idx > 0 {
+			spans = append(spans, CardTextboxElement{
+				Element: CardTextboxElementNewlineNode{},
+			})
+		}
+	}
+
+	return CardContentNode{
+		Element: CardTextBoxElement{
+			Content: spans,
+		},
+	}
 }
 
 type CardTextBoxElement struct {

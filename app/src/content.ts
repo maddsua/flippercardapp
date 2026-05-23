@@ -1,5 +1,5 @@
 
-export interface CardContentNode {
+export interface CardNode {
 	id: string;
 	front: CardContentFace;
 	back: CardContentFace;
@@ -7,7 +7,7 @@ export interface CardContentNode {
 
 export interface CardContentFace {
 	theme?: CardFaceTheme;
-	content: CardContentElement[];
+	content: CardContentNode[];
 };
 
 export interface CardFaceTheme {
@@ -24,7 +24,7 @@ export interface CardContentElementTheme {
 	mask_color?: string;
 }
 
-export type CardContentElement = CardTitleElement | CardTextBoxElement | CardPollElement | CardImageElement;
+export type CardContentNode = CardTitleElement | CardTextBoxElement | CardPollElement | CardImageElement;
 
 interface BaseCardContentElement {
 	type: string;

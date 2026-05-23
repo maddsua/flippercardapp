@@ -3,7 +3,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { computed, onMounted, reactive, toRaw, watch } from 'vue';
 import DeckEditorStatusBar from './DeckEditorStatusBar.vue';
 import CardFaceComponent from '../Cards/CardFace.vue';
-import type { CardContentElement, CardContentFace, CardContentNode, CardImageElement } from '../../content';
+import type { CardContentFace, CardNode, CardImageElement, CardContentNode } from '../../content';
 import DeckCardFacePreviewSlot from './DeckCardFacePreviewSlot.vue';
 import EditorCanvasColumn from './EditorCanvasColumn.vue';
 import CardFaceContentEditor from './CardContentEditor/CardFaceContentEditor.vue';
@@ -50,7 +50,7 @@ const state = reactive({
 			description: null as string | null,
 			visibility: 'HIDDEN' as ResourceVisibility,
 		},
-		cards: [] as CardContentNode[],
+		cards: [] as CardNode[],
 	},
 
 	meta: {
@@ -213,7 +213,7 @@ const flipCardFace = () => {
 	}, 150);
 };
 
-const addCard = (node: CardContentNode) => {
+const addCard = (node: CardNode) => {
 	state.content.cards.push(node);
 	state.view.cardIdx = state.content.cards.length - 1;
 	state.view.frontFace = true;
@@ -386,8 +386,61 @@ onMounted(async () => {
 	};
 });
 
+const importDeckBundle = async () => {
+
+	if (state.loading || state.locked) {
+		return;
+	}
+
+	const files = await pickLocalFiles({ accept: ['.carddeck', '.json'] });
+	if (!files) {
+		return;
+	}
+
+	switch (files[0].type) {
+		case 'application/json':
+			return importJsonDeckTemplate(files[0]);
+		default:
+			return importCompressedDeckBundle(files[0]);
+	}
+};
+
+interface CardDeckTemplate {
+	type: 'flippercardtemplate';
+	content: {
+		name: string;
+		description: string | null;
+		cards: Omit<CardNode, 'id'>[];
+	};
+};
+
+const importJsonDeckTemplate = async (file: File) => {
+
+	state.importer = { total: 1, progress: 0, warns: [], error: null };
+
+	const templ: CardDeckTemplate | null = await file.text().then(data => JSON.parse(data)).catch(() => null);
+	if (!templ) {
+		state.importer.error = 'Invalid template file: Invalid format';
+		return;
+	} else if (templ.type !== 'flippercardtemplate') {
+		state.importer.error = 'Invalid template file: Invalid JSON schema';
+		return;
+	}
+
+	state.content = {
+		meta: {
+			name: templ.content.name,
+			description: templ.content.description,
+			visibility: 'HIDDEN',
+		},
+		cards: templ.content.cards.map(item => ({ ...item, id: crypto.randomUUID() })),
+	};
+
+	state.importer = null;
+};
+
 interface CardDeckBundle {
-	type: 'maddsua:flippercarddapp:bundle:deck';
+	type: 'flippercarddeckbundle';
 	id: string | null;
 	collection_id: string | null;
 	name: string;
@@ -402,26 +455,19 @@ interface ImageBlobBundle {
 	data_url: string;
 };
 
-const importDeckBundle = async () => {
-
-	if (state.loading || state.locked) {
-		return;
-	}
-
-	const files = await pickLocalFiles({ accept: ['.carddeck'] });
-	if (!files) {
-		return;
-	}
+const importCompressedDeckBundle = async (file: File) => {
 
 	state.importer = { total: 1, progress: 0, warns: [], error: null };
 
 	const ds = new DecompressionStream('gzip');
-	const bundleStream = files[0].stream().pipeThrough(ds)
+	const bundleStream = file.stream().pipeThrough(ds)
 	const bundle: CardDeckBundle | null = await new Response(bundleStream).json().catch(() => null);
 
-	if (!bundle || typeof bundle !== 'object' || bundle.type !== 'maddsua:flippercarddapp:bundle:deck') {
-		state.importer.error = 'Invalid bundle file: Invalid JSON object or unsupported bundle type';
-		console.warn(state.importer.error);
+	if (!bundle || typeof bundle !== 'object') {
+		state.importer.error = 'Invalid bundle file: Invalid format';
+		return;
+	} else if (bundle.type !== 'flippercarddeckbundle') {
+		state.importer.error = 'Invalid bundle file: Invalid JSON schema';
 		return;
 	}
 
@@ -447,21 +493,18 @@ const importDeckBundle = async () => {
 
 		if (!image.data_url) {
 			state.importer.warns.push(`Image import: Data URL is missing for ${image.id}`);
-			console.error('Image import: Data URL is missing for', image.id);
 			continue;
 		}
 
 		const blob = await fetch(image.data_url).then(res => res.blob()).catch(() => null);
 		if (!blob) {
 			state.importer.warns.push(`Image import failed: Unable to parse blob for ${image.id}`);
-			console.error('Image import failed: Unable to parse blob for', image.id);
 			continue;
 		}
 
 		const { data, error } = await client.images.upload(blob, image.source_name);
 		if (!data || error) {
 			state.importer.warns.push(`Image upload failed: ${error?.message}`);
-			console.error('Image upload failed:', error?.message);
 			continue;
 		}
 
@@ -495,7 +538,7 @@ const abortDeckImport = async () => {
 	clearState();
 };
 
-const downloadImageBlob = async (node: CardContentElement) => {
+const downloadImageBlob = async (node: CardContentNode) => {
 
 	if (node.type !== 'image' || !node.media_id?.length) {
 		return null;
@@ -519,7 +562,7 @@ const exportDeckBundle = async () => {
 	state.exportActive = true;
 
 	const bundle: CardDeckBundle = {
-		type: 'maddsua:flippercarddapp:bundle:deck',
+		type: 'flippercarddeckbundle',
 		id: state.meta.id,
 		collection_id: state.meta.collectionID,
 		name: state.content.meta.name,

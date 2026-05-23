@@ -1,4 +1,4 @@
-import type { CardContentNode } from "./content";
+import type { CardNode } from "./content";
 
 export interface ContentEntryMetaBase {
 	name: string;
@@ -32,7 +32,7 @@ export interface CardDeck extends CardDeckMetadata {
 	cards: Card[];
 };
 
-export interface Card extends CardContentNode {
+export interface Card extends CardNode {
 	created: string;
 	updated: string;
 };
@@ -82,7 +82,7 @@ export interface CardDeckContentPatch  {
 	cards: CardPatch[];
 };
 
-export interface CardPatch extends Omit<CardContentNode, 'id'> {
+export interface CardPatch extends Omit<CardNode, 'id'> {
 	id?: string | null;
 };
 

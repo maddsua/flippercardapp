@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { UploadReadyState, type CardContentElement } from '../../../content';
+import { UploadReadyState, type CardContentNode } from '../../../content';
 import GenericButton from '../../App/GenericButton.vue';
 import CardTitleNodeEditor from './CardTitleNodeEditor.vue';
 import CardTextNodeEditor from './CardTextNodeEditor.vue';
@@ -11,9 +11,9 @@ const props = defineProps<{
 	isFront?: boolean;
 }>();
 
-const model = defineModel<CardContentElement[]>();
+const model = defineModel<CardContentNode[]>();
 
-type NodeType = CardContentElement['type'];
+type NodeType = CardContentNode['type'];
 
 const nodeSortOrder: NodeType[] = ['title', 'image', 'textbox', 'poll'];
 

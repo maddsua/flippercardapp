@@ -4,8 +4,11 @@
 /app/.vite/
 
 # service ignores
-/cmd/web/dist/
+/cmd/service/web/dist/
 /data/
+
+# imports and other data
+/cmd/batchutil/data
 
 # env, in cas we have 'em
 .env
