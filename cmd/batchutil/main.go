@@ -80,7 +80,7 @@ func main() {
 			for idx, option := range strings.Split(opts, ",") {
 
 				if option = strings.TrimSpace(option); option == "" {
-					fmt.Printf("WARN: Empty poll option")
+					fmt.Printf("WARN: Empty poll options")
 					continue
 				}
 
@@ -94,6 +94,8 @@ func main() {
 				frontContent = append(frontContent, db_model.CardContentNode{
 					Element: poll,
 				})
+			} else {
+				fmt.Printf("WARN: Empty poll options")
 			}
 		}
 
