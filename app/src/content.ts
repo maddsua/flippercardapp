@@ -37,8 +37,10 @@ export interface CardTitleElement extends BaseCardContentElement {
 
 export interface CardTextBoxElement extends BaseCardContentElement {
 	readonly type: 'textbox';
-	content: Array<CardTextboxElementTextNode | CardTextboxElementNewlineNode>;
+	content: CardTextBoxElementContentNode[];
 };
+
+export type CardTextBoxElementContentNode = CardTextboxElementTextNode | CardTextboxElementNewlineNode;
 
 export interface BaseCardTextboxElement extends BaseCardContentElement {};
 
