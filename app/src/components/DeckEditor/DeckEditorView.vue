@@ -12,10 +12,13 @@ import DeckCardList from './DeckCardList.vue';
 import { useStorage } from '../../storage';
 import { useClient } from '../../api';
 import FullscreenMessage from '../App/FullscreenMessage.vue';
-import EditorErrorScreen from './EditorErrorScreen.vue';
-import EditorLoadingScreen from './EditorLoadingScreen.vue';
 import type { Card as CardType, CardDeck, ResourceVisibility } from '../../api_models';
 import { blobToJson, downloadBlob, escapeFileName, pickLocalFiles } from '../../files';
+import EditorScreenOverlay from './EditorScreenOverlay.vue';
+import LoadingMessage from '../App/LoadingMessage.vue';
+import ErrorMessage from '../App/ErrorMessage.vue';
+import GenericButton from '../App/GenericButton.vue';
+import WarnList from '../App/WarnList.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -32,6 +35,13 @@ interface ErrorState {
 	details?: string;
 };
 
+interface ImportState {
+	total: number;
+	progress: number;
+	warns: string[];
+	error: string | null;
+};
+
 const state = reactive({
 	
 	content: {
@@ -43,22 +53,25 @@ const state = reactive({
 		cards: [] as CardContentNode[],
 	},
 
+	meta: {
+		id: null as string | null,
+		collectionID: null as string | null,
+	},
+
 	view: {
 		cardIdx: 0,
 		frontFace: true,
 		previewAnimationTurn: false,
 	},
 
-	meta: {
-		id: null as string | null,
-		collectionID: null as string | null,
+	changes: {
+		meta: false,
+		cards: false,
 	},
 
-	editor: {
-		metaChanged: false,
-		cardsChanged: false,
-		snapshotSaved: false,
-	},
+	snapshotSaved: false,
+	exportActive: false,
+	importer: null as ImportState | null,
 
 	loading: false,
 	locked: false,
@@ -67,7 +80,7 @@ const state = reactive({
 
 interface ResumableState extends Pick<typeof state, 'content' | 'view' | 'meta'> {};
 
-const isEdited = computed(() => state.editor.cardsChanged || state.editor.metaChanged);
+const isEdited = computed(() => state.changes.cards || state.changes.meta);
 const isValid = computed(() => !state.error && !state.loading && state.content.cards.length > 0);
 
 const activeCardFace = computed((): ActiveFace | null => {
@@ -112,7 +125,8 @@ const publishNewDeck = async () => {
 	}
 
 	state.meta = { id: data.id, collectionID: null };
-	state.editor = { metaChanged: false, cardsChanged: false, snapshotSaved: false };
+	state.changes = { meta: false, cards: false };
+	state.snapshotSaved = false;
 
 	await clearStateSnapshot();
 };
@@ -120,8 +134,8 @@ const publishNewDeck = async () => {
 const patchDeckExisting = async (id: string) => {
 
 	const { data, error } = await client.decks.update(id, {
-		meta: state.editor.metaChanged ? state.content.meta : null,
-		content: state.editor.cardsChanged ? { cards: state.content.cards } : null,
+		meta: state.changes.meta ? state.content.meta : null,
+		content: state.changes.cards ? { cards: state.content.cards } : null,
 	});
 
 	if (!data || error) {
@@ -132,8 +146,8 @@ const patchDeckExisting = async (id: string) => {
 		return;
 	}
 
-	state.editor.metaChanged = false;
-	state.editor.cardsChanged = false;
+	state.changes = { meta: false, cards: false };
+	state.snapshotSaved = false;
 
 	await clearStateSnapshot();
 };
@@ -155,6 +169,15 @@ const publishChanges = async () => {
 
 	state.loading = false;
 	state.locked = false;
+};
+
+const clearState = () => {
+	state.content = { meta: { name: '', description: null, visibility: 'HIDDEN' }, cards: [] };
+	state.changes = { cards: false, meta: false };
+	state.exportActive = false;
+	state.importer = null;
+	state.snapshotSaved = false;
+	state.view = { cardIdx: 0, previewAnimationTurn: false, frontFace: true };
 };
 
 const discardChanges = () => {
@@ -229,7 +252,7 @@ const removeCard = (idx: number) => {
 
 const storeStateSnapshot = async () => {
 
-	if (state.locked || state.editor.snapshotSaved) {
+	if (state.locked || state.snapshotSaved) {
 		return;
 	}
 
@@ -238,7 +261,7 @@ const storeStateSnapshot = async () => {
 	const snapshot: ResumableState = { content: state.content, view: state.view, meta: state.meta };
 	await store.deckEditor.store(snapshot);
 
-	state.editor.snapshotSaved = true;
+	state.snapshotSaved = true;
 	state.locked = false;
 };
 
@@ -249,13 +272,13 @@ const clearStateSnapshot = async () => store.deckEditor.store(null);
 const initAutosave = () => {
 
 	watch(() => state.content.meta, () => {
-		state.editor.metaChanged = true;
-		state.editor.snapshotSaved = false;
+		state.changes.meta = true;
+		state.snapshotSaved = false;
 	}, { deep: true });
 
 	watch(() => state.content.cards, () => {
-		state.editor.cardsChanged = true;
-		state.editor.snapshotSaved = false;
+		state.changes.cards = true;
+		state.snapshotSaved = false;
 	}, { deep: true });
 
 	setInterval(async () => {
@@ -283,15 +306,15 @@ const applyRemoteDeckState = (deck: CardDeck) => {
 	state.meta.id = deck.id;
 	state.meta.collectionID = deck.collection_id;
 
-	state.editor.cardsChanged = false;
-	state.editor.metaChanged = false;
+	state.changes.cards = false;
+	state.changes.meta = false;
 };
 
 const applySnapshotState = (snapshot: ResumableState) => {
 	state.meta = snapshot.meta;
 	state.content = snapshot.content;
-	state.editor.cardsChanged = true;
-	state.editor.metaChanged = true;
+	state.changes.cards = true;
+	state.changes.meta = true;
 };
 
 const resolveDeckState = async (data: CardDeck) => {
@@ -390,20 +413,27 @@ const importDeckBundle = async () => {
 		return;
 	}
 
+	state.importer = { total: 1, progress: 0, warns: [], error: null };
+
 	const ds = new DecompressionStream('gzip');
 	const bundleStream = files[0].stream().pipeThrough(ds)
 	const bundle: CardDeckBundle | null = await new Response(bundleStream).json().catch(() => null);
 
 	if (!bundle || typeof bundle !== 'object' || bundle.type !== 'maddsua:flippercarddapp:bundle:deck') {
-		console.warn('Invalid bundle file: Invalid JSON object or unsupported bundle type');
+		state.importer.error = 'Invalid bundle file: Invalid JSON object or unsupported bundle type';
+		console.warn(state.importer.error);
 		return;
 	}
 
 	if (isEdited.value) {
 		if (!confirm('Importing a bundle will discard current changes. Continue anyway?')) {
+			state.importer = null;
 			return;
 		}
 	}
+
+	state.importer.progress++;
+	state.importer.total += bundle.image_blobs.length;
 
 	const imageNodes = bundle.cards
 		.map(item => [item.front.content, item.back.content])
@@ -413,19 +443,24 @@ const importDeckBundle = async () => {
 
 	for (const image of bundle.image_blobs) {
 
+		state.importer.progress++;
+
 		if (!image.data_url) {
+			state.importer.warns.push(`Image import: Data URL is missing for ${image.id}`);
 			console.error('Image import: Data URL is missing for', image.id);
 			continue;
 		}
 
 		const blob = await fetch(image.data_url).then(res => res.blob()).catch(() => null);
 		if (!blob) {
+			state.importer.warns.push(`Image import failed: Unable to parse blob for ${image.id}`);
 			console.error('Image import failed: Unable to parse blob for', image.id);
 			continue;
 		}
 
 		const { data, error } = await client.images.upload(blob, image.source_name);
 		if (!data || error) {
+			state.importer.warns.push(`Image upload failed: ${error?.message}`);
 			console.error('Image upload failed:', error?.message);
 			continue;
 		}
@@ -451,6 +486,13 @@ const importDeckBundle = async () => {
 		id: bundle.id,
 		collectionID: bundle.collection_id,
 	};
+
+	state.importer = null;
+};
+
+const abortDeckImport = async () => {
+	await clearStateSnapshot();
+	clearState();
 };
 
 const downloadImageBlob = async (node: CardContentElement) => {
@@ -473,6 +515,8 @@ const downloadImageBlob = async (node: CardContentElement) => {
 };
 
 const exportDeckBundle = async () => {
+
+	state.exportActive = true;
 
 	const bundle: CardDeckBundle = {
 		type: 'maddsua:flippercarddapp:bundle:deck',
@@ -503,6 +547,8 @@ const exportDeckBundle = async () => {
 	const compressedBlob = await new Response(rawBlob.stream().pipeThrough(compressor)).blob();
 
 	downloadBlob(compressedBlob, name);
+
+	state.exportActive = false;
 };
 
 </script>
@@ -511,8 +557,54 @@ const exportDeckBundle = async () => {
 
 	<div class="deck-editor">
 
-		<EditorLoadingScreen v-if="state.loading" />
-		<EditorErrorScreen v-else-if="state.error" :error="state.error" />
+		<EditorScreenOverlay v-if="state.loading">
+			<LoadingMessage />
+		</EditorScreenOverlay>
+
+		<EditorScreenOverlay v-else-if="state.error" :error="state.error">
+			<ErrorMessage>
+				<template v-slot:message>
+					{{ state.error.message }}
+				</template>
+				<template v-if="state.error.details" v-slot:details>
+					{{ state.error.details }}
+				</template>
+			</ErrorMessage>
+		</EditorScreenOverlay>
+
+		<EditorScreenOverlay v-else-if="state.exportActive">
+			<LoadingMessage>
+				Exporting content
+			</LoadingMessage>
+		</EditorScreenOverlay>
+
+		<EditorScreenOverlay v-else-if="state.importer">
+
+			<template v-if="state.importer.error">
+
+				<ErrorMessage>
+					<template v-slot:message>
+						Import failed
+					</template>
+					<template v-slot:details>
+						{{ state.importer.error }}
+					</template>
+				</ErrorMessage>
+
+				<GenericButton variant="thin" theme="orange" @click="abortDeckImport">
+					Dismiss
+				</GenericButton>
+
+			</template>
+
+			<template v-else>
+				<LoadingMessage>
+					Importing part {{ state.importer.progress }}/{{ state.importer.total }}
+				</LoadingMessage>
+				<WarnList v-if="state.importer.warns.length" :messages="state.importer.warns" />
+			</template>
+
+		</EditorScreenOverlay>
 
 		<DeckEditorStatusBar
 			:meta="state.content.meta"
