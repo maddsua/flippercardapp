@@ -32,7 +32,7 @@ const selectAnswer = (answer: CardPollElementOptionNode) => {
 	if (!props.entry.is_quiz) {
 
 		if (!state.answered) {
-			emit('next');
+			setTimeout(() => emit('next'), 250);
 		}
 		state.answered = true;
 
@@ -70,14 +70,17 @@ const options = computed(() => {
 
 <template>
 	<div class="card-poll" data-interactive="" :disabled="state.answered">
+
 		<CardPollOption v-if="options.length" v-for="option of options"
 			:entry="option"
 			:is_quiz="props.entry.is_quiz"
 			:theme="theme"
 			@select="selectAnswer(option)" />
+
 		<template v-else>
 			[Poll options]
 		</template>
+
 	</div>
 </template>
 

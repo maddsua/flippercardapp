@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed, reactive, type CSSProperties } from 'vue';
 import type { CardContentElementTheme, CardPollElementOptionNode } from '../../content';
 
 const props = defineProps<{
@@ -12,26 +12,39 @@ const emit = defineEmits<{
 	(e: 'select'): void;
 }>();
 
-const wrong = ref(false);
-const right = ref(false);
+const state = reactive({
+	wrong: false,
+	right: false,
+	selected: false,
+});
 
 const handleSelect = () => {
 
+	if (state.selected) {
+		return;
+	}
+	state.selected = true;
+
 	if (props.is_quiz) {
 		if (!props.entry.is_answer) {
-			wrong.value = true;
+			state.wrong = true;
 		} else {
-			right.value = true;
+			state.right = true;
 		}
 	}
 
 	emit('select');
 };
 
+const applyStyles = computed((): CSSProperties => ({
+	backgroundColor: props.theme?.fill_color,
+	color: props.theme?.mask_color,
+}));
+
 </script>
 
 <template>
-	<button type="button" :class="{ wrong, right }" :style="{ backgroundColor: theme?.fill_color, color: theme?.mask_color }" @click.stop="handleSelect">
+	<button type="button" :class="state" :style="applyStyles" @click.stop="handleSelect">
 		{{ entry.value }}
 	</button>
 </template>
@@ -70,6 +83,11 @@ const handleSelect = () => {
 		&.right {
 			color: var(--app-theme-snow-white) !important;
 			background-color: var(--app-theme-irish-green) !important;
+		}
+
+		&.selected {
+			color: var(--app-theme-snow-white) !important;
+			background-color: var(--app-theme-spooky-orange) !important;
 		}
 	}
 
