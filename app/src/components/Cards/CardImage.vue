@@ -27,7 +27,12 @@ watch(() => props.entry.media_id, () => state.ready = ReadyState.Idle);
 <template>
 	<div class="card-image" :class="{ placeholder: state.ready !== ReadyState.Ready }" :style="{ rotate: state.rotation }">
 
-		<img v-if="mediaURL" :src="mediaURL" loading="lazy" @load="state.ready = ReadyState.Ready" @error="state.ready = ReadyState.Failed" />
+		<img v-if="mediaURL"
+			:src="mediaURL"
+			loading="lazy"
+			aria-label="Embedded image"
+			@load="state.ready = ReadyState.Ready"
+			@error="state.ready = ReadyState.Failed" />
 
 		<div v-if="state.ready !== ReadyState.Ready" class="placeholder error">
 
@@ -57,9 +62,9 @@ watch(() => props.entry.media_id, () => state.ready = ReadyState.Idle);
 		border: 0.25em solid var(--app-theme-snow-white);
 		box-shadow: 0 0 1.5em rgba(0, 0, 0, 0.25);
 
-		&.failed {
-			width: 15em;
-			height: 6em;
+		&.placeholder {
+			width: 14em;
+			height: 8em;
 		}
 
 		.placeholder {
