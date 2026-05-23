@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"image"
 	"io"
+	"log/slog"
 	"math"
 	"net/http"
 	"sort"
@@ -557,6 +558,47 @@ func (rslv *resolver) ExportCollectionBundle(ctx context.Context, id uuid.UUID) 
 		Decks:              make([]model.CardDeckBundle, len(decks)),
 	}
 
+	var bundleImage = func(deck *model.CardDeckBundle, image *db_model.CardImageElement) error {
+
+		if image.MediaID == "" {
+			return nil
+		}
+
+		entry, err := tx.GetImageById(ctx, image.MediaID)
+		if db_pkg.IsNull(err) {
+			slog.Warn("BUNDLE MEDIA EXPORT: Broken media reference",
+				slog.String("media_id", image.MediaID))
+			return nil
+		} else if err != nil {
+			return fmt.Errorf("sqlc.GetImageById: %v", err)
+		}
+
+		deck.Images[entry.ID] = model.ImageBundle{
+			ImageMetadata: db_pkg.TransformRow[model.ImageMetadata](entry),
+			Data:          entry.Data,
+		}
+
+		return nil
+	}
+
+	var extractFaceImages = func(deck *model.CardDeckBundle, face *db_model.CardContentFace) (err error) {
+
+		for _, node := range face.Content {
+
+			if image, ok := node.Element.(db_model.CardImageElement); ok {
+				err = bundleImage(deck, &image)
+			} else if image, ok := node.Element.(*db_model.CardImageElement); ok {
+				err = bundleImage(deck, image)
+			}
+
+			if err != nil {
+				break
+			}
+		}
+
+		return
+	}
+
 	for idx, deck := range decks {
 
 		cards, err := tx.GetDeckCards(ctx, deck.ID)
@@ -567,6 +609,18 @@ func (rslv *resolver) ExportCollectionBundle(ctx context.Context, id uuid.UUID) 
 		deckBundle := model.CardDeckBundle{
 			CardDeckMetadata: db_pkg.TransformBatchRow[model.CardDeckMetadata](deck),
 			Cards:            make([]model.Card, len(cards)),
+			Images:           map[string]model.ImageBundle{},
+		}
+
+		for _, card := range cards {
+
+			if err := extractFaceImages(&deckBundle, &card.Content.Front); err != nil {
+				return nil, InternalError("extractImages", err)
+			}
+
+			if err := extractFaceImages(&deckBundle, &card.Content.Back); err != nil {
+				return nil, InternalError("extractImages", err)
+			}
 		}
 
 		for idx, val := range cards {
@@ -609,6 +663,79 @@ func (rslv *resolver) ImportCollectionBundle(ctx context.Context, bundle *model.
 		return nil, InternalError("sqlc.InsertCollection", err)
 	}
 
+	var unpackImage = func(deck *model.CardDeckBundle, image *db_model.CardImageElement) error {
+
+		if image.MediaID == "" {
+			image.MediaID = ""
+			return nil
+		}
+
+		if deck.Images == nil {
+			deck.Images = map[string]model.ImageBundle{}
+		}
+
+		bundle, ok := deck.Images[image.MediaID]
+		if !ok {
+			slog.Warn("BUNDLE MEDIA IMPORT: Broken media reference",
+				slog.String("media_id", image.MediaID))
+			image.MediaID = ""
+			return nil
+		}
+
+		if entry, err := tx.GetImageByHash(ctx, bundle.DataSha512Hash); err != nil && !db_pkg.IsNull(err) {
+			return fmt.Errorf("sqlc.GetImageByHash: %v", err)
+		} else if err == nil {
+			image.MediaID = entry.ID
+			return nil
+		}
+
+		if entry, err := tx.GetImageByHash(ctx, bundle.SourceSha512Hash); err != nil && !db_pkg.IsNull(err) {
+			return fmt.Errorf("sqlc.GetImageByHash: %v", err)
+		} else if err == nil {
+			image.MediaID = entry.ID
+			return nil
+		}
+
+		entry, err := tx.InsertImage(ctx, db_gen.InsertImageParams{
+			ID:               utils.NewRandomBase64Token(64),
+			CreatedAt:        types.NewTime(time.Now()),
+			Mimetype:         bundle.Mimetype,
+			SourceName:       bundle.SourceName,
+			SourceSha512Hash: bundle.SourceSha512Hash,
+			Data:             bundle.Data,
+			DataSize:         int64(bundle.DataSize),
+			DataSha512Hash:   bundle.DataSha512Hash,
+		})
+		if err != nil {
+			return fmt.Errorf("sqlc.InsertImage: %v", err)
+		}
+
+		image.MediaID = entry.ID
+
+		return nil
+	}
+
+	var importFaceImages = func(deck *model.CardDeckBundle, face *db_model.CardContentFace) (err error) {
+
+		for idx := range face.Content {
+
+			node := &face.Content[idx]
+
+			if image, ok := node.Element.(db_model.CardImageElement); ok {
+				err = unpackImage(deck, &image)
+				node.Element = image
+			} else if image, ok := node.Element.(*db_model.CardImageElement); ok {
+				err = unpackImage(deck, image)
+			}
+
+			if err != nil {
+				break
+			}
+		}
+
+		return
+	}
+
 	for _, deck := range bundle.Decks {
 
 		deckEntry, err := tx.InsertDeck(ctx, db_gen.InsertDeckParams{
@@ -625,7 +752,16 @@ func (rslv *resolver) ImportCollectionBundle(ctx context.Context, bundle *model.
 			return nil, InternalError("sqlc.InsertDeck", err)
 		}
 
-		for _, card := range deck.Cards {
+		for idx, card := range deck.Cards {
+
+			if err := importFaceImages(&deck, &deck.Cards[idx].Front); err != nil {
+				return nil, InternalError("importImages", err)
+			}
+
+			if err := importFaceImages(&deck, &deck.Cards[idx].Back); err != nil {
+				return nil, InternalError("importImages", err)
+			}
+
 			if err := tx.InsertCard(ctx, db_gen.InsertCardParams{
 				Content:   card.CardNodeContent,
 				ID:        uuid.New(),

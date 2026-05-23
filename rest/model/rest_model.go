@@ -49,6 +49,22 @@ func (err *Error) Error() string {
 	return err.Message
 }
 
+type Hash []byte
+
+func (hash Hash) MarshalText() ([]byte, error) {
+	return []byte(hex.EncodeToString(hash)), nil
+}
+
+func (hash *Hash) UnmarshalText(data []byte) (err error) {
+	*hash, err = hex.DecodeString(string(data))
+	return
+}
+
+type SignInParams struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 type ContentEntryMetaBase struct {
 	Name        string                      `json:"name"`
 	Description string                      `json:"description,omitempty"`
@@ -179,11 +195,6 @@ type CardDeck struct {
 	Cards  []Card   `json:"cards"`
 }
 
-type CardDeckBundle struct {
-	CardDeckMetadata
-	Cards []Card `json:"cards"`
-}
-
 type Card struct {
 	db_model.CardNodeContent
 	ID      uuid.UUID `json:"id"`
@@ -217,18 +228,13 @@ type CardPatch struct {
 	ID uuid.NullUUID `json:"id"`
 }
 
-type SignInParams struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
 type ImageMetadata struct {
 	ID               string    `json:"id"`
 	Created          time.Time `json:"created"`
 	Mimetype         string    `json:"mimetype"`
 	SourceName       string    `json:"source_name"`
-	SourceSha512Hash string    `json:"source_sha512_hash"`
-	DataSha512Hash   string    `json:"data_sha512_hash"`
+	SourceSha512Hash Hash      `json:"source_sha512_hash"`
+	DataSha512Hash   Hash      `json:"data_sha512_hash"`
 	DataSize         int       `json:"data_size"`
 }
 
@@ -237,7 +243,18 @@ func (meta *ImageMetadata) FromRow(row db_gen.Image) {
 	meta.Created = row.CreatedAt.Time
 	meta.Mimetype = row.Mimetype
 	meta.SourceName = row.SourceName
-	meta.SourceSha512Hash = hex.EncodeToString(row.SourceSha512Hash)
+	meta.SourceSha512Hash = row.SourceSha512Hash
 	meta.DataSize = int(row.DataSize)
-	meta.DataSha512Hash = hex.EncodeToString(row.DataSha512Hash)
+	meta.DataSha512Hash = row.DataSha512Hash
+}
+
+type ImageBundle struct {
+	ImageMetadata
+	Data []byte `json:"data"`
+}
+
+type CardDeckBundle struct {
+	CardDeckMetadata
+	Cards  []Card                 `json:"cards"`
+	Images map[string]ImageBundle `json:"images"`
 }

@@ -217,7 +217,7 @@ type CardPollElementOptionNode struct {
 }
 
 type CardImageElement struct {
-	MediaID string `json:"media_id"`
+	MediaID string `json:"media_id,omitempty"`
 }
 
 func (textbox CardImageElement) ContentElementType() string {
