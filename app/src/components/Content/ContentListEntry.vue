@@ -84,6 +84,7 @@ const visibility = computed(() => props.visibility !== 'PUBLIC' ? (props.visibil
 			flex-flow: row nowrap;
 			align-items: start;
 			width: 100%;
+			gap: 1rem;
 		}
 
 		.title {
