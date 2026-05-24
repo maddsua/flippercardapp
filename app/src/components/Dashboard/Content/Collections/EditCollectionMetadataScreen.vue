@@ -41,9 +41,9 @@ const state = reactive({
 
 const backHref = computed(() => {
 	if (state.data && state.dataValid) {
-		return `/app/dashboard/content/collection/${state.data.id}`;
+		return `/dashboard/content/collection/${state.data.id}`;
 	}
-	return '/app/dashboard/content';
+	return '/dashboard/content';
 })
 
 const formValid = computed(() => state.inputs.name.trim().length > 0);

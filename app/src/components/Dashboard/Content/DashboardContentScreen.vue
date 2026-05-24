@@ -26,18 +26,18 @@ const { more: loadMore } = pageControls(state, async (pagination: Pagination) =>
 onMounted(loadMore);
 
 const createNewCollection = () => {
-	router.push('/app/dashboard/content/collections/new')
+	router.push('/dashboard/content/collections/new')
 };
 
 const manageCollection = (id: string) => {
-	router.push(`/app/dashboard/content/collection/${id}`);
+	router.push(`/dashboard/content/collection/${id}`);
 };
 
 </script>
 
 <template>
 
-	<AppUiHeader backHref="/app/dashboard">
+	<AppUiHeader backHref="/dashboard">
 		<template v-slot:title>
 			Content dashboard
 		</template>

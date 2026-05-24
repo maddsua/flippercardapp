@@ -28,7 +28,7 @@ const state = reactive({
 
 const handleSelect = async (entry: RecommendedEntry) => {
 	await store.collections.add(entry.id);
-	router.push(`/app/collection/${entry.id}`);
+	router.push(`/collection/${entry.id}`);
 };
 
 onMounted(async () => {

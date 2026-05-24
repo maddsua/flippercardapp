@@ -16,7 +16,7 @@ const route = useRoute();
 const router = useRouter();
 const client = useClient();
 
-const backHref = '/app/dashboard/content';
+const backHref = '/dashboard/content';
 
 const state = reactive({
 	data: null as Collection | null,
@@ -39,14 +39,14 @@ onMounted(async () => {
 });
 
 const editCollectionMetadata = () => {
-	router.push(`/app/dashboard/content/collection/${state.data!.id}/metadata`);
+	router.push(`/dashboard/content/collection/${state.data!.id}/metadata`);
 };
 
 const openDeckEditor = (params: { deckID?: string; collectionID?: string }) => {
 	if (params.deckID) {
-		router.push(`/app/editor/deck/${params.deckID}/editor`);
+		router.push(`/editor/deck/${params.deckID}/editor`);
 	} else if (params.collectionID) {
-		router.push(`/app/editor/deck/editor?collection_id=${params.collectionID}`);
+		router.push(`/editor/deck/editor?collection_id=${params.collectionID}`);
 	}
 };
 

@@ -194,11 +194,11 @@ const exitEditor = () => {
 	clearStateSnapshot();
 
 	if (state.meta.collectionID) {
-		router.push(`/app/dashboard/content/collection/${state.meta.collectionID}`);
+		router.push(`/dashboard/content/collection/${state.meta.collectionID}`);
 		return;
 	}
 
-	router.push('/app/dashboard/content');
+	router.push('/dashboard/content');
 };
 
 const flipCardFace = () => {

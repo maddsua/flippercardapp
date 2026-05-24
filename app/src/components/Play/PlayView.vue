@@ -149,11 +149,11 @@ const updateStats = async () => {
 const exitView = () => {
 
 	if (state.collectionID) {
-		router.push(`/app/collection/${state.collectionID}`);
+		router.push(`/collection/${state.collectionID}`);
 		return;
 	}
 
-	router.push('/app/collections');
+	router.push('/collections');
 };
 
 </script>

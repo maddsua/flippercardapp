@@ -33,7 +33,7 @@ const state = reactive({
 
 const formValid = computed(() => state.inputs.name.trim().length > 0);
 
-const backHref = '/app/dashboard/content';
+const backHref = '/dashboard/content';
 
 const createCollection = async () => {
 
@@ -66,7 +66,7 @@ const uploadFile = async () => {
 };
 
 const openCollection = (id: string) => {
-	router.push(`/app/dashboard/content/collection/${id}`);
+	router.push(`/dashboard/content/collection/${id}`);
 };
 
 </script>

@@ -48,11 +48,11 @@ onMounted(async () => {
 });
 
 const openCollection = (id: string) => {
-	router.push(`/app/collection/${id}`);
+	router.push(`/collection/${id}`);
 };
 
 const openExplore = () => {
-	router.push('/app/discover');
+	router.push('/discover');
 };
 
 const lang = useLanguage();

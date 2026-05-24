@@ -23,51 +23,52 @@ import { useClient } from './api';
 const client = useClient();
 
 const routes = [
+	//	todo: replace
+	/* {
+		path: '/home',
+		component: HomeView,
+	}, */
 	{
 		path: '/',
-		component: HomeView,
-	},
-	{
-		path: '/app',
 		component: CollectionsListView,
 		meta: {
 			app_view: 'home'
 		},
 	},
 	{
-		path: '/app/collections',
+		path: '/collections',
 		component: CollectionsListView,
 		meta: {
 			app_view: 'home'
 		},
 	},
 	{
-		path: '/app/collection/:collection_id',
+		path: '/collection/:collection_id',
 		component: CollectionView,
 		meta: {
 			app_view: 'home'
 		},
 	},
 	{
-		path: '/app/play/deck/:deck_id',
+		path: '/play/deck/:deck_id',
 		component: PlayView,
 	},
 	{
-		path: '/app/discover',
+		path: '/discover',
 		component: DiscoverView,
 		meta: {
 			app_view: 'discover'
 		},
 	},
 	{
-		path: '/app/starred',
+		path: '/starred',
 		component: StarredView,
 		meta: {
 			app_view: 'starred'
 		},
 	},
 	{
-		path: '/app/dashboard',
+		path: '/dashboard',
 		component: DashboardView,
 		meta: {
 			app_view: 'menu'
@@ -112,7 +113,7 @@ const routes = [
 		],
 	},
 	{
-		path: `/app/editor/deck/:deck_id/editor`,
+		path: `/editor/deck/:deck_id/editor`,
 		component: DeckEditorView,
 		meta: {
 			requiresDashboardSession: true,
@@ -120,17 +121,18 @@ const routes = [
 		},
 	},
 	{
-		path: `/app/editor/deck/editor`,
+		path: `/editor/deck/editor`,
 		component: DeckEditorView,
 		meta: {
 			requiresDashboardSession: true,
 			requiresEditorPermission: true
 		},
 	},
-	{
+	//	todo: replace
+	/* {
 		path: '/:pathMatch(.*)*',
 		component: HomeView,
-	},
+	}, */
 ]
 
 const router = createRouter({
@@ -146,10 +148,10 @@ router.beforeResolve(async (to) => {
 
 	if (requiresDashboardSession && !authState?.actor) {
 		console.warn('ROUTER: Unauthorized. Redirecting to the login screen');
-		return '/app/dashboard';
+		return '/dashboard';
 	} else if (requiresEditorPermission && !authState?.actor?.permissions.content_edit) {
 		console.warn('ROUTER: Content editor permission missing. Redirecting to the dashboard home');
-		return '/app/dashboard';
+		return '/dashboard';
 	}
 
 });

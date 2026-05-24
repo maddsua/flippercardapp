@@ -46,7 +46,7 @@ onMounted(async () => {
 });
 
 const openDeck = (id: string) => {
-	router.push(`/app/play/deck/${id}`);
+	router.push(`/play/deck/${id}`);
 };
 
 </script>

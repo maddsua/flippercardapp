@@ -88,7 +88,7 @@ const handleSearchInput = (value?: string) => {
 
 const handleSelect = async (entry: SearchResultState) => {
 	await store.collections.add(entry.id)
-	router.push(`/app/collection/${entry.id}`);
+	router.push(`/collection/${entry.id}`);
 };
 
 </script>

@@ -34,7 +34,7 @@ const state = reactive({
 				</template>
 
 				<template v-slot:content>
-					<GenericButton variant="wide" @click="router.push('/app/dashboard/content')">
+					<GenericButton variant="wide" @click="router.push('/dashboard/content')">
 						Manage content
 					</GenericButton>
 				</template>

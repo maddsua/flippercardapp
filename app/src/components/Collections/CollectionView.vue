@@ -69,11 +69,11 @@ onMounted(async () => {
 });
 
 const openDeck = (id: string) => {
-	router.push(`/app/play/deck/${id}`);
+	router.push(`/play/deck/${id}`);
 };
 
 const closeCollection = () => {
-	router.push('/app/collections');
+	router.push('/collections');
 };
 
 const lang = useLanguage();
@@ -97,7 +97,7 @@ const toggleStar = async () => {
 <template>
 	<AppUI>
 
-		<AppUiHeader backHref="/app/collections" :starrable="true" :starred="state.starred" @toggleStar="toggleStar">
+		<AppUiHeader backHref="/collections" :starrable="true" :starred="state.starred" @toggleStar="toggleStar">
 
 			<template v-slot:title>
 

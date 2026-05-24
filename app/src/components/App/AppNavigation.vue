@@ -11,10 +11,10 @@ const appView = computed((): string | null => typeof route.meta.app_view === 'st
 
 <template>
 	<div class="app-navigation">
-		<AppViewButton href="/app" :active="appView === 'home'" icon="home" />
-		<AppViewButton href="/app/starred" :active="appView === 'starred'" icon="star" />
-		<AppViewButton href="/app/discover" :active="appView === 'discover'" icon="search" />
-		<AppViewButton href="/app/dashboard" :active="appView === 'menu'" icon="menu" />
+		<AppViewButton href="/" :active="appView === 'home'" icon="home" />
+		<AppViewButton href="/starred" :active="appView === 'starred'" icon="star" />
+		<AppViewButton href="/discover" :active="appView === 'discover'" icon="search" />
+		<AppViewButton href="/dashboard" :active="appView === 'menu'" icon="menu" />
 	</div>
 </template>
 
