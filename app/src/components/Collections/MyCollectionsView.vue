@@ -122,7 +122,7 @@ const lang = useLanguage();
 
 			<div v-else class="welcome-message">
 
-				<img class="demo" src="/src/assets/images/card-demo.svg" width="619" height="804" alt="Card demo image" />
+				<img class="demo" src="/src/assets/images/card-stack-demo.svg" width="720" height="720" alt="Card demo image" />
 
 				<p>
 					{{ intl(lang, {
