@@ -51,6 +51,10 @@ const state = reactive({
 
 	<DashboardSessionWidget @stateUpdate="val => state.auth = val" />
 
+	<p v-if="!state.auth?.actor" class="service-notice">
+		Designed by maddsua. Provided by MWS via Railway Corp.
+	</p>
+
 </template>
 
 <style lang="scss" scoped>
@@ -66,5 +70,11 @@ const state = reactive({
 			justify-content: center;
 			font-size: 0.75rem;
 		}
+	}
+
+	.service-notice {
+		width: 100%;
+		text-align: center;
+		font-size: 0.65rem;
 	}
 </style>
