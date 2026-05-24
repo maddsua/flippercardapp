@@ -6,8 +6,7 @@ import './theme.scss';
 
 import App from './App.vue';
 import PlayView from './components/Play/PlayView.vue';
-import HomeView from './components/Home/HomeView.vue';
-import CollectionsListView from './components/Collections/CollectionsListView.vue';
+import MyCollectionsView from './components/Collections/MyCollectionsView.vue';
 import CollectionView from './components/Collections/CollectionView.vue';
 import DiscoverView from './components/Discover/DiscoverView.vue';
 import StarredView from './components/Starred/StarredView.vue';
@@ -24,21 +23,16 @@ import NotFoundView from './components/App/NotFoundView.vue';
 const client = useClient();
 
 const routes = [
-	//	todo: replace
-	/* {
-		path: '/home',
-		component: HomeView,
-	}, */
 	{
 		path: '/',
-		component: CollectionsListView,
+		component: MyCollectionsView,
 		meta: {
 			app_view: 'home'
 		},
 	},
 	{
 		path: '/collections',
-		component: CollectionsListView,
+		component: MyCollectionsView,
 		meta: {
 			app_view: 'home'
 		},

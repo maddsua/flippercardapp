@@ -120,14 +120,20 @@ const lang = useLanguage();
 				}) }}
 			</LoadingMessage>
 
-			<p v-else>
-				{{ intl(lang, {
-					en: `You haven't added any collections yet!`,
-					de: 'Sie haben noch keine Karten hinzugefügt!',
-					uk: 'Ви ще не додали жодної колекції!'
-				}) }}
-			</p>
-			
+			<div v-else class="welcome-message">
+
+				<img class="demo" src="/src/assets/images/card-demo.svg" width="619" height="804" alt="Card demo image" />
+
+				<p>
+					{{ intl(lang, {
+						en: `You haven't added any collections yet!`,
+						de: 'Sie haben noch keine Karten hinzugefügt!',
+						uk: 'Ви ще не додали жодної колекції!'
+					}) }}
+				</p>
+
+			</div>
+
 		</CentralMessage>
 
 		<CollectionBreak />
@@ -147,3 +153,22 @@ const lang = useLanguage();
 	</AppUI>
 
 </template>
+
+<style lang="scss" scoped>
+
+	.welcome-message {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.75rem;
+
+		.demo {
+			display: block;
+			width: 10rem;
+			max-width: 100%;
+			height: auto;
+			opacity: 0.75;
+		}
+	}
+
+</style>

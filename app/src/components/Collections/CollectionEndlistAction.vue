@@ -12,6 +12,7 @@
 		display: flex;
 		flex-flow: row nowrap;
 		justify-content: center;
+		gap: 1rem;
 	}
 
 </style>
