@@ -20,6 +20,8 @@ import (
 	"github.com/maddsua/flippercardapp/spa"
 )
 
+var Version = "development"
+
 //go:embed web/*
 var webfs embed.FS
 
@@ -31,6 +33,8 @@ func main() {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 		slog.Debug("ENABLED")
 	}
+
+	slog.Info("FLIPPERCARD APP " + Version)
 
 	dataDir := "data"
 	if val := os.Getenv("DATA_DIR"); val != "" {

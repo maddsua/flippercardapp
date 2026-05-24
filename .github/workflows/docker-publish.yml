@@ -32,4 +32,5 @@ jobs:
         with:
           context: .
           push: true
+          build-args: APP_VERSION=${{ env.IMAGE_TAG }}
           tags: ${{ env.IMAGE_BASE_TAG }}:${{ env.IMAGE_TAG }}, ${{ env.IMAGE_BASE_TAG }}:latest
