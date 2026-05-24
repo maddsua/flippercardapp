@@ -19,6 +19,7 @@ import EditCollectionMetadataScreen from './components/Dashboard/Content/Collect
 import DeckEditorView from './components/DeckEditor/DeckEditorView.vue';
 import DashboardCollectionScreen from './components/Dashboard/Content/Collections/DashboardCollectionScreen.vue';
 import { useClient } from './api';
+import NotFoundView from './components/App/NotFoundView.vue';
 
 const client = useClient();
 
@@ -128,11 +129,10 @@ const routes = [
 			requiresEditorPermission: true
 		},
 	},
-	//	todo: replace
-	/* {
+	{
 		path: '/:pathMatch(.*)*',
-		component: HomeView,
-	}, */
+		component: NotFoundView,
+	},
 ]
 
 const router = createRouter({
