@@ -30,6 +30,10 @@ func main() {
 
 	godotenv.Load()
 
+	if strings.EqualFold(os.Getenv("LOG_FMT"), "json") {
+		slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+	}
+
 	if strings.EqualFold(os.Getenv("DEBUG"), "true") {
 		slog.SetLogLoggerLevel(slog.LevelDebug)
 		slog.Debug("ENABLED")
