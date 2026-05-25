@@ -17,9 +17,10 @@ copy --from=app-builder /app/dist /app/cmd/service/web/dist
 
 run apk add --no-cache make build-base libwebp-dev
 
-arg CGO_ENABLED=1
-arg APP_VERSION=v0.0.0
-arg APP_BUILD_TS
+arg APP_VERSION="development"
+arg APP_BUILD_TS="unknown"
+
+env CGO_ENABLED=1
 
 run go build -v -ldflags "-s -w -X main.Version=${APP_VERSION} -X main.BuildTS=${APP_BUILD_TS}" -o service ./cmd/service
 
