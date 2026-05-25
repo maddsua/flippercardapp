@@ -27,10 +27,15 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Format build timestamp
+        id: date
+        run: echo "APP_BUILD_TS=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> $GITHUB_OUTPUT
       - name: Build and publish action
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          build-args: APP_VERSION=${{ env.IMAGE_TAG }}
+          build-args: |
+            APP_VERSION=${{ env.IMAGE_TAG }}
+            APP_BUILD_TS=${{ steps.date.outputs.APP_BUILD_TS }}
           tags: ${{ env.IMAGE_BASE_TAG }}:${{ env.IMAGE_TAG }}, ${{ env.IMAGE_BASE_TAG }}:latest

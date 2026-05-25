@@ -19,8 +19,9 @@ run apk add --no-cache make build-base libwebp-dev
 
 arg CGO_ENABLED=1
 arg APP_VERSION=v0.0.0
+arg APP_BUILD_TS
 
-run go build -v -ldflags "-s -w -X main.Version=${APP_VERSION}" -o service ./cmd/service
+run go build -v -ldflags "-s -w -X main.Version=${APP_VERSION} -X main.BuildTS=${APP_BUILD_TS}" -o service ./cmd/service
 
 from alpine:3.23.4
 

@@ -21,9 +21,10 @@ import (
 )
 
 var Version = "development"
+var BuildTS = "unknown"
 
 //go:embed web/*
-var webfs embed.FS
+var WebFS embed.FS
 
 func main() {
 
@@ -34,7 +35,9 @@ func main() {
 		slog.Debug("ENABLED")
 	}
 
-	slog.Info("FLIPPERCARD APP " + Version)
+	slog.Info("FLIPPERCARD APP",
+		slog.String("version", Version),
+		slog.String("build_ts", BuildTS))
 
 	dataDir := "data"
 	if val := os.Getenv("DATA_DIR"); val != "" {
@@ -92,7 +95,7 @@ func main() {
 
 	mux.Handle("/media/", http.StripPrefix("/media", media.NewHandler(dbconn)))
 	mux.Handle("/api/", http.StripPrefix("/api", rest.NewHandler(dbconn)))
-	mux.Handle("/", spa.NewServerSPA(webfs, "web/dist"))
+	mux.Handle("/", spa.NewServerSPA(spa.NewEFSSnapshot(WebFS, BuildTS), "web/dist"))
 
 	srv := http.Server{
 		Addr:    fmt.Sprintf(":%d", envServePort(8280)),
