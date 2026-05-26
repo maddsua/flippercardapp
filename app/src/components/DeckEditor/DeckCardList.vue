@@ -27,8 +27,8 @@ watch(() => props.list.length, (length, oldLength) => {
 
 <template>
 	<div class="card-list" ref="scrollableRef">
-		<div v-for="(card, idx) of list" class="card-item-tile" :class="{ selected: idx === pointer }" @click="emit('select', idx)">
-			<div class="controls-layer">
+		<div v-for="(card, idx) of list" class="card-item-tile" :class="{ outline: idx === pointer }" @click="emit('select', idx)">
+			<div class="controls-layer" :class="{ active: idx === pointer }">
 				<div class="label">
 						{{ idx + 1 }}
 				</div>
@@ -172,26 +172,39 @@ watch(() => props.list.length, (length, oldLength) => {
 					opacity: 0;
 				}
 
-				&:hover {
+				&.active, &:hover {
 					background-color: rgba(0, 0, 0, 0.4);
 					backdrop-filter: blur(2px);
 
-					.col.controls, .label {
+					.label {
 						opacity: 1;
+						color: var(--app-theme-snow-white) !important;
 					}
 
 					.col.index {
 						opacity: 0;
 					}
 				}
+
+				&:hover {
+
+					.label {
+						color: var(--app-theme-sporty-yellow);
+					}
+
+					.col.controls {
+						opacity: 1;
+					}
+				}
 			}
 
 			&:hover {
 				cursor: pointer;
-				border-color: var(--app-theme-deep-lavender);
+				border-color: var(--app-theme-sporty-yellow);
+				background-color: var(--app-theme-sporty-yellow);
 			}
 
-			&.selected {
+			&.outline {
 				border-color: var(--app-theme-sky-blue);
 				background-color: var(--app-theme-sky-blue);
 			}
