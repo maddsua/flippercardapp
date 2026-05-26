@@ -43,6 +43,8 @@ func main() {
 		} else if err != nil {
 			fmt.Println("csv.Reader.Read:", err)
 			os.Exit(1)
+		} else if len(row) == 0 || (len(row) == 1 && row[0] == "") {
+			continue
 		}
 
 		if mapper == nil {
@@ -50,52 +52,30 @@ func main() {
 			continue
 		}
 
-		title, _ := mapper.Get(row, "title")
-		if title == "" {
-			fmt.Println("WARN: Empty row title; Skipped")
-			continue
-		}
+		mappedRow := mapper.WithRow(row)
 
-		question, _ := mapper.Get(row, "textarea")
-		if question == "" {
-			fmt.Println("WARN: Empty question; Skipped")
-			continue
-		}
-
-		answer, _ := mapper.Get(row, "answer_text")
-		if answer == "" {
-			fmt.Println("WARN: Empty answer; Skipped")
-			continue
-		}
-
-		frontContent := []db_model.CardContentNode{
-			&db_model.CardTitleNode{Content: title},
-			cardTextNodeFromString(question),
-		}
-
-		if opts, _ := mapper.Get(row, "poll_options"); opts != "" {
-
-			node, err := cardPollNodeFromString(opts)
-			if err != nil {
-				fmt.Println("WARN: Empty poll options; Skipped")
-				continue
-			}
-
-			frontContent = append(frontContent, node)
-		}
-
-		cards = append(cards, db_model.CardNodeContent{
-
+		next := db_model.CardNodeContent{
 			Front: db_model.CardContentFace{
-				Content: frontContent,
+				Content: parseFrontContent(mappedRow),
 			},
-
 			Back: db_model.CardContentFace{
-				Content: []db_model.CardContentNode{
-					cardTextNodeFromString(answer),
-				},
+				Content: parseBackContent(mappedRow),
 			},
-		})
+		}
+
+		if len(next.Front.Content) == 0 {
+			fmt.Println("Empty row/card skipped")
+			continue
+		}
+
+		cards = append(cards, next)
+	}
+
+	if len(cards) == 0 {
+		fmt.Println("No cards have been imported")
+		os.Exit(1)
+	} else {
+		fmt.Println("imported", len(cards), "cards")
 	}
 
 	dstPath := strings.TrimSuffix(*srcPath, path.Ext(*srcPath)) + "-output.json"
