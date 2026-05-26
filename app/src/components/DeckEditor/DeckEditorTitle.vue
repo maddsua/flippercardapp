@@ -57,7 +57,7 @@ const props = defineProps<{
 				display: flex;
 				flex-flow: row nowrap;
 				align-items: center;
-				justify-content: center;
+				justify-content: space-between;
 				width: 100%;
 				gap: 1rem;
 			}
