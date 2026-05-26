@@ -39,12 +39,12 @@ type MethodParamsInit = Record<string, ParamValue | null | undefined>;
 
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
-const unwrapError = (error: any): Error => {
+export const unwrapError = (error: any): Error => {
 	return error instanceof Error ? error : new Error(unwrapErrorMessage(error));
 };
 
-const unwrapErrorMessage = (error: any): string => {
-	return typeof error === 'object' ? 'message' in error ? error.message : 'Unknown error' : `${error}`;
+export const unwrapErrorMessage = (error: any): string => {
+	return typeof error === 'object' ? 'message' in error ? error.message : 'Unknown API error' : `${error}`;
 };
 
 const serializeQueryParams = (target: URLSearchParams, params?: MethodParamsInit) => {
