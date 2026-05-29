@@ -4,17 +4,23 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"path"
 	"time"
 )
 
-func NewBundledFS(fs fs.FS, rfc3339 string) fs.FS {
-	date, _ := time.Parse(time.RFC3339, rfc3339)
-	return &spaBundledFs{FS: fs, mtime: date}
+type modtimer interface {
+	Mtime() time.Time
+}
+
+func NewBundledFS(fs fs.FS, prefix, mtime string) fs.FS {
+	mtimeParsed, _ := time.Parse(time.RFC3339, mtime)
+	return &spaBundledFs{FS: fs, prefix: prefix, mtime: mtimeParsed}
 }
 
 type spaBundledFs struct {
 	fs.FS
-	mtime time.Time
+	prefix string
+	mtime  time.Time
 }
 
 func (fs *spaBundledFs) Open(name string) (fs.File, error) {
@@ -23,12 +29,16 @@ func (fs *spaBundledFs) Open(name string) (fs.File, error) {
 		return nil, fmt.Errorf("bundled fs not loaded")
 	}
 
-	file, err := fs.FS.Open(name)
+	file, err := fs.FS.Open(path.Join(fs.prefix, name))
 	if err != nil {
 		return nil, err
 	}
 
 	return &spaBundledFile{File: file, fs: fs}, nil
+}
+
+func (fs *spaBundledFs) Mtime() time.Time {
+	return fs.mtime
 }
 
 type spaBundledFile struct {

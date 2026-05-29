@@ -2,7 +2,13 @@ package spa
 
 import "strings"
 
-func rewriteIndexSuffix(location string) (string, bool) {
+type Rewrite interface {
+	Rewrite(location string) (string, bool)
+}
+
+type IndexSuffixRewrite struct{}
+
+func (rewrite IndexSuffixRewrite) Rewrite(location string) (string, bool) {
 
 	clean, found := strings.CutSuffix(location, "index.html")
 	if !found {
@@ -16,12 +22,18 @@ func rewriteIndexSuffix(location string) (string, bool) {
 	return clean, true
 }
 
-func rewriteTrailingHtmlSuffix(location string) (string, bool) {
-	return strings.CutSuffix(location, ".html")
+type TrailingSuffixRewrite struct{}
+
+func (rewrite TrailingSuffixRewrite) Rewrite(location string) (string, bool) {
+	if clean, found := strings.CutSuffix(location, ".html"); found {
+		return clean, found
+	}
+	return strings.CutSuffix(location, ".htm")
 }
 
-func rewriteTrailingSlash(location string) (string, bool) {
+type TrailingSlashRewrite struct{}
 
+func (rewrite TrailingSlashRewrite) Rewrite(location string) (string, bool) {
 	if location == "/" {
 		return "", false
 	}

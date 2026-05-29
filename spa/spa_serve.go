@@ -1,115 +1,123 @@
 package spa
 
 import (
+	"bytes"
 	"io"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"path"
+	"strings"
 	"time"
 )
 
-func NewServerSPA(fsys fs.FS, prefix string) http.Handler {
+func NewServerSPA(fs fs.FS) http.Handler {
+
+	index, err := spaIndexTemplate(fs)
+	if err != nil {
+		slog.Warn("SPA: Load index template",
+			slog.String("err", err.Error()))
+	}
+
+	rewrites := []Rewrite{
+		IndexSuffixRewrite{},
+		TrailingSuffixRewrite{},
+		TrailingSlashRewrite{},
+	}
+
 	return http.HandlerFunc(func(wrt http.ResponseWriter, req *http.Request) {
 
-		pathname := req.URL.Path
+		reqPath := req.URL.Path
 
-		if loc, ok := matchRewrite(pathname,
-			rewriteIndexSuffix,
-			rewriteTrailingHtmlSuffix,
-			rewriteTrailingSlash,
-		); ok {
-			urlRedirect(wrt, loc)
+		for _, rule := range rewrites {
+			if loc, ok := rule.Rewrite(reqPath); ok {
+				wrt.Header().Set("Location", loc)
+				wrt.WriteHeader(http.StatusMovedPermanently)
+				return
+			}
+		}
+
+		if index != nil && (reqPath == "" || reqPath == "/") {
+			serveIndex(wrt, req, reqPath, index)
 			return
 		}
 
-		asset := findWebAsset(fsys, prefix, pathname)
-		if asset == nil {
-			wrt.WriteHeader(http.StatusNotFound)
-			wrt.Write([]byte("asset not found\r\n"))
+		if file, _ := fs.Open(reqPath); file != nil {
+
+			defer file.Close()
+
+			if stat, _ := file.Stat(); stat == nil || !stat.Mode().IsRegular() {
+				serveIndex(wrt, req, reqPath, index)
+				return
+			}
+
+			serveFile(wrt, req, reqPath, file)
 			return
 		}
 
-		defer asset.Close()
-
-		if asset.modtime.IsZero() {
-			wrt.Header().Add("Cache-Control", "no-cache")
+		if isPageRequest(req) {
+			serveIndex(wrt, req, reqPath, index)
+			return
 		}
 
-		http.ServeContent(wrt, req, asset.name, asset.modtime, asset.file.(io.ReadSeeker))
+		serve404(wrt)
 	})
 }
 
-func webAssetPath(prefix, name string) string {
-	return path.Join(prefix, path.Clean(name))
-}
+func serveFile(wrt http.ResponseWriter, req *http.Request, assetPath string, file fs.File) {
 
-type webAsset struct {
-	name    string
-	modtime time.Time
-	file    fs.File
-}
-
-func (asset *webAsset) Close() error {
-	if asset == nil || asset.file == nil {
-		return nil
-	}
-	return asset.file.Close()
-}
-
-func findWebAsset(fsys fs.FS, prefix, name string) *webAsset {
-
-	assetName := webAssetPath(prefix, name)
-
-	file, _ := fsys.Open(assetName)
-	if file == nil {
-		// fallback case for SPA routing
-		return tryWebAssetPath(fsys, prefix, "/index.html")
+	var modtime time.Time
+	if stat, _ := file.Stat(); stat != nil {
+		modtime = stat.ModTime()
 	}
 
-	stat, _ := file.Stat()
-	if stat == nil {
-		return nil
+	reader, ok := file.(io.ReadSeeker)
+	if !ok {
+		wrt.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 
-	if stat.IsDir() {
-		file.Close()
-		return tryWebAssetPath(fsys, prefix, path.Join(name, "/index.html"))
-	}
+	setCacheControl(wrt)
 
-	return &webAsset{assetName, stat.ModTime(), file}
+	http.ServeContent(wrt, req, assetPath, modtime, reader)
 }
 
-func tryWebAssetPath(fsys fs.FS, prefix, name string) *webAsset {
-	return tryWebAsset(fsys, webAssetPath(prefix, name))
-}
+func serveIndex(wrt http.ResponseWriter, req *http.Request, assetPath string, templ *pageTemplateData) {
 
-func tryWebAsset(fsys fs.FS, asset string) *webAsset {
-
-	file, _ := fsys.Open(asset)
-	if file == nil {
-		return nil
+	if templ == nil {
+		serve404(wrt)
+		return
 	}
 
-	stat, _ := file.Stat()
-	if stat == nil || stat.IsDir() {
-		return nil
-	}
-
-	return &webAsset{asset, stat.ModTime(), file}
+	setCacheControl(wrt)
+	http.ServeContent(wrt, req, assetPath, templ.mtime, bytes.NewReader(templ.data))
 }
 
-type rewriteRuleFn func(location string) (string, bool)
+func serve404(wrt http.ResponseWriter) {
+	wrt.Header().Set("Cache-Control", "no-cache")
+	wrt.WriteHeader(http.StatusNotFound)
+	wrt.Write([]byte("asset not found\r\n"))
+}
 
-func matchRewrite(location string, rules ...rewriteRuleFn) (string, bool) {
-	for _, rule := range rules {
-		if loc, ok := rule(location); ok {
-			return loc, ok
+func setCacheControl(wrt http.ResponseWriter) {
+	wrt.Header().Set("Cache-Control", "max-age=3600, must-revalidate")
+}
+
+func isPageRequest(req *http.Request) bool {
+
+	if path.Ext(req.URL.Path) == "" {
+		return true
+	}
+
+	for mimetype := range strings.SplitSeq(req.Header.Get("Accept"), ",") {
+
+		mimetype, _, _ = strings.Cut(mimetype, ";")
+		_, format, _ := strings.Cut(mimetype, "/")
+
+		if strings.Contains(format, "html") || strings.Contains(format, "xml") {
+			return true
 		}
 	}
-	return "", false
-}
 
-func urlRedirect(wrt http.ResponseWriter, location string) {
-	wrt.Header().Set("Location", location)
-	wrt.WriteHeader(http.StatusMovedPermanently)
+	return false
 }

@@ -1,17 +1,12 @@
-# frontend ignores
 /app/dist/
 /app/node_modules/
 /app/.vite/
 
-# service ignores
 /cmd/service/web/dist/
+
+/cmd/batchutil/data
 /data/
 
-# imports and other data
-/cmd/batchutil/data
-
-# env, in cas we have 'em
 .env
 
-# macos trash
 .DS_Store
