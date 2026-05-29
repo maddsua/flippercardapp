@@ -4,7 +4,16 @@
 		<meta charset="UTF-8" />
 		<link rel="icon" type="image/svg+xml" href="/app.svg" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, minimal-ui, interactive-widget=resizes-content">
-		<title>The Flip-Card App</title>
+		<title>The FlipCard App</title>
+		<meta name="description" content="No-nonsense flashcard app" />
+		<meta property="og:type" content="website" />
+		<meta property="og:title" content="The FlipCard App" />
+		<meta property="og:site_name" content="{{.AppName}}" />
+		<meta property="og:description" content="No-nonsense flashcard app" />
+		<meta property="og:image:width" content="1080" />
+		<meta property="og:image:height" content="1080" />
+		<meta property="og:image:type" content="image/jpeg" />
+		<meta property="og:image" content="https://{{.AppDomain}}/og_preview.jpg" />
 	</head>
 	<body id="app-root">
 		<script type="module" src="/src/main.ts"></script>

@@ -32,6 +32,7 @@ type pageTemplateData struct {
 
 type spaTempalteVars struct {
 	AppDomain string
+	AppName   string
 }
 
 func spaIndexTemplate(fs fs.FS) (*pageTemplateData, error) {
@@ -43,10 +44,15 @@ func spaIndexTemplate(fs fs.FS) (*pageTemplateData, error) {
 
 	vars := spaTempalteVars{
 		AppDomain: "localhost",
+		AppName:   "FlipperCard",
 	}
 
 	if val := os.Getenv("APP_DOMAIN"); val != "" {
 		vars.AppDomain = val
+	}
+
+	if val := os.Getenv("APP_NAME"); val != "" {
+		vars.AppName = val
 	}
 
 	var buff bytes.Buffer
