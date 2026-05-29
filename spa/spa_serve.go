@@ -8,29 +8,7 @@ import (
 	"time"
 )
 
-type StaticFilesystem interface {
-	fs.FS
-	SnapshotTime() time.Time
-}
-
-type embeddedFsSnapshot struct {
-	fs.FS
-	date time.Time
-}
-
-func (es embeddedFsSnapshot) SnapshotTime() time.Time {
-	if es.date.Year() < 2020 {
-		return time.Time{}
-	}
-	return es.date
-}
-
-func NewEFSSnapshot(fs fs.FS, rfc3339 string) *embeddedFsSnapshot {
-	date, _ := time.Parse(time.RFC3339, rfc3339)
-	return &embeddedFsSnapshot{FS: fs, date: date}
-}
-
-func NewServerSPA(fsys StaticFilesystem, prefix string) http.Handler {
+func NewServerSPA(fsys fs.FS, prefix string) http.Handler {
 	return http.HandlerFunc(func(wrt http.ResponseWriter, req *http.Request) {
 
 		pathname := req.URL.Path
@@ -54,7 +32,7 @@ func NewServerSPA(fsys StaticFilesystem, prefix string) http.Handler {
 		defer asset.Close()
 
 		if asset.modtime.IsZero() {
-			asset.modtime = fsys.SnapshotTime()
+			wrt.Header().Add("Cache-Control", "no-cache")
 		}
 
 		http.ServeContent(wrt, req, asset.name, asset.modtime, asset.file.(io.ReadSeeker))

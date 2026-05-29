@@ -17,7 +17,7 @@ jobs:
     env:
       REGISTRY: ghcr.io
       IMAGE_BASE_TAG: ghcr.io/${{ github.repository }}
-      IMAGE_TAG: ${{  github.ref_name }}
+      IMAGE_TAG: ${{ github.ref_name }}
     steps:
       - name: git checkout
         uses: actions/checkout@v4

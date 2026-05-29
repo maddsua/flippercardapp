@@ -99,7 +99,7 @@ func main() {
 
 	mux.Handle("/media/", http.StripPrefix("/media", media.NewHandler(dbconn)))
 	mux.Handle("/api/", http.StripPrefix("/api", rest.NewHandler(dbconn)))
-	mux.Handle("/", spa.NewServerSPA(spa.NewEFSSnapshot(WebFS, BuildTS), "web/dist"))
+	mux.Handle("/", spa.NewServerSPA(spa.NewBundledFS(WebFS, BuildTS), "web/dist"))
 
 	srv := http.Server{
 		Addr:    fmt.Sprintf(":%d", envServePort(8280)),
