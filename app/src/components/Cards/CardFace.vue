@@ -56,8 +56,8 @@ const contentStyle = computed((): CSSProperties => {
 
 				<CardTextBox v-else-if="node.type === 'textbox'">
 					<template v-for="txtnode of node.content">
-						<CardTextNode v-if="txtnode.type === 'text'" :theme="txtnode.theme">
-							{{ txtnode.content || '[Content]' }}
+						<CardTextNode v-if="txtnode.type === 'text' && txtnode.content.length" :theme="txtnode.theme">
+							{{ txtnode.content }}
 						</CardTextNode>
 						<br v-else-if="txtnode.type === 'newline'" />
 					</template>
