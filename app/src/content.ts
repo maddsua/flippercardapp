@@ -56,8 +56,8 @@ export interface CardTextboxElementTheme {
 }
 
 export interface CardTextboxElementTextHighlight {
-	text_color: string;
-	fill_color: string;
+	text_color?: string;
+	fill_color?: string;
 }
 
 export interface CardTextboxNewlineNode extends CardContentNodeBase {

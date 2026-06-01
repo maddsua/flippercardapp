@@ -216,8 +216,8 @@ type CardTextboxElementTheme struct {
 }
 
 type CardTextboxElementTextHighlight struct {
-	TextColor string `json:"text_color"`
-	FillColor string `json:"fill_color"`
+	TextColor string `json:"text_color,omitempty"`
+	FillColor string `json:"fill_color,omitempty"`
 }
 
 type CardTextboxElementDecoration string
