@@ -2,6 +2,7 @@ package spa
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/fs"
 	"log/slog"
@@ -47,15 +48,8 @@ func NewServerSPA(fs fs.FS) http.Handler {
 			return
 		}
 
-		if file, _ := fs.Open(reqPath); file != nil {
-
+		if file, _ := findServableFile(fs, reqPath); file != nil {
 			defer file.Close()
-
-			if stat, _ := file.Stat(); stat == nil || !stat.Mode().IsRegular() {
-				serveIndex(wrt, req, reqPath, index)
-				return
-			}
-
 			serveFile(wrt, req, reqPath, file)
 			return
 		}
@@ -67,6 +61,45 @@ func NewServerSPA(fs fs.FS) http.Handler {
 
 		serve404(wrt)
 	})
+}
+
+func findServableFile(fs fs.FS, name string) (fs.File, error) {
+
+	file, err := fs.Open(name)
+	if err != nil {
+		return nil, err
+	}
+
+	stat, err := file.Stat()
+	if err != nil {
+		file.Close()
+		return nil, err
+	}
+
+	if stat.IsDir() {
+		if index, _ := findDirectoryIndexFile(fs, name); index != nil {
+			file.Close()
+			return index, nil
+		}
+	}
+
+	if !stat.Mode().IsRegular() {
+		file.Close()
+		return nil, fmt.Errorf("is not a regular file")
+	}
+
+	return file, nil
+}
+
+func findDirectoryIndexFile(fs fs.FS, name string) (fs.File, error) {
+
+	for _, suffix := range []string{"index.html", "index.htm"} {
+		if index, _ := findServableFile(fs, path.Join(name, suffix)); index != nil {
+			return index, nil
+		}
+	}
+
+	return nil, fmt.Errorf("no index files exist")
 }
 
 func serveFile(wrt http.ResponseWriter, req *http.Request, assetPath string, file fs.File) {
