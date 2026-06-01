@@ -329,7 +329,7 @@ export class ApiClient {
 			this.execBlob('GET', `/images/${id}/blob`),
 
 		metadata: async (id: string) =>
-			this.execJSON<ImageMetadata>('GET', `/images/${id}`),
+			this.execJSON<ImageMetadata>('GET', `/images/${id}/metadata`),
 	};
 };
 

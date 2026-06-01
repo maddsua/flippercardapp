@@ -221,7 +221,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return rslv.UploadImage(req.Context(), req.URL.Query().Get("name"), req.Body)
 	}))
 
-	mux.Handle("GET /images/{id}", MethodHandleFunc(func(req *http.Request) (*model.ImageMetadata, error) {
+	mux.Handle("GET /images/{id}/metadata", MethodHandleFunc(func(req *http.Request) (*model.ImageMetadata, error) {
 		return rslv.ImageMetadata(req.Context(), req.PathValue("id"))
 	}))
 
