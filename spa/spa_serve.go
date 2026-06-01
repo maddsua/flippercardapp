@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"os"
 	"path"
 	"strings"
 	"time"
@@ -13,7 +14,11 @@ import (
 
 func NewServerSPA(fs fs.FS) http.Handler {
 
-	index, err := spaIndexTemplate(fs)
+	index, err := spaGenerateIndex(fs, spaIndexProps{
+		AppDomain: os.Getenv("APP_DOMAIN"),
+		AppName:   os.Getenv("APP_NAME"),
+	})
+
 	if err != nil {
 		slog.Warn("SPA: Load index template",
 			slog.String("err", err.Error()))
@@ -82,7 +87,7 @@ func serveFile(wrt http.ResponseWriter, req *http.Request, assetPath string, fil
 	http.ServeContent(wrt, req, assetPath, modtime, reader)
 }
 
-func serveIndex(wrt http.ResponseWriter, req *http.Request, assetPath string, templ *pageTemplateData) {
+func serveIndex(wrt http.ResponseWriter, req *http.Request, assetPath string, templ *spaIndex) {
 
 	if templ == nil {
 		serve404(wrt)

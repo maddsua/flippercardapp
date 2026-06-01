@@ -3,74 +3,70 @@ package spa
 import (
 	"bytes"
 	"fmt"
-	"html/template"
 	"image"
 	"io"
 	"io/fs"
 	"log/slog"
-	"os"
+	"regexp"
+	"strings"
 	"time"
 
 	_ "image/jpeg"
 	_ "image/png"
 )
 
-func loadTemplateFileFs(fs fs.FS, name string) (*template.Template, error) {
+func spaLoadIndexTemplateFS(fs fs.FS, name string) ([]byte, error) {
 
 	file, err := fs.Open(name)
 	if err != nil {
-		return nil, fmt.Errorf("index.html not found")
+		return nil, fmt.Errorf("%s not found", name)
 	}
 
-	page, err := io.ReadAll(file)
-	if err != nil {
-		return nil, err
-	}
-
-	return template.New(name).Parse(string(page))
+	return io.ReadAll(file)
 }
 
-type pageTemplateData struct {
+type spaIndexProps struct {
+	AppDomain string
+	AppName   string
+}
+
+type spaIndex struct {
 	data  []byte
 	mtime time.Time
 }
 
-func spaIndexTemplate(fs fs.FS) (*pageTemplateData, error) {
+func spaGenerateIndex(fs fs.FS, props spaIndexProps) (*spaIndex, error) {
 
-	templ, err := loadTemplateFileFs(fs, "index.html")
+	data, err := spaLoadIndexTemplateFS(fs, "index.html")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("load template: %v", err)
 	}
 
-	props := map[string]any{
-		"app_domain": "localhost",
-		"app_name":   "FlipperCard",
+	templProps := map[string]any{
+		"og_site_name": "FlipperCard",
 	}
 
-	if val := os.Getenv("APP_DOMAIN"); val != "" {
+	if props.AppDomain != "" {
 
-		props["app_domain"] = val
-
-		ogPreview, err := spaGenerateOgPreview(fs, val)
+		ogPreview, err := spaGenerateOgPreview(fs, props.AppDomain)
 		if err != nil {
 			slog.Warn("SPA: Generate og:preview",
 				slog.String("err", err.Error()))
 		} else {
-			props["og_preview"] = ogPreview
+			templProps["og_preview"] = ogPreview
 		}
 	}
 
-	if val := os.Getenv("APP_NAME"); val != "" {
-		props["app_name"] = val
+	if props.AppName != "" {
+		templProps["og_site_name"] = strings.ReplaceAll(props.AppName, `"`, `'`)
 	}
 
-	var buff bytes.Buffer
-	if err := templ.Execute(&buff, props); err != nil {
-		return nil, err
+	if data, err = MetaTemplateReplace(data, templProps); err != nil {
+		return nil, fmt.Errorf("exec template: %v", err)
 	}
 
-	page := pageTemplateData{
-		data: buff.Bytes(),
+	page := spaIndex{
+		data: data,
 	}
 
 	if mt, ok := fs.(modtimer); ok {
@@ -80,18 +76,23 @@ func spaIndexTemplate(fs fs.FS) (*pageTemplateData, error) {
 	return &page, nil
 }
 
-func spaGenerateOgPreview(fs fs.FS, domain string) (template.HTML, error) {
+func spaFindOgPreview(fs fs.FS) (fs.File, error) {
 
 	for _, ext := range []string{"png", "jpg", "jpeg"} {
 		if file, _ := fs.Open("og_preview." + ext); file != nil {
-			return spaGenerateOgPreviewFromFile(file, domain)
+			return file, nil
 		}
 	}
 
-	return "", fmt.Errorf("preview not found")
+	return nil, fmt.Errorf("preview not found")
 }
 
-func spaGenerateOgPreviewFromFile(file fs.File, domain string) (template.HTML, error) {
+func spaGenerateOgPreview(fs fs.FS, domain string) (string, error) {
+
+	file, err := spaFindOgPreview(fs)
+	if err != nil {
+		return "", err
+	}
 
 	defer file.Close()
 
@@ -105,33 +106,66 @@ func spaGenerateOgPreviewFromFile(file fs.File, domain string) (template.HTML, e
 		return "", err
 	}
 
-	return spaGenerateOgPreviewTemplate(domain, stat.Name(), "image/"+mimetype, img.Bounds().Dx(), img.Bounds().Dy())
+	bounds := img.Bounds()
+
+	return fmt.Sprintf(`
+		<meta property="og:image:width" content="%d" />
+		<meta property="og:image:height" content="%d" />
+		<meta property="og:image:type" content="image/%s" />
+		<meta property="og:image" content="https://%s/%s" />
+	`, bounds.Dx(), bounds.Dy(), mimetype, domain, stat.Name()), nil
 }
 
-func spaGenerateOgPreviewTemplate(domain, name, mimetype string, width, height int) (template.HTML, error) {
+func MetaTemplateReplace(data []byte, props map[string]any) ([]byte, error) {
 
-	templ, err := template.New("og-preview").Parse(`
-		<meta property="og:image:width" content="{{.width}}" />
-		<meta property="og:image:height" content="{{.height}}" />
-		<meta property="og:image:type" content="{{.type}}" />
-		<meta property="og:image" content="https://{{.domain}}/{{.name}}" />
-	`)
-
+	templRegexp, err := regexp.Compile(`(?i)(\<\!\-{2}\s*\{{2}\s*[^{}]+\s*\}{2}\s*\-{2}\>)|(\{{2}\s*[^{}]+\s*\}{2})`)
 	if err != nil {
-		return "", err
+		return nil, fmt.Errorf("template regexp: %v", err)
+	}
+
+	propRegexp, err := regexp.Compile(`(?i)[a-z0-9_]+`)
+	if err != nil {
+		return nil, fmt.Errorf("prop regexp: %v", err)
 	}
 
 	var buff bytes.Buffer
 
-	if err := templ.Execute(&buff, map[string]any{
-		"width":  width,
-		"height": height,
-		"domain": domain,
-		"name":   name,
-		"type":   mimetype,
-	}); err != nil {
-		return "", err
+	var lastIdx int
+
+	for _, tokenRange := range templRegexp.FindAllIndex(data, -1) {
+
+		if len(tokenRange) != 2 {
+			return nil, fmt.Errorf("invalid regexp match range length (%d)", len(tokenRange))
+		}
+
+		tokenStart := tokenRange[0]
+		tokenEnd := tokenRange[1]
+
+		if _, err := buff.Write(data[lastIdx:tokenStart]); err != nil {
+			return nil, fmt.Errorf("buffer: %v", err)
+		}
+
+		lastIdx = tokenEnd
+		token := data[tokenStart:tokenEnd]
+
+		tokenProp := propRegexp.Find(token)
+		if len(tokenProp) == 0 {
+			continue
+		}
+
+		value, ok := props[string(tokenProp)]
+		if !ok {
+			continue
+		}
+
+		if _, err := fmt.Fprint(&buff, value); err != nil {
+			return nil, fmt.Errorf("buffer: %v", err)
+		}
 	}
 
-	return template.HTML(buff.String()), nil
+	if lastIdx < len(data)-1 {
+		buff.Write(data[lastIdx:])
+	}
+
+	return buff.Bytes(), nil
 }
