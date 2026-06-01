@@ -40,7 +40,7 @@ watch(() => props.entry.media_id, () => state.ready = ReadyState.Idle);
 				Unable to load image
 			</template>
 
-			<template v-else-if="state.ready === ReadyState.Idle">
+			<template v-else-if="state.ready === ReadyState.Idle && mediaURL">
 				<LoadingMessage />
 			</template>
 
