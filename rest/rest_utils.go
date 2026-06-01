@@ -123,11 +123,7 @@ func ParseGenericJSON[T any](req *http.Request) (T, error) {
 func ResourceVisibilityFilter(ctx context.Context, idFilter uuid.UUIDs) db_model.ResourceVisibilities {
 
 	if perms, _ := auth.For(ctx).Permissions(); perms != nil && perms.AsTeamMember() == nil {
-		return db_model.ResourceVisibilities{
-			db_model.ResourceVisibilityPrivate,
-			db_model.ResourceVisibilityHidden,
-			db_model.ResourceVisibilityPublic,
-		}
+		return db_model.ResourceVisibilities{}
 	}
 
 	if len(idFilter) > 0 {
