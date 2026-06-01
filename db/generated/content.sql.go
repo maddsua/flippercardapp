@@ -56,44 +56,6 @@ func (q *Queries) CollectionSize(ctx context.Context, id uuid.UUID) (int64, erro
 	return count, err
 }
 
-const deckCardSet = `-- name: DeckCardSet :many
-select id from cards
-where deck_id = ?1
-`
-
-func (q *Queries) DeckCardSet(ctx context.Context, deckID uuid.UUID) ([]uuid.UUID, error) {
-	rows, err := q.db.QueryContext(ctx, deckCardSet, deckID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []uuid.UUID
-	for rows.Next() {
-		var id uuid.UUID
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-		items = append(items, id)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const deleteCard = `-- name: DeleteCard :exec
-delete from cards
-where id = ?1
-`
-
-func (q *Queries) DeleteCard(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, deleteCard, id)
-	return err
-}
-
 const deleteCollection = `-- name: DeleteCollection :execrows
 delete from collections
 where id = ?1
@@ -251,7 +213,7 @@ func (q *Queries) GetCollectionSearchBatch(ctx context.Context, arg GetCollectio
 }
 
 const getDeckById = `-- name: GetDeckById :one
-select id, collection_id, created_at, updated_at, name, description, visibility from decks
+select id, collection_id, created_at, updated_at, name, description, visibility, latest_version_id from decks
 where id = ?1
 `
 
@@ -266,30 +228,93 @@ func (q *Queries) GetDeckById(ctx context.Context, id uuid.UUID) (Deck, error) {
 		&i.Name,
 		&i.Description,
 		&i.Visibility,
+		&i.LatestVersionID,
 	)
 	return i, err
 }
 
-const getDeckCards = `-- name: GetDeckCards :many
-select id, deck_id, created_at, updated_at, content from cards
+const getDeckLatestVersion = `-- name: GetDeckLatestVersion :one
+select id, created_at, deck_id, card_count, content, label from deck_versions
 where deck_id = ?1
+order by created_at desc
+limit 1
 `
 
-func (q *Queries) GetDeckCards(ctx context.Context, deckID uuid.UUID) ([]Card, error) {
-	rows, err := q.db.QueryContext(ctx, getDeckCards, deckID)
+func (q *Queries) GetDeckLatestVersion(ctx context.Context, deckID uuid.UUID) (DeckVersion, error) {
+	row := q.db.QueryRowContext(ctx, getDeckLatestVersion, deckID)
+	var i DeckVersion
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.DeckID,
+		&i.CardCount,
+		&i.Content,
+		&i.Label,
+	)
+	return i, err
+}
+
+const getDeckVersion = `-- name: GetDeckVersion :one
+select id, created_at, deck_id, card_count, content, label from deck_versions
+where id = ?1
+`
+
+func (q *Queries) GetDeckVersion(ctx context.Context, id uuid.UUID) (DeckVersion, error) {
+	row := q.db.QueryRowContext(ctx, getDeckVersion, id)
+	var i DeckVersion
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.DeckID,
+		&i.CardCount,
+		&i.Content,
+		&i.Label,
+	)
+	return i, err
+}
+
+const getDeckVersionsBatch = `-- name: GetDeckVersionsBatch :many
+select
+	id,
+	created_at,
+	deck_id,
+	card_count,
+	label
+from deck_versions
+where deck_id = ?1
+order by created_at desc
+limit ?3 offset ?2
+`
+
+type GetDeckVersionsBatchParams struct {
+	DeckID uuid.UUID
+	Offset int64
+	Limit  int64
+}
+
+type GetDeckVersionsBatchRow struct {
+	ID        uuid.UUID
+	CreatedAt types.Time
+	DeckID    uuid.UUID
+	CardCount int64
+	Label     sql.NullString
+}
+
+func (q *Queries) GetDeckVersionsBatch(ctx context.Context, arg GetDeckVersionsBatchParams) ([]GetDeckVersionsBatchRow, error) {
+	rows, err := q.db.QueryContext(ctx, getDeckVersionsBatch, arg.DeckID, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Card
+	var items []GetDeckVersionsBatchRow
 	for rows.Next() {
-		var i Card
+		var i GetDeckVersionsBatchRow
 		if err := rows.Scan(
 			&i.ID,
-			&i.DeckID,
 			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.Content,
+			&i.DeckID,
+			&i.CardCount,
+			&i.Label,
 		); err != nil {
 			return nil, err
 		}
@@ -306,10 +331,10 @@ func (q *Queries) GetDeckCards(ctx context.Context, deckID uuid.UUID) ([]Card, e
 
 const getDecksBatch = `-- name: GetDecksBatch :many
 select
-	distinct decks.id, decks.collection_id, decks.created_at, decks.updated_at, decks.name, decks.description, decks.visibility,
-	count(cards.id) as size
+	distinct decks.id, decks.collection_id, decks.created_at, decks.updated_at, decks.name, decks.description, decks.visibility, decks.latest_version_id,
+	deck_versions.card_count as size
 from decks
-	inner join cards on cards.deck_id = decks.id
+	left join deck_versions on deck_versions.id = decks.latest_version_id
 where (?1 is null or decks.id in (
 	select value from json_each(?1)
 )) and (decks.collection_id = ?2
@@ -331,14 +356,15 @@ type GetDecksBatchParams struct {
 }
 
 type GetDecksBatchRow struct {
-	ID           uuid.UUID
-	CollectionID uuid.UUID
-	CreatedAt    types.Time
-	UpdatedAt    types.Time
-	Name         string
-	Description  sql.NullString
-	Visibility   model.ResourceVisibility
-	Size         int64
+	ID              uuid.UUID
+	CollectionID    uuid.UUID
+	CreatedAt       types.Time
+	UpdatedAt       types.Time
+	Name            string
+	Description     sql.NullString
+	Visibility      model.ResourceVisibility
+	LatestVersionID uuid.NullUUID
+	Size            sql.NullInt64
 }
 
 func (q *Queries) GetDecksBatch(ctx context.Context, arg GetDecksBatchParams) ([]GetDecksBatchRow, error) {
@@ -364,6 +390,7 @@ func (q *Queries) GetDecksBatch(ctx context.Context, arg GetDecksBatchParams) ([
 			&i.Name,
 			&i.Description,
 			&i.Visibility,
+			&i.LatestVersionID,
 			&i.Size,
 		); err != nil {
 			return nil, err
@@ -420,41 +447,6 @@ func (q *Queries) GetImageById(ctx context.Context, id string) (Image, error) {
 		&i.DataSha512Hash,
 	)
 	return i, err
-}
-
-const insertCard = `-- name: InsertCard :exec
-insert into cards (
-	id,
-	deck_id,
-	created_at,
-	updated_at,
-	content
-) values (
-	?1,
-	?2,
-	?3,
-	?4,
-	?5
-)
-`
-
-type InsertCardParams struct {
-	ID        uuid.UUID
-	DeckID    uuid.UUID
-	CreatedAt types.Time
-	UpdatedAt types.Time
-	Content   model.CardNodeContent
-}
-
-func (q *Queries) InsertCard(ctx context.Context, arg InsertCardParams) error {
-	_, err := q.db.ExecContext(ctx, insertCard,
-		arg.ID,
-		arg.DeckID,
-		arg.CreatedAt,
-		arg.UpdatedAt,
-		arg.Content,
-	)
-	return err
 }
 
 const insertCollection = `-- name: InsertCollection :one
@@ -522,7 +514,7 @@ insert into decks (
 	?5,
 	?6,
 	?7
-) returning id, collection_id, created_at, updated_at, name, description, visibility
+) returning id, collection_id, created_at, updated_at, name, description, visibility, latest_version_id
 `
 
 type InsertDeckParams struct {
@@ -554,6 +546,55 @@ func (q *Queries) InsertDeck(ctx context.Context, arg InsertDeckParams) (Deck, e
 		&i.Name,
 		&i.Description,
 		&i.Visibility,
+		&i.LatestVersionID,
+	)
+	return i, err
+}
+
+const insertDeckVersion = `-- name: InsertDeckVersion :one
+insert into deck_versions (
+	id,
+	created_at,
+	deck_id,
+	card_count,
+	content,
+	label
+) values (
+	?1,
+	?2,
+	?3,
+	?4,
+	?5,
+	?6
+) returning id, created_at, deck_id, card_count, content, label
+`
+
+type InsertDeckVersionParams struct {
+	ID        uuid.UUID
+	CreatedAt types.Time
+	DeckID    uuid.UUID
+	CardCount int64
+	Content   model.DeckVersionContent
+	Label     sql.NullString
+}
+
+func (q *Queries) InsertDeckVersion(ctx context.Context, arg InsertDeckVersionParams) (DeckVersion, error) {
+	row := q.db.QueryRowContext(ctx, insertDeckVersion,
+		arg.ID,
+		arg.CreatedAt,
+		arg.DeckID,
+		arg.CardCount,
+		arg.Content,
+		arg.Label,
+	)
+	var i DeckVersion
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.DeckID,
+		&i.CardCount,
+		&i.Content,
+		&i.Label,
 	)
 	return i, err
 }
@@ -616,20 +657,20 @@ func (q *Queries) InsertImage(ctx context.Context, arg InsertImageParams) (Image
 	return i, err
 }
 
-const setDeckUpdateTime = `-- name: SetDeckUpdateTime :one
+const setDeckLatestVersion = `-- name: SetDeckLatestVersion :one
 update decks
-set updated_at = ?1
+set latest_version_id = ?1
 where id = ?2
-returning id, collection_id, created_at, updated_at, name, description, visibility
+returning id, collection_id, created_at, updated_at, name, description, visibility, latest_version_id
 `
 
-type SetDeckUpdateTimeParams struct {
-	UpdatedAt types.Time
-	ID        uuid.UUID
+type SetDeckLatestVersionParams struct {
+	LatestVersionID uuid.NullUUID
+	DeckID          uuid.UUID
 }
 
-func (q *Queries) SetDeckUpdateTime(ctx context.Context, arg SetDeckUpdateTimeParams) (Deck, error) {
-	row := q.db.QueryRowContext(ctx, setDeckUpdateTime, arg.UpdatedAt, arg.ID)
+func (q *Queries) SetDeckLatestVersion(ctx context.Context, arg SetDeckLatestVersionParams) (Deck, error) {
+	row := q.db.QueryRowContext(ctx, setDeckLatestVersion, arg.LatestVersionID, arg.DeckID)
 	var i Deck
 	err := row.Scan(
 		&i.ID,
@@ -639,37 +680,37 @@ func (q *Queries) SetDeckUpdateTime(ctx context.Context, arg SetDeckUpdateTimePa
 		&i.Name,
 		&i.Description,
 		&i.Visibility,
+		&i.LatestVersionID,
 	)
 	return i, err
 }
 
-const updateCardContent = `-- name: UpdateCardContent :execrows
-update cards
-set
-	updated_at = ?1,
-	content = ?2
-where id = ?3
-	and deck_id = ?4
+const setDeckUpdateTime = `-- name: SetDeckUpdateTime :one
+update decks
+set updated_at = ?1
+where id = ?2
+returning id, collection_id, created_at, updated_at, name, description, visibility, latest_version_id
 `
 
-type UpdateCardContentParams struct {
+type SetDeckUpdateTimeParams struct {
 	UpdatedAt types.Time
-	Content   model.CardNodeContent
-	ID        uuid.UUID
 	DeckID    uuid.UUID
 }
 
-func (q *Queries) UpdateCardContent(ctx context.Context, arg UpdateCardContentParams) (int64, error) {
-	result, err := q.db.ExecContext(ctx, updateCardContent,
-		arg.UpdatedAt,
-		arg.Content,
-		arg.ID,
-		arg.DeckID,
+func (q *Queries) SetDeckUpdateTime(ctx context.Context, arg SetDeckUpdateTimeParams) (Deck, error) {
+	row := q.db.QueryRowContext(ctx, setDeckUpdateTime, arg.UpdatedAt, arg.DeckID)
+	var i Deck
+	err := row.Scan(
+		&i.ID,
+		&i.CollectionID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Name,
+		&i.Description,
+		&i.Visibility,
+		&i.LatestVersionID,
 	)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected()
+	return i, err
 }
 
 const updateCollection = `-- name: UpdateCollection :one
@@ -719,7 +760,7 @@ set
 	description = ?3,
 	visibility = ?4
 where id = ?5
-returning id, collection_id, created_at, updated_at, name, description, visibility
+returning id, collection_id, created_at, updated_at, name, description, visibility, latest_version_id
 `
 
 type UpdateDeckMetadataParams struct {
@@ -747,6 +788,7 @@ func (q *Queries) UpdateDeckMetadata(ctx context.Context, arg UpdateDeckMetadata
 		&i.Name,
 		&i.Description,
 		&i.Visibility,
+		&i.LatestVersionID,
 	)
 	return i, err
 }

@@ -3,6 +3,7 @@ import type {
 	CardDeck,
 	CardDeckMetadata,
 	CardDeckPatch,
+	CardDeckVersionMetadata,
 	Collection,
 	CollectionMetadata,
 	CollectionPatch,
@@ -280,19 +281,19 @@ export class ApiClient {
 			this.execJSON<Collection>('GET', `/collections/${id}`),
 
 		create: async (patch: CollectionPatch) =>
-			this.execJSON<CollectionMetadata>('PUT', '/manage/content/collection', {}, patch),
+			this.execJSON<CollectionMetadata>('PUT', '/collections/new', {}, patch),
 
 		update: async (id: string, patch: CollectionPatch) =>
-			this.execJSON<CollectionMetadata>('PATCH', `/manage/content/collection/${id}/metadata`, {}, patch),
+			this.execJSON<CollectionMetadata>('PATCH', `/collections/${id}`, {}, patch),
 
 		remove: async (id: string, opts?: { recursive?: boolean }) =>
-			this.execJSON<null>('DELETE', `/manage/content/collection/${id}`, opts),
+			this.execJSON<null>('DELETE', `/collections/${id}`, opts),
 
 		exportBundle: async (id: string) =>
-			this.execBlob('POST', `/manage/content/collection/${id}/export`),
+			this.execBlob('POST', `/collections/${id}/export`),
 
 		importBundle: async (file: File) =>
-			this.execJSON<CollectionMetadata>('POST', `/manage/content/collections/import`, {}, file),
+			this.execJSON<CollectionMetadata>('POST', `/collections/import`, {}, file),
 	};
 
 	decks = {
@@ -304,25 +305,31 @@ export class ApiClient {
 			this.execJSON<CardDeck>('GET',`/decks/${id}`),
 
 		create: async (patch: CardDeckPatch) =>
-			this.execJSON<CardDeckMetadata>('PUT', '/manage/content/deck', {}, patch),
+			this.execJSON<CardDeckMetadata>('PUT', '/decks/new', {}, patch),
 
 		update: async (id: string, patch: CardDeckPatch) =>
-			this.execJSON<CardDeckMetadata>('PATCH', `/manage/content/deck/${id}`, {}, patch),
+			this.execJSON<CardDeckMetadata>('PATCH', `/decks/${id}`, {}, patch),
 
 		remove: async (id: string) =>
-			this.execJSON<null>('DELETE', `/manage/content/deck/${id}`),
+			this.execJSON<null>('DELETE', `/decks/${id}`),
+
+		versions: async (id: string) =>
+			this.execJSON<Page<CardDeckVersionMetadata>>('GET', `/decks/${id}/versions`),
+
+		rollbackVersion: async (deckID: string, versionID: string) =>
+			this.execJSON<Page<CardDeckVersionMetadata>>('POST', `/decks/${deckID}/versions/${versionID}/rollback`),
 	};
 
 	images = {
 
 		upload: async (img: File | Blob, blobName?: string) =>
-			this.execJSON<ImageMetadata>('PUT', '/manage/content/images/upload', { name: img instanceof File ? img.name : blobName }, img),
+			this.execJSON<ImageMetadata>('PUT', '/images/upload', { name: img instanceof File ? img.name : blobName }, img),
 
 		blob: async (id: string) =>
-			this.execBlob('GET', `/manage/content/images/${id}/blob`),
+			this.execBlob('GET', `/images/${id}/blob`),
 
 		metadata: async (id: string) =>
-			this.execJSON<ImageMetadata>('GET', `/manage/content/images/${id}/metadata`),
+			this.execJSON<ImageMetadata>('GET', `/images/${id}`),
 	};
 };
 

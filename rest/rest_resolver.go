@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha512"
+	"database/sql"
 	"fmt"
 	"image"
 	"io"
@@ -49,18 +50,18 @@ func (rslv *resolver) LoadCardDeck(ctx context.Context, id uuid.UUID) (*model.Ca
 		return nil, err
 	}
 
-	cards, err := rslv.db.GetDeckCards(ctx, deck.ID)
-	if err != nil {
-		return nil, InternalError("sqlc.GetDeckCards", err)
-	}
-
 	result := model.CardDeck{
 		CardDeckMetadata: db_pkg.TransformRow[model.CardDeckMetadata](deck),
 		Labels:           []string{deck.Name},
-		Cards:            make([]model.Card, len(cards)),
 	}
 
-	result.CardDeckMetadata.Size = len(cards)
+	if version, err := rslv.getDeckLatestVersion(ctx, &rslv.db.Queries, deck.ID, deck.LatestVersionID); err != nil {
+		return nil, err
+	} else if version.Valid {
+		result.VersionID = types.NewNullUUID(version.V.ID)
+		result.Cards = version.V.Content.Cards
+		result.Size = int(version.V.CardCount)
+	}
 
 	if collection, err := rslv.db.GetCollectionById(ctx, deck.CollectionID); err != nil {
 		return nil, InternalError("sqlc.GetCollectionById", err)
@@ -68,14 +69,124 @@ func (rslv *resolver) LoadCardDeck(ctx context.Context, id uuid.UUID) (*model.Ca
 		result.Labels = append(result.Labels, collection.Name)
 	}
 
-	for idx, val := range cards {
-		result.Cards[idx].FromRow(val)
-	}
-
 	return &result, nil
 }
 
-func (rslv *resolver) ListCardDeckPage(ctx context.Context, ids uuid.UUIDs, page PagePointers) (*Page[model.CardDeckMetadata], error) {
+func (rslv *resolver) getDeckLatestVersion(ctx context.Context, tx *db_gen.Queries, deckID uuid.UUID, latestVersionID uuid.NullUUID) (sql.Null[db_gen.DeckVersion], error) {
+
+	if latestVersionID.Valid {
+
+		if version, err := tx.GetDeckVersion(ctx, latestVersionID.UUID); err != nil && !db_pkg.IsNull(err) {
+			return sql.Null[db_gen.DeckVersion]{}, InternalError("sqlc.GetDeckVersion", err)
+		} else if err == nil {
+			return sql.Null[db_gen.DeckVersion]{V: version, Valid: true}, nil
+		}
+
+		slog.Warn("REST DATA: Deck latest version wasn't found by it's referenced ID",
+			slog.String("deck_id", deckID.String()))
+
+		return sql.Null[db_gen.DeckVersion]{}, nil
+	}
+
+	version, err := tx.GetDeckLatestVersion(ctx, deckID)
+	if err != nil && !db_pkg.IsNull(err) {
+		return sql.Null[db_gen.DeckVersion]{}, InternalError("sqlc.GetDeckLatestVersion", err)
+	}
+
+	return sql.Null[db_gen.DeckVersion]{V: version, Valid: true}, nil
+}
+
+func (rslv *resolver) ListCardDeckVersions(ctx context.Context, deckID uuid.UUID, page PagePointers) (*Page[model.CardDeckVersionMetadata], error) {
+
+	if perms, err := auth.For(ctx).Permissions(); err != nil {
+		return nil, err
+	} else if err := perms.AsTeamMember(); err != nil {
+		return nil, err
+	}
+
+	deck, err := rslv.db.GetDeckById(ctx, deckID)
+	if db_pkg.IsNull(err) {
+		return nil, &model.Error{Message: "deck not found", Code: http.StatusNotFound}
+	} else if err != nil {
+		return nil, InternalError("sqlc.GetDeckById", err)
+	}
+
+	entries, err := rslv.db.GetDeckVersionsBatch(ctx, db_gen.GetDeckVersionsBatchParams{
+		DeckID: deck.ID,
+		Limit:  page.QueryLimit(),
+		Offset: page.QueryOffset(),
+	})
+	if err != nil {
+		return nil, InternalError("sqlc.GetDeckVersionsBatch", err)
+	}
+
+	result := TransformPage(page, entries, db_pkg.TransformBatchRow[model.CardDeckVersionMetadata, db_gen.GetDeckVersionsBatchRow])
+
+	if deck.LatestVersionID.Valid {
+		for idx, val := range result.Entries {
+			if val.ID == deck.LatestVersionID.UUID {
+				result.Entries[idx].IsLatest = true
+				break
+			}
+		}
+	}
+
+	return result, nil
+}
+
+func (rslv *resolver) RollbackCardDeckVersion(ctx context.Context, deckID uuid.UUID, versionID uuid.UUID) (*model.CardDeckMetadata, error) {
+
+	if perms, err := auth.For(ctx).Permissions(); err != nil {
+		return nil, err
+	} else if err := perms.AsContentEditor(); err != nil {
+		return nil, err
+	}
+
+	tx, err := rslv.db.BeginTx(ctx)
+	if err != nil {
+		return nil, InternalError("sqlc.BeginTx", err)
+	}
+	defer tx.Rollback()
+
+	deck, err := tx.GetDeckById(ctx, deckID)
+	if db_pkg.IsNull(err) {
+		return nil, &model.Error{Message: "Deck not found", Code: http.StatusNotFound}
+	} else if err != nil {
+		return nil, InternalError("sqlc.GetDeckById", err)
+	}
+
+	version, err := tx.GetDeckVersion(ctx, versionID)
+	if db_pkg.IsNull(err) {
+		return nil, &model.Error{Message: "Version not found", Code: http.StatusNotFound}
+	} else if err != nil {
+		return nil, InternalError("sqlc.GetDeckVersion", err)
+	} else if version.ID == deck.LatestVersionID.UUID {
+		return nil, &model.Error{Message: "Version is already the latest", Code: http.StatusBadRequest}
+	}
+
+	if deck, err = tx.SetDeckLatestVersion(ctx, db_gen.SetDeckLatestVersionParams{
+		DeckID:          deck.ID,
+		LatestVersionID: types.NewNullUUID(version.ID),
+	}); err != nil {
+		return nil, InternalError("sqlc.SetDeckLatestVersion", err)
+	}
+
+	if deck, err = tx.SetDeckUpdateTime(ctx, db_gen.SetDeckUpdateTimeParams{
+		DeckID:    deck.ID,
+		UpdatedAt: types.NewTime(time.Now()),
+	}); err != nil {
+		return nil, InternalError("sqlc.SetDeckUpdateTime", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, InternalError("sqlc.Commit", err)
+	}
+
+	result := db_pkg.TransformRow[model.CardDeckMetadata](deck)
+	return &result, nil
+}
+
+func (rslv *resolver) ListCardDeckBatch(ctx context.Context, ids uuid.UUIDs, page PagePointers) (*Page[model.CardDeckMetadata], error) {
 
 	entries, err := rslv.db.GetDecksBatch(ctx, db_gen.GetDecksBatchParams{
 		IdsSet:        types.NewNullUUIDs(ids),
@@ -126,7 +237,7 @@ func (rslv *resolver) LoadCollection(ctx context.Context, id uuid.UUID) (*model.
 	return &result, nil
 }
 
-func (rslv *resolver) ListCollectionsPage(ctx context.Context, ids uuid.UUIDs, page PagePointers) (*Page[model.CollectionMetadata], error) {
+func (rslv *resolver) ListCollectionsBatch(ctx context.Context, ids uuid.UUIDs, page PagePointers) (*Page[model.CollectionMetadata], error) {
 
 	entries, err := rslv.db.GetCollectionBatch(ctx, db_gen.GetCollectionBatchParams{
 		IdsSet:        types.NewNullUUIDs(ids),
@@ -264,7 +375,7 @@ func (rslv *resolver) CreateContentCollection(ctx context.Context, params model.
 	return &result, nil
 }
 
-func (rslv *resolver) UpdateContentCollection(ctx context.Context, id uuid.UUID, patch model.CollectionPatch) (*model.CollectionMetadata, error) {
+func (rslv *resolver) UpdateContentCollection(ctx context.Context, id uuid.UUID, params model.CollectionPatch) (*model.CollectionMetadata, error) {
 
 	if perms, err := auth.For(ctx).Permissions(); err != nil {
 		return nil, err
@@ -272,15 +383,15 @@ func (rslv *resolver) UpdateContentCollection(ctx context.Context, id uuid.UUID,
 		return nil, err
 	}
 
-	if err := patch.Valid(); err != nil {
+	if err := params.Valid(); err != nil {
 		return nil, &model.Error{Message: fmt.Sprintf("Invalid collection details: %v", err)}
 	}
 
 	entry, err := rslv.db.UpdateCollection(ctx, db_gen.UpdateCollectionParams{
 		ID:          id,
-		Name:        patch.Name,
-		Description: types.NewNullString(patch.Description),
-		Visibility:  patch.Visibility,
+		Name:        params.Name,
+		Description: types.NewNullString(params.Description),
+		Visibility:  params.Visibility,
 		UpdatedAt:   types.NewTime(time.Now()),
 	})
 	if db_pkg.IsNull(err) {
@@ -379,28 +490,50 @@ func (rslv *resolver) CreateCardDeck(ctx context.Context, params model.CardDeckP
 		return nil, InternalError("sqlc.InsertDeck", err)
 	}
 
-	for _, card := range params.Content.Cards {
-		if err := tx.InsertCard(ctx, db_gen.InsertCardParams{
-			Content:   card.CardNodeContent,
-			ID:        uuid.New(),
-			DeckID:    deck.ID,
-			CreatedAt: types.NewTime(time.Now()),
-			UpdatedAt: types.NewTime(time.Now()),
-		}); err != nil {
-			return nil, InternalError("sqlc.InsertCard", err)
+	result := db_pkg.TransformRow[model.CardDeckMetadata](deck)
+
+	if params.Content != nil {
+
+		version, err := rslv.addDeckVersion(ctx, &tx.Queries, deck.ID, params.Content.DeckVersionContent)
+		if err != nil {
+			return nil, err
 		}
+
+		result.VersionID = types.NewNullUUID(version.ID)
+		result.Size = len(params.Content.Cards)
 	}
 
 	if err := tx.Commit(); err != nil {
 		return nil, InternalError("sqlc.Commit", err)
 	}
 
-	result := db_pkg.TransformRow[model.CardDeckMetadata](deck)
-	result.Size = len(params.Content.Cards)
 	return &result, nil
 }
 
-func (rslv *resolver) UpdateCardDeck(ctx context.Context, id uuid.UUID, patch model.CardDeckPatch) (*model.CardDeckMetadata, error) {
+func (rslv *resolver) addDeckVersion(ctx context.Context, tx *db_gen.Queries, deckID uuid.UUID, version db_model.DeckVersionContent) (db_gen.DeckVersion, error) {
+
+	entry, err := tx.InsertDeckVersion(ctx, db_gen.InsertDeckVersionParams{
+		ID:        uuid.New(),
+		CreatedAt: types.NewTime(time.Now()),
+		DeckID:    deckID,
+		CardCount: int64(len(version.Cards)),
+		Content:   version,
+	})
+	if err != nil {
+		return db_gen.DeckVersion{}, InternalError("sqlc.InsertDeckVersion", err)
+	}
+
+	if _, err = tx.SetDeckLatestVersion(ctx, db_gen.SetDeckLatestVersionParams{
+		DeckID:          entry.DeckID,
+		LatestVersionID: types.NewNullUUID(entry.ID),
+	}); err != nil {
+		return db_gen.DeckVersion{}, InternalError("sqlc.SetDeckLatestVersion", err)
+	}
+
+	return entry, nil
+}
+
+func (rslv *resolver) UpdateCardDeck(ctx context.Context, id uuid.UUID, params model.CardDeckPatch) (*model.CardDeckMetadata, error) {
 
 	if perms, err := auth.For(ctx).Permissions(); err != nil {
 		return nil, err
@@ -415,7 +548,7 @@ func (rslv *resolver) UpdateCardDeck(ctx context.Context, id uuid.UUID, patch mo
 	defer tx.Rollback()
 
 	deck, err := tx.SetDeckUpdateTime(ctx, db_gen.SetDeckUpdateTimeParams{
-		ID:        id,
+		DeckID:    id,
 		UpdatedAt: types.NewTime(time.Now()),
 	})
 
@@ -425,26 +558,26 @@ func (rslv *resolver) UpdateCardDeck(ctx context.Context, id uuid.UUID, patch mo
 		return nil, InternalError("sqlc.SetDeckUpdateTime", err)
 	}
 
-	if patch.CollectionID.Valid {
-		if exists, err := tx.CollectionIDExists(ctx, patch.CollectionID.UUID); err != nil {
+	if params.CollectionID.Valid {
+		if exists, err := tx.CollectionIDExists(ctx, params.CollectionID.UUID); err != nil {
 			return nil, InternalError("sqlc.CollectionIDExists", err)
 		} else if !exists {
 			return nil, &model.Error{Message: "Collection ID not found", Code: http.StatusNotFound}
 		}
 	}
 
-	if patch.Meta != nil {
+	if params.Meta != nil {
 
-		if err := patch.Meta.Valid(); err != nil {
+		if err := params.Meta.Valid(); err != nil {
 			return nil, &model.Error{Message: fmt.Sprintf("Invalid deck details: %v", err)}
 		}
 
 		if deck, err = tx.UpdateDeckMetadata(ctx, db_gen.UpdateDeckMetadataParams{
 			ID:           id,
-			CollectionID: patch.CollectionID,
-			Name:         patch.Meta.Name,
-			Description:  types.NewNullString(patch.Meta.Description),
-			Visibility:   patch.Meta.Visibility,
+			CollectionID: params.CollectionID,
+			Name:         params.Meta.Name,
+			Description:  types.NewNullString(params.Meta.Description),
+			Visibility:   params.Meta.Visibility,
 		}); err != nil {
 			return nil, InternalError("sqlc.UpdateDeckMetadata", err)
 		}
@@ -452,51 +585,15 @@ func (rslv *resolver) UpdateCardDeck(ctx context.Context, id uuid.UUID, patch mo
 
 	result := db_pkg.TransformRow[model.CardDeckMetadata](deck)
 
-	if patch.Content != nil {
+	if params.Content != nil {
 
-		staleCards := map[uuid.UUID]struct{}{}
-		if cardIds, err := tx.DeckCardSet(ctx, deck.ID); err != nil {
-			return nil, InternalError("sqlc.DeckCardSet", err)
-		} else {
-			for _, id := range cardIds {
-				staleCards[id] = struct{}{}
-			}
+		version, err := rslv.addDeckVersion(ctx, &tx.Queries, deck.ID, params.Content.DeckVersionContent)
+		if err != nil {
+			return nil, err
 		}
 
-		for _, card := range patch.Content.Cards {
-
-			if card.ID.Valid {
-				if count, err := tx.UpdateCardContent(ctx, db_gen.UpdateCardContentParams{
-					Content:   card.CardNodeContent,
-					ID:        card.ID.UUID,
-					DeckID:    deck.ID,
-					UpdatedAt: types.NewTime(time.Now()),
-				}); err != nil {
-					return nil, InternalError("sqlc.UpdateCardContent", err)
-				} else if count > 0 {
-					delete(staleCards, card.ID.UUID)
-					continue
-				}
-			}
-
-			if err := tx.InsertCard(ctx, db_gen.InsertCardParams{
-				Content:   card.CardNodeContent,
-				ID:        uuid.New(),
-				DeckID:    deck.ID,
-				CreatedAt: types.NewTime(time.Now()),
-				UpdatedAt: types.NewTime(time.Now()),
-			}); err != nil {
-				return nil, InternalError("sqlc.InsertCard", err)
-			}
-		}
-
-		for id := range staleCards {
-			if err := tx.DeleteCard(ctx, id); err != nil {
-				return nil, InternalError("sqlc.DeleteCard", err)
-			}
-		}
-
-		result.Size = len(patch.Content.Cards)
+		result.VersionID = types.NewNullUUID(version.ID)
+		result.Size = len(params.Content.Cards)
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -599,30 +696,26 @@ func (rslv *resolver) ExportCollectionBundle(ctx context.Context, id uuid.UUID) 
 
 	for idx, deck := range decks {
 
-		cards, err := tx.GetDeckCards(ctx, deck.ID)
+		version, err := rslv.getDeckLatestVersion(ctx, &tx.Queries, deck.ID, deck.LatestVersionID)
 		if err != nil {
-			return nil, InternalError("sqlc.GetDeckCards", err)
+			return nil, err
 		}
 
 		deckBundle := model.CardDeckBundle{
 			CardDeckMetadata: db_pkg.TransformBatchRow[model.CardDeckMetadata](deck),
-			Cards:            make([]model.Card, len(cards)),
+			Cards:            version.V.Content.Cards,
 			Images:           map[string]model.ImageBundle{},
 		}
 
-		for _, card := range cards {
+		for _, card := range deckBundle.Cards {
 
-			if err := extractFaceImages(&deckBundle, &card.Content.Front); err != nil {
+			if err := extractFaceImages(&deckBundle, &card.Front); err != nil {
 				return nil, InternalError("extractImages", err)
 			}
 
-			if err := extractFaceImages(&deckBundle, &card.Content.Back); err != nil {
+			if err := extractFaceImages(&deckBundle, &card.Back); err != nil {
 				return nil, InternalError("extractImages", err)
 			}
-		}
-
-		for idx, val := range cards {
-			deckBundle.Cards[idx].FromRow(val)
 		}
 
 		bundle.Decks[idx] = deckBundle
@@ -746,7 +839,7 @@ func (rslv *resolver) ImportCollectionBundle(ctx context.Context, bundle *model.
 			return nil, InternalError("sqlc.InsertDeck", err)
 		}
 
-		for idx, card := range deck.Cards {
+		for idx := range deck.Cards {
 
 			if err := importFaceImages(&deck, &deck.Cards[idx].Front); err != nil {
 				return nil, InternalError("importImages", err)
@@ -755,16 +848,10 @@ func (rslv *resolver) ImportCollectionBundle(ctx context.Context, bundle *model.
 			if err := importFaceImages(&deck, &deck.Cards[idx].Back); err != nil {
 				return nil, InternalError("importImages", err)
 			}
+		}
 
-			if err := tx.InsertCard(ctx, db_gen.InsertCardParams{
-				Content:   card.CardNodeContent,
-				ID:        uuid.New(),
-				DeckID:    deckEntry.ID,
-				CreatedAt: types.NewTime(card.Created),
-				UpdatedAt: types.NewTime(card.Updated),
-			}); err != nil {
-				return nil, InternalError("sqlc.InsertCard", err)
-			}
+		if _, err := rslv.addDeckVersion(ctx, &tx.Queries, deckEntry.ID, db_model.DeckVersionContent{Cards: deck.Cards}); err != nil {
+			return nil, err
 		}
 	}
 

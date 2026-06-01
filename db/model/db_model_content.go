@@ -4,26 +4,33 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
+
+	"github.com/google/uuid"
 )
 
-type CardNodeContent struct {
-	Front CardContentFace `json:"front"`
-	Back  CardContentFace `json:"back"`
+type DeckVersionContent struct {
+	Cards []CardNode `json:"cards"`
 }
 
-func (perms CardNodeContent) Value() (driver.Value, error) {
-	return json.Marshal(perms)
+func (content DeckVersionContent) Value() (driver.Value, error) {
+	return json.Marshal(content)
 }
 
-func (perms *CardNodeContent) Scan(src any) error {
+func (content *DeckVersionContent) Scan(src any) error {
 	switch src := src.(type) {
 	case []byte:
-		return json.Unmarshal(src, perms)
+		return json.Unmarshal(src, content)
 	case string:
-		return json.Unmarshal([]byte(src), perms)
+		return json.Unmarshal([]byte(src), content)
 	default:
 		return fmt.Errorf("unable to scan %T into CardNodeContent", src)
 	}
+}
+
+type CardNode struct {
+	ID    uuid.UUID       `json:"id"`
+	Front CardContentFace `json:"front"`
+	Back  CardContentFace `json:"back"`
 }
 
 type CardContentFace struct {

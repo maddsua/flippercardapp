@@ -5,9 +5,9 @@ where id = sqlc.arg(id);
 -- name: GetDecksBatch :many
 select
 	distinct decks.*,
-	count(cards.id) as size
+	deck_versions.card_count as size
 from decks
-	inner join cards on cards.deck_id = decks.id
+	left join deck_versions on deck_versions.id = decks.latest_version_id
 where (sqlc.narg(ids_set) is null or decks.id in (
 	select value from json_each(sqlc.narg(ids_set))
 )) and (decks.collection_id = sqlc.narg(collection_id)
@@ -19,9 +19,27 @@ group by decks.id
 order by decks.created_at desc
 limit sqlc.arg(limit) offset sqlc.arg(offset);
 
--- name: GetDeckCards :many
-select * from cards
-where deck_id = sqlc.arg(deck_id);
+-- name: GetDeckVersion :one
+select * from deck_versions
+where id = sqlc.arg(id);
+
+-- name: GetDeckVersionsBatch :many
+select
+	id,
+	created_at,
+	deck_id,
+	card_count,
+	label
+from deck_versions
+where deck_id = sqlc.arg(deck_id)
+order by created_at desc
+limit sqlc.arg(limit) offset sqlc.arg(offset);
+
+-- name: GetDeckLatestVersion :one
+select * from deck_versions
+where deck_id = sqlc.arg(deck_id)
+order by created_at desc
+limit 1;
 
 -- name: GetCollectionById :one
 select * from collections
@@ -117,25 +135,33 @@ insert into decks (
 	sqlc.arg(visibility)
 ) returning *;
 
--- name: InsertCard :exec
-insert into cards (
+-- name: InsertDeckVersion :one
+insert into deck_versions (
 	id,
-	deck_id,
 	created_at,
-	updated_at,
-	content
+	deck_id,
+	card_count,
+	content,
+	label
 ) values (
 	sqlc.arg(id),
-	sqlc.arg(deck_id),
 	sqlc.arg(created_at),
-	sqlc.arg(updated_at),
-	sqlc.arg(content)
-);
+	sqlc.arg(deck_id),
+	sqlc.arg(card_count),
+	sqlc.arg(content),
+	sqlc.arg(label)
+) returning *;
 
 -- name: SetDeckUpdateTime :one
 update decks
 set updated_at = sqlc.arg(updated_at)
-where id = sqlc.arg(id)
+where id = sqlc.arg(deck_id)
+returning *;
+
+-- name: SetDeckLatestVersion :one
+update decks
+set latest_version_id = sqlc.arg(latest_version_id)
+where id = sqlc.arg(deck_id)
 returning *;
 
 -- name: UpdateDeckMetadata :one
@@ -147,22 +173,6 @@ set
 	visibility = sqlc.arg(visibility)
 where id = sqlc.arg(id)
 returning *;
-
--- name: DeckCardSet :many
-select id from cards
-where deck_id = sqlc.arg(deck_id);
-
--- name: UpdateCardContent :execrows
-update cards
-set
-	updated_at = sqlc.arg(updated_at),
-	content = sqlc.arg(content)
-where id = sqlc.arg(id)
-	and deck_id = sqlc.arg(deck_id);
-
--- name: DeleteCard :exec
-delete from cards
-where id = sqlc.arg(id);
 
 -- name: DeleteDeck :execrows
 delete from decks

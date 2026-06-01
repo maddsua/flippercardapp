@@ -157,11 +157,12 @@ func (bundle *CollectionBundle) Valid() error {
 
 type CardDeckMetadata struct {
 	ContentEntryMetaBase
-	ID           uuid.UUID `json:"id"`
-	CollectionID uuid.UUID `json:"collection_id"`
-	Created      time.Time `json:"created"`
-	Updated      time.Time `json:"updated"`
-	Size         int       `json:"size"`
+	ID           uuid.UUID     `json:"id"`
+	CollectionID uuid.UUID     `json:"collection_id"`
+	VersionID    uuid.NullUUID `json:"version_id"`
+	Created      time.Time     `json:"created"`
+	Updated      time.Time     `json:"updated"`
+	Size         int           `json:"size"`
 }
 
 func (meta *CardDeckMetadata) FromRow(row db_gen.Deck) {
@@ -172,6 +173,7 @@ func (meta *CardDeckMetadata) FromRow(row db_gen.Deck) {
 	}
 	meta.ID = row.ID
 	meta.CollectionID = row.CollectionID
+	meta.VersionID = row.LatestVersionID
 	meta.Created = row.CreatedAt.Time
 	meta.Updated = row.UpdatedAt.Time
 }
@@ -186,27 +188,38 @@ func (meta *CardDeckMetadata) FromBatchRow(row db_gen.GetDecksBatchRow) {
 	meta.CollectionID = row.CollectionID
 	meta.Created = row.CreatedAt.Time
 	meta.Updated = row.UpdatedAt.Time
-	meta.Size = int(row.Size)
+	meta.Size = int(row.Size.Int64)
 }
 
 type CardDeck struct {
 	CardDeckMetadata
-	Labels []string `json:"labels"`
-	Cards  []Card   `json:"cards"`
+	Labels []string            `json:"labels"`
+	Cards  []db_model.CardNode `json:"cards"`
 }
 
-type Card struct {
-	db_model.CardNodeContent
-	ID      uuid.UUID `json:"id"`
-	Created time.Time `json:"created"`
-	Updated time.Time `json:"updated"`
+type CardDeckVersionMetadata struct {
+	ID        uuid.UUID `json:"id"`
+	Created   time.Time `json:"created"`
+	DeckID    uuid.UUID `json:"deck_id"`
+	CardCount int       `json:"card_count"`
+	IsLatest  bool      `json:"is_latest"`
+	Label     string    `json:"label,omitempty"`
 }
 
-func (card *Card) FromRow(row db_gen.Card) {
-	card.CardNodeContent = row.Content
-	card.ID = row.ID
-	card.Created = row.CreatedAt.Time
-	card.Updated = row.UpdatedAt.Time
+func (meta *CardDeckVersionMetadata) FromRow(row db_gen.DeckVersion) {
+	meta.ID = row.ID
+	meta.Created = row.CreatedAt.Time
+	meta.DeckID = row.DeckID
+	meta.CardCount = int(row.CardCount)
+	meta.Label = row.Label.String
+}
+
+func (meta *CardDeckVersionMetadata) FromBatchRow(row db_gen.GetDeckVersionsBatchRow) {
+	meta.ID = row.ID
+	meta.Created = row.CreatedAt.Time
+	meta.DeckID = row.DeckID
+	meta.CardCount = int(row.CardCount)
+	meta.Label = row.Label.String
 }
 
 type CollectionPatch struct {
@@ -220,11 +233,11 @@ type CardDeckPatch struct {
 }
 
 type CardDeckContentPatch struct {
-	Cards []CardPatch `json:"cards"`
+	db_model.DeckVersionContent
 }
 
 type CardPatch struct {
-	db_model.CardNodeContent
+	db_model.CardNode
 	ID uuid.NullUUID `json:"id"`
 }
 
@@ -255,6 +268,6 @@ type ImageBundle struct {
 
 type CardDeckBundle struct {
 	CardDeckMetadata
-	Cards  []Card                 `json:"cards"`
+	Cards  []db_model.CardNode    `json:"cards"`
 	Images map[string]ImageBundle `json:"images"`
 }

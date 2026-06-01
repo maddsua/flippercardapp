@@ -23,12 +23,28 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 
 	mux := http.NewServeMux()
 
+	mux.Handle("GET /auth/whoami", MethodHandleFunc(func(req *http.Request) (*auth.RequestAuth, error) {
+		return auth.For(req.Context()), nil
+	}))
+
+	mux.Handle("POST /auth/signin", MethodHandleFunc(func(req *http.Request) (*auth.RequestAuth, error) {
+		params, err := ParseGenericJSON[model.SignInParams](req)
+		if err != nil {
+			return nil, err
+		}
+		return auth.NewWebSessionWithPassword(req.Context(), params.Username, params.Password)
+	}))
+
+	mux.Handle("POST /auth/signout", MethodHandleFunc(func(req *http.Request) (*auth.RequestAuth, error) {
+		return auth.TerminateWebSession(req.Context())
+	}))
+
 	mux.Handle("GET /collections", MethodHandleFunc(func(req *http.Request) (*Page[model.CollectionMetadata], error) {
 		idSet, err := ParseUUIDSet(req.URL.Query().Get("ids"))
 		if err != nil {
 			return nil, err
 		}
-		return rslv.ListCollectionsPage(req.Context(), idSet, Pagination(req))
+		return rslv.ListCollectionsBatch(req.Context(), idSet, Pagination(req))
 	}))
 
 	mux.Handle("GET /collections/search", MethodHandleFunc(func(req *http.Request) (*Page[model.CollectionSearchResult], error) {
@@ -47,39 +63,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return rslv.LoadCollection(req.Context(), collectionID)
 	}))
 
-	mux.Handle("GET /decks", MethodHandleFunc(func(req *http.Request) (*Page[model.CardDeckMetadata], error) {
-		idSet, err := ParseUUIDSet(req.URL.Query().Get("ids"))
-		if err != nil {
-			return nil, err
-		}
-		return rslv.ListCardDeckPage(req.Context(), idSet, Pagination(req))
-	}))
-
-	mux.Handle("GET /decks/{id}", MethodHandleFunc(func(req *http.Request) (*model.CardDeck, error) {
-		deckID, err := ParseUUID(req.PathValue("id"))
-		if err != nil {
-			return nil, err
-		}
-		return rslv.LoadCardDeck(req.Context(), deckID)
-	}))
-
-	mux.Handle("GET /auth/whoami", MethodHandleFunc(func(req *http.Request) (*auth.RequestAuth, error) {
-		return auth.For(req.Context()), nil
-	}))
-
-	mux.Handle("POST /auth/signin", MethodHandleFunc(func(req *http.Request) (*auth.RequestAuth, error) {
-		params, err := ParseGenericJSON[model.SignInParams](req)
-		if err != nil {
-			return nil, err
-		}
-		return auth.NewWebSessionWithPassword(req.Context(), params.Username, params.Password)
-	}))
-
-	mux.Handle("POST /auth/signout", MethodHandleFunc(func(req *http.Request) (*auth.RequestAuth, error) {
-		return auth.TerminateWebSession(req.Context())
-	}))
-
-	mux.Handle("PUT /manage/content/collection", MethodHandleFunc(func(req *http.Request) (*model.CollectionMetadata, error) {
+	mux.Handle("PUT /collections/new", MethodHandleFunc(func(req *http.Request) (*model.CollectionMetadata, error) {
 		params, err := ParseGenericJSON[model.CollectionPatch](req)
 		if err != nil {
 			return nil, err
@@ -87,7 +71,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return rslv.CreateContentCollection(req.Context(), params)
 	}))
 
-	mux.Handle("POST /manage/content/collections/import", MethodHandleFunc(func(req *http.Request) (*model.CollectionMetadata, error) {
+	mux.Handle("POST /collections/import", MethodHandleFunc(func(req *http.Request) (*model.CollectionMetadata, error) {
 
 		var bundle model.CollectionBundle
 
@@ -105,7 +89,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return rslv.ImportCollectionBundle(req.Context(), &bundle)
 	}))
 
-	mux.Handle("PATCH /manage/content/collection/{id}/metadata", MethodHandleFunc(func(req *http.Request) (*model.CollectionMetadata, error) {
+	mux.Handle("PATCH /collections/{id}", MethodHandleFunc(func(req *http.Request) (*model.CollectionMetadata, error) {
 
 		collectionID, err := ParseUUID(req.PathValue("id"))
 		if err != nil {
@@ -120,7 +104,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return rslv.UpdateContentCollection(req.Context(), collectionID, params)
 	}))
 
-	mux.Handle("POST /manage/content/collection/{id}/export", http.HandlerFunc(func(wrt http.ResponseWriter, req *http.Request) {
+	mux.Handle("POST /collections/{id}/export", http.HandlerFunc(func(wrt http.ResponseWriter, req *http.Request) {
 
 		collectionID, err := ParseUUID(req.PathValue("id"))
 		if err != nil {
@@ -150,7 +134,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 
 	}))
 
-	mux.Handle("DELETE /manage/content/collection/{id}", MethodHandleFunc(func(req *http.Request) (*any, error) {
+	mux.Handle("DELETE /collections/{id}", MethodHandleFunc(func(req *http.Request) (*any, error) {
 		collectionID, err := ParseUUID(req.PathValue("id"))
 		if err != nil {
 			return nil, err
@@ -159,7 +143,43 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return nil, rslv.DeleteCollection(req.Context(), collectionID, recursive)
 	}))
 
-	mux.Handle("PUT /manage/content/deck", MethodHandleFunc(func(req *http.Request) (*model.CardDeckMetadata, error) {
+	mux.Handle("GET /decks", MethodHandleFunc(func(req *http.Request) (*Page[model.CardDeckMetadata], error) {
+		idSet, err := ParseUUIDSet(req.URL.Query().Get("ids"))
+		if err != nil {
+			return nil, err
+		}
+		return rslv.ListCardDeckBatch(req.Context(), idSet, Pagination(req))
+	}))
+
+	mux.Handle("GET /decks/{id}", MethodHandleFunc(func(req *http.Request) (*model.CardDeck, error) {
+		deckID, err := ParseUUID(req.PathValue("id"))
+		if err != nil {
+			return nil, err
+		}
+		return rslv.LoadCardDeck(req.Context(), deckID)
+	}))
+
+	mux.Handle("GET /decks/{id}/versions", MethodHandleFunc(func(req *http.Request) (*Page[model.CardDeckVersionMetadata], error) {
+		deckID, err := ParseUUID(req.PathValue("id"))
+		if err != nil {
+			return nil, err
+		}
+		return rslv.ListCardDeckVersions(req.Context(), deckID, Pagination(req))
+	}))
+
+	mux.Handle("POST /decks/{id}/versions/{vid}/rollback", MethodHandleFunc(func(req *http.Request) (*model.CardDeckMetadata, error) {
+		deckID, err := ParseUUID(req.PathValue("id"))
+		if err != nil {
+			return nil, err
+		}
+		versionID, err := ParseUUID(req.PathValue("vid"))
+		if err != nil {
+			return nil, err
+		}
+		return rslv.RollbackCardDeckVersion(req.Context(), deckID, versionID)
+	}))
+
+	mux.Handle("PUT /decks/new", MethodHandleFunc(func(req *http.Request) (*model.CardDeckMetadata, error) {
 		params, err := ParseGenericJSON[model.CardDeckPatch](req)
 		if err != nil {
 			return nil, err
@@ -167,7 +187,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return rslv.CreateCardDeck(req.Context(), params)
 	}))
 
-	mux.Handle("PATCH /manage/content/deck/{id}", MethodHandleFunc(func(req *http.Request) (*model.CardDeckMetadata, error) {
+	mux.Handle("PATCH /decks/{id}", MethodHandleFunc(func(req *http.Request) (*model.CardDeckMetadata, error) {
 
 		deckID, err := ParseUUID(req.PathValue("id"))
 		if err != nil {
@@ -182,7 +202,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return rslv.UpdateCardDeck(req.Context(), deckID, params)
 	}))
 
-	mux.Handle("DELETE /manage/content/deck/{id}", MethodHandleFunc(func(req *http.Request) (*any, error) {
+	mux.Handle("DELETE /decks/{id}", MethodHandleFunc(func(req *http.Request) (*any, error) {
 		deckID, err := ParseUUID(req.PathValue("id"))
 		if err != nil {
 			return nil, err
@@ -190,7 +210,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return nil, rslv.DeleteDeck(req.Context(), deckID)
 	}))
 
-	mux.Handle("PUT /manage/content/images/upload", MethodHandleFunc(func(req *http.Request) (*model.ImageMetadata, error) {
+	mux.Handle("PUT /images/upload", MethodHandleFunc(func(req *http.Request) (*model.ImageMetadata, error) {
 
 		if req.ContentLength <= 0 {
 			return nil, &model.Error{Message: "Image uploads must be of a known size", Code: http.StatusLengthRequired}
@@ -201,11 +221,11 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return rslv.UploadImage(req.Context(), req.URL.Query().Get("name"), req.Body)
 	}))
 
-	mux.Handle("GET /manage/content/images/{id}/metadata", MethodHandleFunc(func(req *http.Request) (*model.ImageMetadata, error) {
+	mux.Handle("GET /images/{id}", MethodHandleFunc(func(req *http.Request) (*model.ImageMetadata, error) {
 		return rslv.ImageMetadata(req.Context(), req.PathValue("id"))
 	}))
 
-	mux.Handle("GET /manage/content/images/{id}/blob", http.HandlerFunc(func(wrt http.ResponseWriter, req *http.Request) {
+	mux.Handle("GET /images/{id}/blob", http.HandlerFunc(func(wrt http.ResponseWriter, req *http.Request) {
 
 		blob, err := rslv.ImageBlob(req.Context(), req.PathValue("id"))
 		if err != nil {

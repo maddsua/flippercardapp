@@ -12,14 +12,6 @@ import (
 	"github.com/maddsua/flippercardapp/db/types"
 )
 
-type Card struct {
-	ID        uuid.UUID
-	DeckID    uuid.UUID
-	CreatedAt types.Time
-	UpdatedAt types.Time
-	Content   model.CardNodeContent
-}
-
 type Collection struct {
 	ID          uuid.UUID
 	CreatedAt   types.Time
@@ -30,13 +22,23 @@ type Collection struct {
 }
 
 type Deck struct {
-	ID           uuid.UUID
-	CollectionID uuid.UUID
-	CreatedAt    types.Time
-	UpdatedAt    types.Time
-	Name         string
-	Description  sql.NullString
-	Visibility   model.ResourceVisibility
+	ID              uuid.UUID
+	CollectionID    uuid.UUID
+	CreatedAt       types.Time
+	UpdatedAt       types.Time
+	Name            string
+	Description     sql.NullString
+	Visibility      model.ResourceVisibility
+	LatestVersionID uuid.NullUUID
+}
+
+type DeckVersion struct {
+	ID        uuid.UUID
+	CreatedAt types.Time
+	DeckID    uuid.UUID
+	CardCount int64
+	Content   model.DeckVersionContent
+	Label     sql.NullString
 }
 
 type Image struct {

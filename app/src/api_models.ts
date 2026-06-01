@@ -95,3 +95,12 @@ export interface ImageMetadata {
 	data_sha512_hash: string;
 	data_size: number;
 };
+
+export interface CardDeckVersionMetadata {
+	id: string;
+	created: string;
+	deck_id: string;
+	card_count: number;
+	is_latest: boolean;
+	label?: string | null;
+};

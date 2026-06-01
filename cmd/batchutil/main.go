@@ -33,7 +33,7 @@ func main() {
 
 	var mapper *utils.RecordMapper
 
-	var cards []db_model.CardNodeContent
+	var cards []db_model.CardNode
 
 	for {
 
@@ -54,7 +54,7 @@ func main() {
 
 		mappedRow := mapper.WithRow(row)
 
-		next := db_model.CardNodeContent{
+		next := db_model.CardNode{
 			Front: db_model.CardContentFace{
 				Content: parseFrontContent(mappedRow),
 			},
@@ -106,9 +106,9 @@ type DeckTemplateBundle struct {
 }
 
 type DeckTemplate struct {
-	Name        string                     `json:"name"`
-	Description string                     `json:"description,omitempty"`
-	Cards       []db_model.CardNodeContent `json:"cards"`
+	Name        string              `json:"name"`
+	Description string              `json:"description,omitempty"`
+	Cards       []db_model.CardNode `json:"cards"`
 }
 
 func (node DeckTemplateBundle) MarshalJSON() ([]byte, error) {
