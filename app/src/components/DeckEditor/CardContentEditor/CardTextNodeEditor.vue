@@ -9,6 +9,7 @@ const model = defineModel<CardTextBoxElementNode[]>();
 //	todo: implement text formatting
 
 const rawValue = ref('');
+const isActive = ref(false);
 
 const modelToRaw = () => {
 	return model.value?.map(item => item.type === 'text' ? item.content : '\n').join('') || '';
@@ -28,7 +29,11 @@ const rawToModel = (): CardTextBoxElementNode[] => {
 
 onMounted(() => {
 	rawValue.value = modelToRaw();
-	watch(() => model.value, () => rawValue.value = modelToRaw());
+	watch(() => model.value, () => {
+		if (!isActive.value) {
+			rawValue.value = modelToRaw();
+		}
+	});
 	watch(() => rawValue.value, () => model.value = rawToModel());
 });
 
@@ -45,7 +50,7 @@ const emit = defineEmits<{
 		</template>
 
 		<template v-slot:content>
-			<textarea type="text" placeholder="Text" v-model="rawValue"></textarea>
+			<textarea type="text" placeholder="Text" v-model="rawValue" @focus="isActive = true" @blur="isActive = false"></textarea>
 		</template>
 	</CardNodeHarness>
 </template>
