@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRoute, useRouter } from 'vue-router';
-import { computed, onMounted, reactive, toRaw, watch } from 'vue';
+import { computed, onMounted, onUnmounted, reactive, toRaw, watch } from 'vue';
 import DeckEditorStatusBar from './DeckEditorStatusBar.vue';
 import CardFaceComponent from '../Cards/CardFace.vue';
 import type { CardContentFace, CardNode, CardImageNode, CardContentNode } from '../../content';
@@ -61,6 +61,7 @@ const state = reactive({
 		ready: false,
 		error: null as string | null,
 		saved: false,
+		oldTitle: null as string | null,
 		view: {
 			cardIdx: 0,
 			frontFace: true,
@@ -351,6 +352,9 @@ const resolveDeckState = async (deck: CardDeck) => {
 
 onMounted(async () => {
 
+	state.editor.oldTitle = document.title;
+	watch(() => state.content.meta.name, (name) => document.title = `${name || 'Unnamed'} | Deck editor`, { immediate: true });
+
 	const { deck_id } = route.params;
 	if (typeof deck_id === 'string') {
 
@@ -386,6 +390,8 @@ onMounted(async () => {
 
 	state.editor.error = 'Invalid editor URL';
 });
+
+onUnmounted(() => document.title = state.editor.oldTitle || '');
 
 const importDeckBundle = async () => {
 
