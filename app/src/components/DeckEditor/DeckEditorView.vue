@@ -146,7 +146,9 @@ const publishChanges = async () => {
 			return;
 		}
 
-		state.publisher.deckID = data.id;
+		const { id: deckID } = data;
+		state.publisher.deckID = deckID;
+		router.push(`/editor/deck/${deckID}/editor`);
 
 	} else {
 		state.publisher.error = 'Invalid editor state'
