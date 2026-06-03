@@ -21,5 +21,8 @@
 		gap: 1rem;
 		align-items: center;
 		justify-content: center;
+
+		//	todo: remove when editor gets a proper toolbar
+		padding-top: 4rem;
 	}
 </style>

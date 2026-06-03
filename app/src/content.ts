@@ -78,6 +78,7 @@ export interface CardPollNodeOption {
 export interface CardImageNode {
 	readonly type: 'image';
 	media_id?: string | null;
+	media_url?: string | null;
 	state?: UploadReadyState | null;
 };
 
@@ -85,4 +86,183 @@ export enum UploadReadyState {
 	Idle,
 	Uploading,
 	Done
+};
+
+export interface ContentBundle {
+	decks?: DeckContentBundle[];
+	image_blobs?: ImageBlobBundle[];
+};
+
+export interface DeckContentBundle {
+	deck_id: string;
+	collection_id: string;
+	name: string;
+	description: string | null;
+	cards: CardNode[];
+};
+
+export interface ImageBlobBundle {
+	media_id: string;
+	source_name: string;
+	data_url: string;
+};
+
+export interface CardContentCSVRow {
+	front_title: string;
+	front_image: string;
+	front_textarea: string;
+	front_poll: string;
+	back_title: string;
+	back_image: string;
+	back_textarea: string;
+};
+
+export const stringifyTextBoxContent = (nodes: CardTextBoxElementNode[]): string => {
+
+	let result = '';
+
+	for (const node of nodes) {
+		switch (node.type) {
+			case 'newline':
+				result += '\n';
+				continue;
+			case 'text':
+				result += stringifyTextBoxNode(node);
+				continue;
+		}
+	}
+
+	return result;
+};
+
+const escapeTextBoxNodeContent = (content: string): string => {
+	if (/[\|\`\s]/.test(content)) {
+		return `\`${content.replaceAll('`', `'`)}\``;
+	}
+	return content;
+};
+
+const stringifyTextBoxNode = (node: CardTextboxTextNode): string => {
+
+	const modifiers: string[] = [];
+
+	if (node.theme?.bold) {
+		modifiers.push('bold');
+	}
+
+	if (node.theme?.italic) {
+		modifiers.push('italic');
+	}
+
+	if (node.theme?.decoration) {
+		modifiers.push(node.theme.decoration);
+	}
+
+	if (node.theme?.highlight?.fill_color) {
+		modifiers.push(`fill-${node.theme?.highlight.fill_color}`);
+	}
+
+	if (node.theme?.highlight?.text_color) {
+		modifiers.push(`text-${node.theme?.highlight.text_color}`);
+	}
+
+	if (!modifiers.length) {
+		return node.content;
+	}
+
+	return `{{ ${escapeTextBoxNodeContent(node.content)} | ${modifiers.join(' | ')} }}`;
+};
+
+const parseTextBoxNode = (content: string, modifiers?: string | null): CardTextboxTextNode => {
+
+	const textColorPrefix = 'text-';
+	const fillColorPrefix = 'fill-';
+
+	const attributes = modifiers?.split('|').map(item => item.trim()).filter(item => item.length) || [];
+
+	const theme: CardTextboxElementTheme = {};
+
+	for (const attr of attributes) {
+
+		switch (attr.toLowerCase()) {
+			case 'bold':
+				theme.bold = true;
+				continue;
+			case 'italic':
+				theme.italic = true;
+				continue;
+			case 'underline':
+				theme.decoration = 'underline';
+				continue;
+			case 'strikethrough':
+				theme.decoration = 'strikethrough';
+				continue;
+		}
+
+		if (attr.toLowerCase().startsWith(textColorPrefix)) {
+			if (!theme.highlight) {
+				theme.highlight = {};
+			}
+			theme.highlight.text_color = attr.slice(textColorPrefix.length);
+			continue;
+		}
+
+		if (attr.toLowerCase().startsWith(fillColorPrefix)) {
+			if (!theme.highlight) {
+				theme.highlight = {};
+			}
+			theme.highlight.fill_color = attr.slice(fillColorPrefix.length);
+			continue;
+		}
+	}
+
+	return { type: 'text', content, theme };
+};
+
+export const parseTextBoxContent = (value: string): CardTextBoxElementNode[] => {
+
+	const markExpr = /\{{2}\s*(([^\{\}\|\`]+)|(\`[^\`]+\`))((\s*\|\s*[\(\)a-z-0-9\_\-]*)*)\s*\}{2}/gi;
+
+	const nodes: CardTextBoxElementNode[] = [];
+
+	const lines = value.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n');
+
+	for (const line of lines) {
+
+		if (!line) {
+			nodes.push({ type: 'newline' });
+			continue;
+		}
+
+		if (nodes.length) {
+			nodes.push({ type: 'newline' });
+		}
+
+		const exprs = line.matchAll(markExpr);
+
+		let lastExprIdx = 0;
+
+		for (const expr of exprs) {
+
+			if (expr.length < 5) {
+				throw new Error('Invalid regexp result');
+			}
+
+			nodes.push({ type: 'text', content: line.slice(lastExprIdx, expr.index) });
+			lastExprIdx = expr.index + expr[0].length;
+
+			const textContent = expr.at(3)?.slice(1, -1) || expr.at(2)?.trim() || null;
+			if (!textContent?.length) {
+				continue;
+			}
+
+			nodes.push(parseTextBoxNode(textContent, expr[4]));
+		}
+
+		if (lastExprIdx < line.length) {
+			nodes.push({ type: 'text', content: line.slice(lastExprIdx) });
+		}
+	}
+
+	return nodes;
 };

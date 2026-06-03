@@ -7,7 +7,10 @@ const props = defineProps<{
 	entry: CardImageNode;
 }>();
 
-const mediaURL = computed(() => props.entry.media_id ? `/media/images/${props.entry.media_id}` : null);
+const mediaURL = computed(() => {
+	const { media_id, media_url: media_url } = props.entry;
+	return media_url?.length ? media_url : media_id?.length ? `/media/images/${media_id}` : null
+});
 
 enum ReadyState {
 	Idle,
@@ -78,7 +81,7 @@ watch(() => props.entry.media_id, () => state.ready = ReadyState.Idle);
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			font-size: 0.65rem;
+			font-size: 0.65em;
 			color: var(--app-theme-snow-white);
 		}
 

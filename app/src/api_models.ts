@@ -29,12 +29,7 @@ export interface CardDeckMetadata extends ContentEntryMetaBase{
 
 export interface CardDeck extends CardDeckMetadata {
 	labels: string[];
-	cards: Card[];
-};
-
-export interface Card extends CardNode {
-	created: string;
-	updated: string;
+	cards: CardNode[];
 };
 
 export interface Collection extends CollectionMetadata {

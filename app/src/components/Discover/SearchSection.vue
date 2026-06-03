@@ -30,7 +30,7 @@ const state = reactive({
 	prompted: false,
 	busy: false,
 	locked: false,
-	timer: null as number | null,
+	timer: null as NodeJS.Timeout | null,
 	error: null as string | null,
 });
 

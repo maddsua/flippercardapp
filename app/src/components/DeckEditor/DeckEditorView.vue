@@ -1,24 +1,24 @@
 <script setup lang="ts">
-import { useRoute, useRouter } from 'vue-router';
 import { computed, onMounted, onUnmounted, reactive, toRaw, watch } from 'vue';
-import DeckEditorStatusBar from './DeckEditorStatusBar.vue';
-import CardFaceComponent from '../Cards/CardFace.vue';
-import type { CardContentFace, CardNode, CardImageNode, CardContentNode } from '../../content';
-import DeckCardFacePreviewSlot from './DeckCardFacePreviewSlot.vue';
-import EditorCanvasColumn from './EditorCanvasColumn.vue';
-import CardFaceContentEditor from './CardContentEditor/CardFaceContentEditor.vue';
-import CardFaceThemeEditor from './CardContentEditor/CardFaceThemeEditor.vue';
-import DeckCardList from './DeckCardList.vue';
-import { useStorage } from '../../storage';
+import { useRoute, useRouter } from 'vue-router';
 import { unwrapErrorMessage, useClient } from '../../api';
-import FullscreenMessage from '../App/FullscreenMessage.vue';
-import type { Card as CardType, CardDeck, ResourceVisibility } from '../../api_models';
-import { blobToJson, downloadBlob, escapeFileName, pickLocalFiles } from '../../files';
-import EditorScreenOverlay from './EditorScreenOverlay.vue';
-import LoadingMessage from '../App/LoadingMessage.vue';
+import type { CardDeck, ResourceVisibility } from '../../api_models';
+import type { CardContentFace, CardNode } from '../../content';
+import { useStorage } from '../../storage';
 import ErrorMessage from '../App/ErrorMessage.vue';
+import FullscreenMessage from '../App/FullscreenMessage.vue';
 import GenericButton from '../App/GenericButton.vue';
-import WarnList from '../App/WarnList.vue';
+import LoadingMessage from '../App/LoadingMessage.vue';
+import CardFaceComponent from '../Cards/CardFace.vue';
+import EditorContentExporter from './ContentIO/EditorContentExporter.vue';
+import EditorContentImporter from './ContentIO/EditorContentImporter.vue';
+import CardFaceContentEditor from './ContentNodeEditable/CardFaceContentEditor.vue';
+import CardFaceThemeEditor from './ContentNodeEditable/CardFaceThemeEditor.vue';
+import DeckCardFacePreviewSlot from './DeckCardFacePreviewSlot.vue';
+import DeckEditorStatusBar from './DeckEditorStatusBar.vue';
+import EditorCanvasColumn from './EditorCanvasColumn.vue';
+import DeckCardList from './EditorCardNavigationList.vue';
+import EditorScreenOverlay from './EditorScreenOverlay.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -30,14 +30,16 @@ interface ActiveFace {
 	face: CardContentFace;
 };
 
+const defaultDeckMeta = () => ({
+	name: 'Unnamed deck',
+	description: null as string | null,
+	visibility: 'HIDDEN' as ResourceVisibility,
+});
+
 const state = reactive({
 	
 	content: {
-		meta: {
-			name: 'Unnamed deck',
-			description: null as string | null,
-			visibility: 'HIDDEN' as ResourceVisibility,
-		},
+		meta: defaultDeckMeta(),
 		cards: [] as CardNode[],
 	},
 
@@ -48,20 +50,13 @@ const state = reactive({
 		error: null as string | null,
 	},
 
-	io: {
-		busy: false,
-		isImport: false,
-		tasks: 0,
-		tasksDone: 0,
-		warns: null as string[] | null,
-		error: null as string | null,
-	},
-
 	editor: {
 		ready: false,
 		error: null as string | null,
 		saved: false,
 		oldTitle: null as string | null,
+		exportOpen: false,
+		importOpen: false,
 		view: {
 			cardIdx: 0,
 			frontFace: true,
@@ -78,9 +73,7 @@ const isReady = computed(() =>
 	state.editor.ready &&
 	!state.editor.error &&
 	!state.publisher?.busy &&
-	!state.publisher?.error &&
-	!state.io.busy &&
-	!state.io.error);
+	!state.publisher?.error);
 
 const isEdited = computed(() => !!state.content.cards.length && (state.editor.changes.cards || state.editor.changes.meta));
 
@@ -170,14 +163,6 @@ const resetPublisher = () => {
 	}
 	state.publisher.busy = false;
 	state.publisher.error = null;
-};
-
-const resetState = () => {
-	state.content = { meta: { name: 'Unnamed deck', description: null, visibility: 'HIDDEN' }, cards: [] };
-	state.editor.changes = { meta: false, cards: false };
-	state.io = { busy: false, isImport: false, tasks: 0, tasksDone: 0, warns: null, error: null };
-	state.editor.saved = false;
-	state.editor.view = { cardIdx: 0, previewAnimationTurn: false, frontFace: true };
 };
 
 const discardChanges = () => {
@@ -395,219 +380,9 @@ onMounted(async () => {
 
 onUnmounted(() => document.title = state.editor.oldTitle || '');
 
-const importDeckBundle = async () => {
-
-	if (!isReady.value) {
-		return;
-	}
-
-	const files = await pickLocalFiles({ accept: ['.carddeck', '.json'] });
-	if (!files) {
-		return;
-	}
-
-	state.io = { busy: true, isImport: true, tasks: 1, tasksDone: 0, warns: null, error: null };
-
-	switch (files[0].type) {
-		case 'application/json':
-			return importJsonDeckTemplate(files[0]);
-		default:
-			return importCompressedDeckBundle(files[0]);
-	}
-};
-
-interface CardDeckTemplate {
-	type: 'flippercardtemplate';
-	content: {
-		name: string;
-		description: string | null;
-		cards: Omit<CardNode, 'id'>[];
-	};
-};
-
-const importJsonDeckTemplate = async (file: File) => {
-
-	const templ: CardDeckTemplate | null = await file.text().then(data => JSON.parse(data)).catch(() => null);
-	if (!templ) {
-		state.io.error = 'Invalid template file: Invalid format';
-		return;
-	} else if (templ.type !== 'flippercardtemplate') {
-		state.io.error = 'Invalid template file: Invalid JSON schema';
-		return;
-	}
-
-	if (!state.publisher.deckID) {
-		state.content.meta = {
-			name: templ.content.name,
-			description: templ.content.description,
-			visibility: 'HIDDEN',
-		};
-	}
-
-	state.content.cards = templ.content.cards.map(item => ({ ...item, id: crypto.randomUUID() }));
-
-	state.io.busy = false;
-};
-
-interface CardDeckBundle {
-	type: 'flippercarddeckbundle';
-	deck_id: string | null;
-	collection_id: string | null;
-	name: string;
-	description: string | null;
-	cards: Array<Omit<CardType, 'created' | 'updated'>>;
-	image_blobs: ImageBlobBundle[];
-};
-
-interface ImageBlobBundle {
-	id: string;
-	source_name: string;
-	data_url: string;
-};
-
-const importCompressedDeckBundle = async (file: File) => {
-
-	const ds = new DecompressionStream('gzip');
-	const bundleStream = file.stream().pipeThrough(ds)
-	const bundle: CardDeckBundle | null = await new Response(bundleStream).json().catch(() => null);
-
-	if (!bundle || typeof bundle !== 'object') {
-		state.io.error = 'Invalid bundle file: Invalid format';
-		return;
-	} else if (bundle.type !== 'flippercarddeckbundle') {
-		state.io.error = 'Invalid bundle file: Invalid JSON schema';
-		return;
-	}
-
-	if (isEdited.value) {
-		if (!confirm('Importing a bundle will discard current changes. Continue anyway?')) {
-			state.io = { busy: false, isImport: false, tasks: 0, tasksDone: 0, warns: null, error: null };
-			return;
-		}
-	}
-
-	state.io.tasksDone++;
-	state.io.tasks += bundle.image_blobs.length;
-
-	const imageNodes = bundle.cards
-		.map(item => [item.front.content, item.back.content])
-		.flat()
-		.flat()
-		.filter(item => item.type === 'image' && item.media_id?.length) as CardImageNode[];
-
-	for (const image of bundle.image_blobs) {
-
-		state.io.tasksDone++;
-
-		if (!image.data_url) {
-			state.io.warns = [ ...state.io.warns || [], `Image import: Data URL is missing for ${image.id}`];
-			continue;
-		}
-
-		const blob = await fetch(image.data_url).then(res => res.blob()).catch(() => null);
-		if (!blob) {
-			state.io.warns = [ ...state.io.warns || [], `Image import failed: Unable to parse blob for ${image.id}`];
-			continue;
-		}
-
-		const { data, error } = await client.images.upload(blob, image.source_name);
-		if (!data || error) {
-			state.io.warns = [ ...state.io.warns || [], `Image upload failed: ${error?.message}`];
-			continue;
-		}
-
-		for (const node of imageNodes) {
-			if (node.media_id !== image.id) {
-				continue;
-			}
-			node.media_id = data.id;
-		}
-	}
-
-	state.content = {
-		meta: {
-			name: bundle.name,
-			description: bundle.description,
-			visibility: 'HIDDEN',
-		},
-		cards: bundle.cards,
-	};
-
-	state.publisher = { deckID: bundle.deck_id, collectionID: bundle.collection_id, busy: false, error: null };
-	state.io.busy = false;
-};
-
-const downloadImageBlob = async (node: CardContentNode) => {
-
-	if (node.type !== 'image' || !node.media_id?.length) {
-		return null;
-	}
-
-	const { data } = await client.images.metadata(node.media_id);
-	if (!data) {
-		return null;
-	}
-
-	const { blob } = await client.images.blob(node.media_id);
-	if (!blob) {
-		return null;
-	}
-
-	return { id: node.media_id, source_name: data.source_name, blob };
-};
-
-const exportDeckBundle = async () => {
-
-	if (!isReady.value || !state.publisher) {
-		return;
-	}
-
-	state.io = { busy: false, isImport: false, tasks: 1, tasksDone: 0, warns: null, error: null };
-
-	const bundle: CardDeckBundle = {
-		type: 'flippercarddeckbundle',
-		deck_id: state.publisher.deckID,
-		collection_id: state.publisher.collectionID,
-		name: state.content.meta.name,
-		description: state.content.meta.description,
-		cards: state.content.cards,
-		image_blobs: await Promise.all(state.content.cards
-			.map(item => [item.front.content, item.back.content])
-			.flat()
-			.flat()
-			.filter(item => item.type === 'image' && item.media_id?.length)
-			.map(item => downloadImageBlob(item)))
-			.then(items => items.filter(item => item?.blob?.size))
-			.then(items => Promise.all(items.map(async item => ({
-				id: item!.id,
-				source_name: item!.source_name,
-				data_url: await blobToJson(item!.blob),
-			})))),
-	};
-
-	const baseName = escapeFileName(state.content.meta.name) || 'unnamed_deck';
-	const name = `${baseName}-export-${new Date().getTime()}.carddeck`;
-
-	const rawBlob = new Blob([JSON.stringify(bundle)]);
-	const compressor = new CompressionStream('gzip');
-	const compressedBlob = await new Response(rawBlob.stream().pipeThrough(compressor)).blob();
-
-	state.io.tasksDone++;
-
-	downloadBlob(compressedBlob, name);
-
-	state.io.busy = false;
-};
-
-const resetIOState = async () => {
-
-	if (state.io.error) {
-		await clearStateSnapshot();
-		resetState();
-		return;
-	}
-
-	state.io = { busy: false, isImport: false, tasks: 0, tasksDone: 0, warns: null, error: null };
+const patchDeckMeta = (patch: { name: string | null; description: string | null; }) => {
+	state.content.meta.name = patch.name || defaultDeckMeta().name;
+	state.content.meta.description = patch.description;
 };
 
 </script>
@@ -637,39 +412,6 @@ const resetIOState = async () => {
 					Loading editor ...
 				</LoadingMessage>
 			</template>
-
-		</EditorScreenOverlay>
-
-		<EditorScreenOverlay v-else-if="state.io.busy || state.io.warns?.length || state.io.error">
-
-			<ErrorMessage v-if="state.io.error">
-				<template v-slot:message>
-					<template v-if="state.io.isImport">
-						Unable to import cards
-					</template>
-					<template v-else>
-						Unable to export cards
-					</template>
-				</template>
-				<template v-slot:details>
-					{{ state.io.error }}
-				</template>
-			</ErrorMessage>
-
-			<LoadingMessage v-else-if="state.io.busy">
-				<template v-if="state.io.isImport">
-					Importing cards ...
-				</template>
-				<template v-else>
-					Exporting cards ...
-				</template>
-			</LoadingMessage>		
-
-			<WarnList v-if="state.io.warns?.length" :messages="state.io.warns" />
-
-			<GenericButton v-if="state.io.error || state.io.warns?.length" variant="thin" theme="orange" @click="resetIOState">
-				Dismiss
-			</GenericButton>
 
 		</EditorScreenOverlay>
 
@@ -706,9 +448,21 @@ const resetIOState = async () => {
 			@updateMeta="meta => state.content.meta = meta"
 			@flip="flipCardFace"
 			@publish="publishChanges"
-			@import="importDeckBundle"
-			@export="exportDeckBundle"
+			@import="state.editor.importOpen = true"
+			@export="state.editor.exportOpen = true"
 			@disacard="discardChanges" />
+
+		<EditorScreenOverlay v-if="state.editor.exportOpen">
+			<EditorContentExporter :meta="state.publisher" :content="state.content" @done="state.editor.exportOpen = false" />
+		</EditorScreenOverlay>
+
+		<EditorScreenOverlay v-if="state.editor.importOpen">
+			<EditorContentImporter 
+				@addCards="cards => state.content.cards.push(...cards)"
+				@replaceCards="cards => state.content.cards = cards"
+				@updateMeta="patchDeckMeta"
+				@done="state.editor.importOpen = false" />
+		</EditorScreenOverlay>
 
 		<div class="editor-canvas">
 

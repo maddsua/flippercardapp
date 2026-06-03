@@ -11,7 +11,9 @@ interface Option {
 const props = defineProps<{
 	placeholder?: string;
 	options: Option[];
+	disabled?: boolean;
 }>();
+
 const model = defineModel<Value>();
 
 const activeOption = computed(() => props.options.find((item) => item.value === model.value));
@@ -38,7 +40,7 @@ watch(model, () => (isOpen.value = false));
 </script>
 
 <template>
-	<div class="dropdown">
+	<div class="dropdown" :disabled="disabled">
 		<div class="header" :class="{ disabled: !$props.options.length, open: isOpen }" @click="toggle">
 			<span>
 				{{ activeOption?.label || activeOption?.value || $props.placeholder || '-' }}
@@ -69,7 +71,6 @@ watch(model, () => (isOpen.value = false));
 		padding: 0.65rem 1rem;
 		border-radius: 0.5rem;
 		background-color: var(--app-theme-ghostly-glow);
-		border: 1px solid var(--app-theme-powder-trail);
 
 		span {
 			display: block;
@@ -144,6 +145,12 @@ watch(model, () => (isOpen.value = false));
 				cursor: pointer;
 			}
 		}
+	}
+
+	&:disabled {
+		pointer-events: none;
+		filter: saturate(0);
+		opacity: 0.75;
 	}
 }
 </style>

@@ -5,6 +5,7 @@ const props = defineProps<{
 	placeholder?: string;
 	variant?: 'normal' | 'borderless';
 	multiline?: boolean;
+	disabled?: boolean;
 }>();
 
 const model = defineModel<string>();
@@ -12,11 +13,12 @@ const model = defineModel<string>();
 </script>
 
 <template>
-	<textarea v-if="multiline" :class="{ [`variant-${variant}`]: !!variant }" :placeholder="placeholder" v-model="model"></textarea>
-	<input v-else :type="type || 'text'" :class="{ [`variant-${variant}`]: !!variant }" :placeholder="placeholder" v-model="model">
+	<textarea v-if="multiline" :class="{ [`variant-${variant}`]: !!variant }" :placeholder="placeholder" v-model="model" :disabled="disabled"></textarea>
+	<input v-else :type="type || 'text'" :class="{ [`variant-${variant}`]: !!variant }" :placeholder="placeholder" v-model="model" :disabled="disabled" />
 </template>
 
 <style lang="scss" scoped>
+
 	input, textarea {
 		display: block;
 		width: 100%;
@@ -47,9 +49,17 @@ const model = defineModel<string>();
 			color: var(--app-theme-snow-white);
 			opacity: 0.5;
 		}
+
+		&:disabled {
+			pointer-events: none;
+			filter: saturate(0);
+			opacity: 0.75;
+		}
 	}
+
 	textarea {
 		resize: none;
 		height: 5em;
 	}
+
 </style>
