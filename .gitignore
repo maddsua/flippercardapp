@@ -4,7 +4,6 @@
 
 /cmd/service/web/dist/
 
-/cmd/batchutil/data
 /data/
 
 .env
