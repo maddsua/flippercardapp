@@ -494,7 +494,7 @@ func (rslv *resolver) CreateCardDeck(ctx context.Context, params model.CardDeckP
 
 	if params.Content != nil {
 
-		version, err := rslv.addDeckVersion(ctx, &tx.Queries, deck.ID, params.Content.DeckVersionContent)
+		version, err := rslv.addDeckVersion(ctx, &tx.Queries, deck.ID, "Deck created", params.Content.DeckVersionContent)
 		if err != nil {
 			return nil, err
 		}
@@ -510,14 +510,15 @@ func (rslv *resolver) CreateCardDeck(ctx context.Context, params model.CardDeckP
 	return &result, nil
 }
 
-func (rslv *resolver) addDeckVersion(ctx context.Context, tx *db_gen.Queries, deckID uuid.UUID, version db_model.DeckVersionContent) (db_gen.DeckVersion, error) {
+func (rslv *resolver) addDeckVersion(ctx context.Context, tx *db_gen.Queries, deckID uuid.UUID, label string, content db_model.DeckVersionContent) (db_gen.DeckVersion, error) {
 
 	entry, err := tx.InsertDeckVersion(ctx, db_gen.InsertDeckVersionParams{
 		ID:        uuid.New(),
 		CreatedAt: types.NewTime(time.Now()),
 		DeckID:    deckID,
-		CardCount: int64(len(version.Cards)),
-		Content:   version,
+		CardCount: int64(len(content.Cards)),
+		Content:   content,
+		Label:     types.NewNullString(label),
 	})
 	if err != nil {
 		return db_gen.DeckVersion{}, InternalError("sqlc.InsertDeckVersion", err)
@@ -587,7 +588,7 @@ func (rslv *resolver) UpdateCardDeck(ctx context.Context, id uuid.UUID, params m
 
 	if params.Content != nil {
 
-		version, err := rslv.addDeckVersion(ctx, &tx.Queries, deck.ID, params.Content.DeckVersionContent)
+		version, err := rslv.addDeckVersion(ctx, &tx.Queries, deck.ID, params.Label, params.Content.DeckVersionContent)
 		if err != nil {
 			return nil, err
 		}
@@ -850,7 +851,7 @@ func (rslv *resolver) ImportCollectionBundle(ctx context.Context, bundle *model.
 			}
 		}
 
-		if _, err := rslv.addDeckVersion(ctx, &tx.Queries, deckEntry.ID, db_model.DeckVersionContent{Cards: deck.Cards}); err != nil {
+		if _, err := rslv.addDeckVersion(ctx, &tx.Queries, deckEntry.ID, "Deck imported", db_model.DeckVersionContent{Cards: deck.Cards}); err != nil {
 			return nil, err
 		}
 	}

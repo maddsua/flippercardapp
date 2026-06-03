@@ -228,6 +228,7 @@ type CollectionPatch struct {
 
 type CardDeckPatch struct {
 	CollectionID uuid.NullUUID         `json:"collection_id"`
+	Label        string                `json:"label"`
 	Meta         *ContentEntryMetaBase `json:"meta,omitempty"`
 	Content      *CardDeckContentPatch `json:"content,omitempty"`
 }
