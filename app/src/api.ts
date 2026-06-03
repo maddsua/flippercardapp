@@ -288,12 +288,6 @@ export class ApiClient {
 
 		remove: async (id: string, opts?: { recursive?: boolean }) =>
 			this.execJSON<null>('DELETE', `/collections/${id}`, opts),
-
-		exportBundle: async (id: string) =>
-			this.execBlob('POST', `/collections/${id}/export`),
-
-		importBundle: async (file: File) =>
-			this.execJSON<CollectionMetadata>('POST', `/collections/import`, {}, file),
 	};
 
 	decks = {

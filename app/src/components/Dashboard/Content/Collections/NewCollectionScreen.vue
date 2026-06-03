@@ -10,7 +10,6 @@ import GenericInput from '../../../App/GenericInput.vue';
 import InlineErorrMessage from '../../../App/InlineErorrMessage.vue';
 import GenericButton from '../../../App/GenericButton.vue';
 import InputRow from '../../../App/InputRow.vue';
-import { pickLocalFiles } from '../../../../files';
 import GenericDropdown from '../../../App/GenericDropdown.vue';
 import type { ResourceVisibility } from '../../../../api_models';
 import { resourceVisibilityOptions } from '../../../../inputs';
@@ -19,10 +18,6 @@ const client = useClient();
 const router = useRouter();
 
 const state = reactive({
-	importer: {
-		busy: false,
-		error: null as string | null
-	},
 	inputs: {
 		name: '',
 		description: '',
@@ -40,25 +35,6 @@ const createCollection = async () => {
 	const { data, error } = await client.collections.create(state.inputs);
 	if (!data || error) {
 		state.error = error?.message || 'Unable to create collection';
-		return;
-	}
-
-	openCollection(data.id);
-};
-
-const uploadFile = async () => {
-
-	const files = await pickLocalFiles({ accept: ['.cardbundle'] });
-	if (!files?.length) {
-		return;
-	}
-
-	state.importer = { busy: true, error: null };
-
-	const { data, error } = await client.collections.importBundle(files[0]);
-	if (!data || error) {
-		state.importer.busy = false;
-		state.importer.error = error?.message || 'Bundle import failed';
 		return;
 	}
 
@@ -128,15 +104,6 @@ const openCollection = (id: string) => {
 			<GenericButton :disabled="!formValid" @click="createCollection">
 				Create collection →
 			</GenericButton>
-		</InputRow>
-
-		<InputRow>
-			<GenericButton theme="orange" variant="thin" :spinner="state.importer.busy" :disabled="state.importer.busy" @click="uploadFile">
-				Upload file
-			</GenericButton>
-			<InlineErorrMessage v-if="state.importer.error">
-				{{ state.importer.error }}
-			</InlineErorrMessage>
 		</InputRow>
 
 	</CollectionFormWrapper>

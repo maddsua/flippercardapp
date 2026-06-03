@@ -134,7 +134,7 @@ const deleteDeck = async (deckID: string) => {
 				</div>
 				<div class="actions">
 					<GenericButton variant="thin" theme="green" :disabled="!state.data" @click="openDeckEditor({ collectionID: state.data.id })">
-						New deck
+						+ New deck
 					</GenericButton>
 				</div>
 			</div>

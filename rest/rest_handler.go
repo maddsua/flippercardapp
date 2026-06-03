@@ -1,14 +1,9 @@
 package rest
 
 import (
-	"compress/gzip"
 	"database/sql"
-	"encoding/json"
-	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/maddsua/flippercardapp/auth"
@@ -71,24 +66,6 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return rslv.CreateContentCollection(req.Context(), params)
 	}))
 
-	mux.Handle("POST /collections/import", MethodHandleFunc(func(req *http.Request) (*model.CollectionMetadata, error) {
-
-		var bundle model.CollectionBundle
-
-		gz, err := gzip.NewReader(req.Body)
-		if err != nil {
-			return nil, &model.Error{Message: "Invalid bundle: " + err.Error()}
-		}
-
-		defer gz.Close()
-
-		if err := json.NewDecoder(gz).Decode(&bundle); err != nil {
-			return nil, &model.Error{Message: "Invalid bundle: " + err.Error()}
-		}
-
-		return rslv.ImportCollectionBundle(req.Context(), &bundle)
-	}))
-
 	mux.Handle("PATCH /collections/{id}", MethodHandleFunc(func(req *http.Request) (*model.CollectionMetadata, error) {
 
 		collectionID, err := ParseUUID(req.PathValue("id"))
@@ -102,36 +79,6 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		}
 
 		return rslv.UpdateContentCollection(req.Context(), collectionID, params)
-	}))
-
-	mux.Handle("POST /collections/{id}/export", http.HandlerFunc(func(wrt http.ResponseWriter, req *http.Request) {
-
-		collectionID, err := ParseUUID(req.PathValue("id"))
-		if err != nil {
-			NewErrorResponseStatus[any](err, http.StatusBadRequest).Write(wrt)
-			return
-		}
-
-		bundle, err := rslv.ExportCollectionBundle(req.Context(), collectionID)
-		if err != nil {
-			NewErrorResponseStatus[any](err, http.StatusBadRequest).Write(wrt)
-			return
-		}
-
-		wrt.Header().Set("Content-Type", "application/json+gzip")
-		wrt.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", url.PathEscape(bundle.Name)))
-
-		gz := gzip.NewWriter(wrt)
-		defer gz.Close()
-
-		if err := json.NewEncoder(gz).Encode(bundle); err != nil {
-			slog.Error("REST: Encode and compress collection bundle",
-				slog.String("type", "json"),
-				slog.String("client", req.RemoteAddr),
-				slog.String("err", err.Error()))
-			return
-		}
-
 	}))
 
 	mux.Handle("DELETE /collections/{id}", MethodHandleFunc(func(req *http.Request) (*any, error) {
