@@ -111,7 +111,7 @@ export interface CardContentCSVRow {
 	front_title: string;
 	front_image: string;
 	front_textarea: string;
-	front_poll: string;
+	front_quiz: string;
 	back_title: string;
 	back_image: string;
 	back_textarea: string;

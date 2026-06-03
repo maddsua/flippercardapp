@@ -285,7 +285,7 @@ const exportDeckCSV = async () => {
 		front_title: item.front.content.find(item => item.type === 'title')?.content || '',
 		front_image: item.front.content.find(item => item.type === 'image')?.media_id || '',
 		front_textarea: serializeTextbox(item.front.content.find(item => item.type === 'textbox')),
-		front_poll: serializePoll(item.front.content.find(item => item.type === 'poll')),
+		front_quiz: serializePoll(item.front.content.find(item => item.type === 'poll')),
 		back_title: item.back.content.find(item => item.type === 'title')?.content || '',
 		back_image: item.back.content.find(item => item.type === 'image')?.media_id || '',
 		back_textarea: serializeTextbox(item.back.content.find(item => item.type === 'textbox')),

@@ -321,15 +321,15 @@ const loadFileCSV = async (file: File) => {
 			}
 		}
 
-		if (typeof row.front_poll === 'string' && row.front_poll.length) {
+		if (typeof row.front_quiz === 'string' && row.front_quiz.length) {
 
-			const content = row.front_poll.split(',')
+			const content = row.front_quiz.split(',')
 				.map(item => item.trim())
 				.filter(item => item.length).map((item, idx) => ({ is_answer: idx === 0, value: item }));
 
 			if (content.length) {
 				next.valid = true;
-				next.front.content.push({ type: 'poll', content });
+				next.front.content.push({ type: 'poll', content, is_quiz: true });
 			}
 		}
 
