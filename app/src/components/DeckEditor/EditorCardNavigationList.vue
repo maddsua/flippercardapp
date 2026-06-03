@@ -15,25 +15,36 @@ const emit = defineEmits<{
 	(e: 'add'): void;
 }>();
 
-const scrollableRef = ref<HTMLElement | null>(null);
+const listRef = ref<Array<Element | null>>([]);
 
-watch(() => props.list.length, (length, oldLength) => {
-	if (length > oldLength && scrollableRef.value) {
-		setTimeout(() => scrollableRef.value!.scrollTop = scrollableRef.value!.scrollHeight, 100);
+let scrollTimeout: NodeJS.Timeout | null = null;
+
+watch(() => props.list.length, () => {
+
+	if (scrollTimeout) {
+		clearTimeout(scrollTimeout);
 	}
+
+	scrollTimeout = setTimeout(() => {
+		listRef.value[props.pointer]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		scrollTimeout = null;
+	}, 100);
+
 });
 
 </script>
 
 <template>
-	<div class="editor-deck-navigation" ref="scrollableRef">
-		<ul class="card-list">
-			<li v-for="(card, idx) of list">
-				<button type="button" class="card" @click="emit('select', idx)">
-					<CardThumbnail :card="card" :label="idx + 1" :active="idx === pointer" :showControls="true" @duplicate="emit('duplicate', idx)" @remove="emit('remove', idx)"/>
-				</button>
-			</li>
-		</ul>
+	<div class="editor-deck-navigation">
+		<div class="scroll-wrapper">
+			<ul class="card-list">
+				<li v-for="(card, idx) of list" :ref="elem => listRef[idx] = elem as Element | null">
+					<button type="button" class="card" @click="emit('select', idx)">
+						<CardThumbnail :card="card" :label="idx + 1" :active="idx === pointer" :showControls="true" @duplicate="emit('duplicate', idx)" @remove="emit('remove', idx)"/>
+					</button>
+				</li>
+			</ul>
+		</div>
 		<button type="button" class="new-card" title="Add card" @click="emit('add')">+ Add card</button>
 	</div>
 </template>
@@ -43,19 +54,49 @@ watch(() => props.list.length, (length, oldLength) => {
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
+		padding: 1rem;
 		user-select: none;
-		overflow: hidden auto;
-		scrollbar-width: thin;
-		padding-right: 0.5rem;
-		scroll-behavior: smooth;
+		min-height: 0;
+		height: 100%;
+
+		.scroll-wrapper {
+			position: relative;
+			min-height: 0;
+			height: 100%;
+
+			&::after, &::before {
+				content: "";
+				position: absolute;
+				left: 0;
+				z-index: 10;
+				display: block;
+				width: 100%;
+				height: 2rem;
+				background: linear-gradient(0deg,rgba(0, 0, 0, 0) 0%, #242424 100%);
+			}
+
+			&::before {
+				top: 0;
+			}
+
+			&::after {
+				bottom: 0;
+				transform: rotate(180deg);
+			}
+		}
 
 		.card-list {
 			display: flex;
 			flex-direction: column;
 			gap: 0.5rem;
 			list-style: none;
-			padding: 0;
+			padding: 2rem 0;
 			margin: 0;
+			overflow: hidden auto;
+			scrollbar-width: thin;
+			padding-right: 0.25rem;
+			scroll-behavior: smooth;
+			height: 100%;
 
 			li {
 				display: block;
