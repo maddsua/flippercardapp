@@ -10,8 +10,8 @@ import FullscreenMessage from '../App/FullscreenMessage.vue';
 import GenericButton from '../App/GenericButton.vue';
 import LoadingMessage from '../App/LoadingMessage.vue';
 import CardFaceComponent from '../Cards/CardFace.vue';
-import EditorContentExporter from './ContentIO/EditorContentExporter.vue';
-import EditorContentImporter from './ContentIO/EditorContentImporter.vue';
+import EditorContentExporter from './EditorModals/EditorContentExporter.vue';
+import EditorContentImporter from './EditorModals/EditorContentImporter.vue';
 import CardFaceContentEditor from './ContentNodeEditable/CardFaceContentEditor.vue';
 import CardFaceThemeEditor from './ContentNodeEditable/CardFaceThemeEditor.vue';
 import DeckCardFacePreviewSlot from './DeckCardFacePreviewSlot.vue';
@@ -19,6 +19,7 @@ import DeckEditorStatusBar from './DeckEditorStatusBar.vue';
 import EditorCanvasColumn from './EditorCanvasColumn.vue';
 import DeckCardList from './EditorCardNavigationList.vue';
 import EditorScreenOverlay from './EditorScreenOverlay.vue';
+import EditorContentVersionControl from './EditorModals/EditorContentVersionControl.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -55,8 +56,11 @@ const state = reactive({
 		error: null as string | null,
 		saved: false,
 		oldTitle: null as string | null,
-		exportOpen: false,
-		importOpen: false,
+		modals: {
+			versions: false,
+			importer: false,
+			exporter: false,
+		},
 		view: {
 			cardIdx: 0,
 			frontFace: true,
@@ -385,6 +389,11 @@ const patchDeckMeta = (patch: { name: string | null; description: string | null;
 	state.content.meta.description = patch.description;
 };
 
+const handleVersionRollback = async () => {
+	await clearStateSnapshot();
+	document.location.reload();
+};
+
 </script>
 
 <template>
@@ -447,21 +456,32 @@ const patchDeckMeta = (patch: { name: string | null; description: string | null;
 			:valid="isReady"
 			@updateMeta="meta => state.content.meta = meta"
 			@flip="flipCardFace"
+			@versions="state.editor.modals.versions = true"
 			@publish="publishChanges"
-			@import="state.editor.importOpen = true"
-			@export="state.editor.exportOpen = true"
+			@import="state.editor.modals.importer = true"
+			@export="state.editor.modals.exporter = true"
 			@disacard="discardChanges" />
 
-		<EditorScreenOverlay v-if="state.editor.exportOpen">
-			<EditorContentExporter :meta="state.publisher" :content="state.content" @done="state.editor.exportOpen = false" />
+		<EditorScreenOverlay v-if="state.editor.modals.exporter">
+			<EditorContentExporter
+				:meta="state.publisher"
+				:content="state.content"
+				@done="state.editor.modals.exporter = false" />
 		</EditorScreenOverlay>
 
-		<EditorScreenOverlay v-if="state.editor.importOpen">
+		<EditorScreenOverlay v-if="state.editor.modals.importer">
 			<EditorContentImporter 
 				@addCards="cards => state.content.cards.push(...cards)"
 				@replaceCards="cards => state.content.cards = cards"
 				@updateMeta="patchDeckMeta"
-				@done="state.editor.importOpen = false" />
+				@done="state.editor.modals.importer = false" />
+		</EditorScreenOverlay>
+
+		<EditorScreenOverlay v-if="state.editor.modals.versions && state.publisher.deckID">
+			<EditorContentVersionControl
+				:deckID="state.publisher.deckID"
+				@rollback="handleVersionRollback"
+				@done="state.editor.modals.versions = false" />
 		</EditorScreenOverlay>
 
 		<div class="editor-canvas">

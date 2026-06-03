@@ -57,12 +57,12 @@ watch(() => props.list.length, () => {
 		padding: 1rem;
 		user-select: none;
 		min-height: 0;
-		height: 100%;
+		max-height: 100%;
 
 		.scroll-wrapper {
 			position: relative;
 			min-height: 0;
-			height: 100%;
+			max-height: 100%;
 
 			&::after, &::before {
 				content: "";

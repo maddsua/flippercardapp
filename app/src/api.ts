@@ -313,11 +313,11 @@ export class ApiClient {
 		remove: async (id: string) =>
 			this.execJSON<null>('DELETE', `/decks/${id}`),
 
-		versions: async (id: string) =>
-			this.execJSON<Page<CardDeckVersionMetadata>>('GET', `/decks/${id}/versions`),
+		versions: async (id: string, params?: Partial<Pagination>) =>
+			this.execJSON<Page<CardDeckVersionMetadata>>('GET', `/decks/${id}/versions`, params),
 
 		rollbackVersion: async (deckID: string, versionID: string) =>
-			this.execJSON<Page<CardDeckVersionMetadata>>('POST', `/decks/${deckID}/versions/${versionID}/rollback`),
+			this.execJSON<CardDeckVersionMetadata>('POST', `/decks/${deckID}/versions/${versionID}/rollback`),
 	};
 
 	images = {

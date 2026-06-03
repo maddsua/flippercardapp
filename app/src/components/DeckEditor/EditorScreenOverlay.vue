@@ -15,7 +15,7 @@
 		width: 100%;
 		height: 100%;
 		backdrop-filter: blur(4px);
-		background-color: rgba(0, 0, 0, 0.5);
+		background-color: rgba(0, 0, 0, 0.35);
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;

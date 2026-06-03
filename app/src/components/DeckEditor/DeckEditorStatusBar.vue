@@ -25,6 +25,7 @@ const emit = defineEmits<{
 	(e: 'publish'): void;
 	(e: 'import'): void;
 	(e: 'export'): void;
+	(e: 'versions'): void;
 }>();
 
 const metaEditorOpen = ref(false);
@@ -50,6 +51,9 @@ const metaEditorOpen = ref(false);
 					<template v-else>
 						Exit
 					</template>
+				</GenericButton>
+				<GenericButton variant="thin" theme="blue" @click="emit('versions')">
+					Versions
 				</GenericButton>
 				<GenericButton variant="thin" theme="blue" @click="emit('import')">
 					Import

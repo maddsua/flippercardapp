@@ -4,6 +4,7 @@ import EditorScreenOverlay from './EditorScreenOverlay.vue';
 
 const props = defineProps<{
 	title: string;
+	variant?: 'wide' | 'narrow';
 }>();
 
 const emit = defineEmits<{
@@ -13,9 +14,11 @@ const emit = defineEmits<{
 
 <template>
 	<EditorScreenOverlay>
-		<div class="modal-container">
-			<div class="modal-window">
-	
+
+		<div class="modal-container" @click.self="emit('close')">
+
+			<div class="modal-window" :class="{ [`variant-${variant}`]: !!variant }">
+
 				<div class="modal-status-bar">
 					<div class="modal-title">
 						{{ title }}
@@ -30,13 +33,17 @@ const emit = defineEmits<{
 				</div>
 	
 			</div>
+
 		</div>
+
 	</EditorScreenOverlay>
 </template>
 
 <style lang="scss" scoped>
 	.modal-container {
-		display: block;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
 		width: 100%;
 		height: 100%;
 		padding: 2rem 4rem;
@@ -52,6 +59,10 @@ const emit = defineEmits<{
 			background-color: var(--app-theme-midnight);
 			padding: 1rem;
 			border-radius: 0.5rem;
+
+			&.variant-narrow {
+				max-width: 30rem;
+			}
 
 			.modal-status-bar {
 				display: flex;
