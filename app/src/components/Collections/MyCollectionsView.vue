@@ -1,20 +1,20 @@
 <script setup lang="ts">
 import { onMounted, reactive } from 'vue';
 import { useRouter } from 'vue-router';
-import ContentList from '../Content/ContentList.vue';
-import ContentListEntry from '../Content/ContentListEntry.vue';
-import ErrorMessage from '../App/ErrorMessage.vue';
-import CollectionBreak from './CollectionBreak.vue';
-import CollectionEndlistAction from './CollectionEndlistAction.vue';
-import GenericButton from '../App/GenericButton.vue';
-import AppUI from '../App/AppUI.vue';
-import { intl, useLanguage } from '../../intl';
-import CentralMessage from '../App/CentralMessage.vue';
-import LoadingMessage from '../App/LoadingMessage.vue';
-import AppUiHeader from '../App/AppUiHeader.vue';
 import { useClient } from '../../api';
 import type { CollectionMetadata } from '../../api_models';
-import { useStorage } from '../../storage';
+import { intl, useLanguage } from '../../intl';
+import { useStorage } from '../../storage/storage';
+import AppUI from '../App/AppUI.vue';
+import AppUiHeader from '../App/AppUiHeader.vue';
+import CentralMessage from '../App/CentralMessage.vue';
+import ErrorMessage from '../App/ErrorMessage.vue';
+import GenericButton from '../App/GenericButton.vue';
+import LoadingMessage from '../App/LoadingMessage.vue';
+import ContentList from '../Content/ContentList.vue';
+import ContentListEntry from '../Content/ContentListEntry.vue';
+import CollectionBreak from './CollectionBreak.vue';
+import CollectionEndlistAction from './CollectionEndlistAction.vue';
 
 const router = useRouter();
 const client = useClient();
@@ -31,7 +31,7 @@ const state = reactive({
 
 onMounted(async () => {
 
-	const ids = await store.collections.entries();
+	const ids = await store.collections.starred.all().catch(() => []);
 	if (!ids.length) {
 		state.data = [];
 		return;
@@ -43,8 +43,19 @@ onMounted(async () => {
 		return;
 	}
 
-	const scoreMap = await store.playStats.collectionScores();
-	state.data = data.entries.map(item => ({ ...item, score: scoreMap.get(item.id) || 0 }));
+	const collectionStats = new Map(await store.collections.stats.aggregated(data.entries.map(item => item.id)).catch(() => []));
+
+	state.data = data.entries.map(item => ({
+		...item,
+		//	todo: export
+		score: (() => {
+			const stat = collectionStats.get(item.id);
+			if (!stat) {
+				return 0;
+			}
+			return stat.avg_score * (stat.decks_played / (item.size ?? 1));
+		})(),
+	}));
 });
 
 const openCollection = (id: string) => {

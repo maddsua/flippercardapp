@@ -1,15 +1,30 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { onMounted, reactive } from 'vue';
 import { intl, useLanguage } from '../../intl';
-
+import { useRouter } from 'vue-router';
+import { useStorage } from '../../storage/storage';
 import AppUI from '../App/AppUI.vue';
 import AppUiHeader from '../App/AppUiHeader.vue';
 import RecommendedSection from './RecommendedSection.vue';
 import SearchSection from './SearchSection.vue';
 
 const lang = useLanguage();
+const store = useStorage();
+const router = useRouter();
 
-const searchActive = ref(false);
+const state = reactive({
+	searching: false,
+	starred: new Set<string>(),
+});
+
+onMounted(async () => {
+	state.starred = new Set(await store.collections.starred.all().catch(() => []));
+});
+
+const openCollection = async (entry: { id: string }) => {
+	store.collections.starred.add(entry.id).catch(() => null);
+	router.push(`/collection/${entry.id}`);
+};
 
 </script>
 
@@ -25,10 +40,15 @@ const searchActive = ref(false);
 			</template>
 		</AppUiHeader>
 
-		<SearchSection @active="state => searchActive = state" />
+		<SearchSection
+			:starred="state.starred"
+			@active="val => state.searching = val"
+			@open="openCollection" />
 		
 		<KeepAlive>
-			<RecommendedSection v-if="!searchActive" />
+			<RecommendedSection v-if="!state.searching"
+				:starred="state.starred"
+				@open="openCollection" />
 		</KeepAlive>
 
 	</AppUI>

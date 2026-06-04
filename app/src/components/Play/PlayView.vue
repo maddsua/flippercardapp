@@ -10,7 +10,7 @@ import LoadingMessage from '../App/LoadingMessage.vue';
 import ErrorMessage from '../App/ErrorMessage.vue';
 import GenericButton from '../App/GenericButton.vue';
 import { useClient } from '../../api';
-import { useStorage } from '../../storage';
+import { useStorage } from '../../storage/storage';
 
 const router = useRouter();
 const route = useRoute();
@@ -95,7 +95,7 @@ onMounted(async () => {
 	}
 
 	state.deckID = id;
-	state.isMarked = await store.starredDecks.contains(id);
+	state.isMarked = await store.decks.starred.has(id).catch(() => false);
 	state.collectionID = data.collection_id;
 	state.labels = data.labels;
 	state.cards = data.cards;
@@ -109,12 +109,12 @@ const toggleMarked = async () => {
 		return;
 	}
 
-	state.isMarked = !state.isMarked;
+	const { deckID, isMarked } = state;
 
-	if (state.isMarked) {
-		await store.starredDecks.add(state.deckID);
+	if (isMarked) {
+		state.isMarked = await store.decks.starred.del(deckID).then(() => false).catch(() => false);
 	} else {
-		await store.starredDecks.remove(state.deckID);
+		state.isMarked = await store.decks.starred.add(deckID).then(() => true).catch(() => false);
 	}
 };
 
@@ -137,13 +137,13 @@ const updateStats = async () => {
 	}
 
 	const latestScore = Math.round((statsScreen.value.score / statsScreen.value.questions) * 100);
-	const stats = await store.playStats.load(state.deckID);
+	const stats = await store.decks.stats.load(state.deckID).catch(() => null);
 
-	await store.playStats.store(state.deckID, {
+	await store.decks.stats.store({
 		deck_id: state.deckID,
 		collection_id: state.collectionID,
 		score: stats && stats.score >= latestScore ? stats.score : latestScore,
-	});
+	}).catch(() => null);
 };
 
 const exitView = () => {

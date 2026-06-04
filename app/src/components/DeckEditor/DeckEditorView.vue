@@ -4,7 +4,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { unwrapErrorMessage, useClient } from '../../api';
 import type { CardDeck, ResourceVisibility } from '../../api_models';
 import type { CardContentFace, CardNode } from '../../content';
-import { useStorage } from '../../storage';
+import { useStorage } from '../../storage/storage';
 import ErrorMessage from '../App/ErrorMessage.vue';
 import FullscreenMessage from '../App/FullscreenMessage.vue';
 import GenericButton from '../App/GenericButton.vue';
@@ -261,14 +261,14 @@ const storeStateSnapshot = async () => {
 		},
 	};
 
-	await store.deckEditor.store(snapshot);
+	store.decks.editor.snapshot.store(snapshot);
 
 	state.editor.saved = true;
 };
 
-const loadSnapshot = async () => await store.deckEditor.load() as ResumableState | null;
+const loadSnapshot = async () => await store.decks.editor.snapshot.load() as ResumableState | null;
 
-const clearStateSnapshot = async () => store.deckEditor.store(null);
+const clearStateSnapshot = async () => store.decks.editor.snapshot.clear();
 
 const initAutosave = () => {
 

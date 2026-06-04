@@ -10,7 +10,7 @@ import { useRouter } from 'vue-router';
 import LoadingMessage from '../App/LoadingMessage.vue';
 import ErrorMessage from '../App/ErrorMessage.vue';
 import CentralMessage from '../App/CentralMessage.vue';
-import { useStorage } from '../../storage';
+import { useStorage } from '../../storage/storage';
 import { useClient } from '../../api';
 
 interface Entry extends CardDeckMetadata {
@@ -29,7 +29,7 @@ const client = useClient();
 
 onMounted(async () => {
 
-	const ids = await store.starredDecks.entries();
+	const ids = await store.decks.starred.all().catch(() => []);
 	if (!ids.length) {
 		state.data = [];
 		return;
@@ -41,8 +41,14 @@ onMounted(async () => {
 		return;
 	}
 
-	const playStats = new Map(await store.playStats.entries());
-	state.data = data.entries.map(item => ({ ... item, score: playStats.get(item.id)?.score || 0 }));
+	const loadedDeckIDSet = new Set(data.entries.map(item => item.id));
+
+	const scoreMap = new Map(await store.decks.stats
+		.filter(val => loadedDeckIDSet.has(val.deck_id))
+		.catch(() => [])
+		.then(entries => entries.map(entry => [entry.deck_id, entry.score])));
+
+	state.data = data.entries.map(item => ({ ... item, score: scoreMap.get(item.id) || 0 }));
 });
 
 const openDeck = (id: string) => {

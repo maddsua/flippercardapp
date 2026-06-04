@@ -15,7 +15,7 @@ import Skeleton from '../App/Skeleton.vue';
 import AppUiHeader from '../App/AppUiHeader.vue';
 import { useClient } from '../../api';
 import type { CardDeckMetadata, CollectionMetadata } from '../../api_models';
-import { useStorage } from '../../storage';
+import { useStorage } from '../../storage/storage';
 
 const router = useRouter();
 const route = useRoute();
@@ -51,13 +51,19 @@ onMounted(async () => {
 		return;
 	}
 
-	const starredDecks = new Set(await store.starredDecks.entries());
-	const playStats = new Map(await store.playStats.entries());
+	const starredDecks = new Set(await store.decks.starred.all().catch(() => []));
 
-	const deckEntries = data.decks .map(item => ({
+	const loadedDeckIDSet = new Set(data.decks.map(item => item.id));
+
+	const deckScoreMap = new Map(await store.decks.stats
+		.filter(val => loadedDeckIDSet.has(val.deck_id))
+		.catch(() => [])
+		.then(entries => entries.map(entry => [entry.deck_id, entry.score])));
+
+	const deckEntries = data.decks.map(item => ({
 		... item,
 		starred: starredDecks.has(item.id),
-		score: playStats.get(item.id)?.score || 0,
+		score: deckScoreMap.get(item.id) || 0,
 	}));
 
 	state.data = {
@@ -65,7 +71,7 @@ onMounted(async () => {
 		decks: deckEntries.sort((a,b) => (b.starred ? 1 : 0) - (a.starred ? 1 : 0)),
 	};
 
-	state.starred = await store.collections.contains(data.id);
+	state.starred = await store.collections.starred.has(data.id).catch(() => false);
 });
 
 const openDeck = (id: string) => {
@@ -80,15 +86,16 @@ const lang = useLanguage();
 
 const toggleStar = async () => {
 
-	state.starred = !state.starred;
+	if (!state.data) {
+		return;
+	}
 
-	if (state.data) {
-		const { id } = state.data;
-		if (state.starred) {
-			await store.collections.add(id);
-		} else {
-			await store.collections.remove(id);
-		}
+	const { id } = state.data;
+
+	if (state.starred) {
+		state.starred = await store.collections.starred.del(id).then(() => false).catch(() => false);
+	} else {
+		state.starred = await store.collections.starred.add(id).then(() => true).catch(() => false);
 	}
 };
 

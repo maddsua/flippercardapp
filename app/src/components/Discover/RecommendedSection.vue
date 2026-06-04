@@ -1,20 +1,26 @@
 <script setup lang="ts">
 import { onMounted, reactive } from 'vue';
+import { useClient } from '../../api';
 import type { CollectionMetadata } from '../../api_models';
+import { intl, useLanguage } from '../../intl';
+import CentralMessage from '../App/CentralMessage.vue';
+import ErrorMessage from '../App/ErrorMessage.vue';
 import LoadingMessage from '../App/LoadingMessage.vue';
 import ContentList from '../Content/ContentList.vue';
 import ContentListEntry from '../Content/ContentListEntry.vue';
-import { intl, useLanguage } from '../../intl';
-import { useClient } from '../../api';
-import { useStorage } from '../../storage';
-import { useRouter } from 'vue-router';
-import ErrorMessage from '../App/ErrorMessage.vue';
-import CentralMessage from '../App/CentralMessage.vue';
+import { useStorage } from '../../storage/storage';
 
 const client = useClient();
-const store = useStorage();
-const router = useRouter();
 const lang = useLanguage();
+const store = useStorage();
+
+const props = defineProps<{
+	starred: Set<string>;
+}>();
+
+const emit = defineEmits<{
+	(e: 'open', entry: RecommendedEntry): void;
+}>();
 
 interface RecommendedEntry extends CollectionMetadata {
 	starred: boolean;
@@ -26,11 +32,6 @@ const state = reactive({
 	error: null as string | null,
 });
 
-const handleSelect = async (entry: RecommendedEntry) => {
-	await store.collections.add(entry.id);
-	router.push(`/collection/${entry.id}`);
-};
-
 onMounted(async () => {
 	
 	const { data, error } = await client.collections.list({ limit: 5 });
@@ -39,13 +40,19 @@ onMounted(async () => {
 		return;
 	}
 
-	const scoreMap = await store.playStats.collectionScores();
-	const starred = new Set(await store.collections.entries());
+	const collectionStats = new Map(await store.collections.stats.aggregated(data.entries.map(item => item.id)).catch(() => []))
 
 	state.data = data.entries.map(item => ({
 		... item,
-		starred: starred.has(item.id),
-		score: scoreMap.get(item.id) || 0,
+		starred: props.starred.has(item.id),
+		//	todo: export
+		score: (() => {
+			const stat = collectionStats.get(item.id);
+			if (!stat) {
+				return 0;
+			}
+			return stat.avg_score * (stat.decks_played / (item.size ?? 1));
+		})(),
 	}));
 });
 
@@ -84,7 +91,7 @@ onMounted(async () => {
 				:starred="item.starred"
 				:deckCount="item.size"
 				:score="item.score"
-				@click="handleSelect(item)" />
+				@click="emit('open', item)" />
 		</ContentList>
 
 		<template v-else>

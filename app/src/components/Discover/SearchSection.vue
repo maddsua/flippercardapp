@@ -1,24 +1,27 @@
 <script setup lang="ts">
 import { reactive } from 'vue';
 import { useClient } from '../../api';
-import { useStorage } from '../../storage';
-import { useRouter } from 'vue-router';
-import { intl, useLanguage } from '../../intl';
 import type { CollectionSearchResult } from '../../api_models';
-import Searchbar from './Searchbar.vue';
+import { intl, useLanguage } from '../../intl';
+import ErrorMessage from '../App/ErrorMessage.vue';
 import LoadingMessage from '../App/LoadingMessage.vue';
 import ContentList from '../Content/ContentList.vue';
 import ContentListEntry from '../Content/ContentListEntry.vue';
-import ErrorMessage from '../App/ErrorMessage.vue';
+import Searchbar from './Searchbar.vue';
+import { useStorage } from '../../storage/storage';
+
+const props = defineProps<{
+	starred: Set<string>;
+}>();
 
 const emit = defineEmits<{
 	(e: 'active', state: boolean): void;
+	(e: 'open', entry: SearchResultState): void;
 }>();
 
 const client = useClient();
-const store = useStorage();
-const router = useRouter();
 const lang = useLanguage();
+const store = useStorage();
 
 interface SearchResultState extends CollectionSearchResult {
 	starred: boolean;
@@ -45,13 +48,19 @@ const execSearchQuery = async (term: string) => {
 		return;
 	}
 
-	const scoreMap = await store.playStats.collectionScores();
-	const starred = new Set(await store.collections.entries());
+	const collectionStats = new Map(await store.collections.stats.aggregated(data.entries.map(item => item.id)).catch(() => []))
 
 	state.data = data.entries.map(item => ({
 		... item,
-		starred: starred.has(item.id),
-		score: scoreMap.get(item.id) || 0,
+		starred: props.starred.has(item.id),
+		//	todo: export
+		score: (() => {
+			const stat = collectionStats.get(item.id);
+			if (!stat) {
+				return 0;
+			}
+			return stat.avg_score * (stat.decks_played / (item.size ?? 1));
+		})(),
 	}));
 };
 
@@ -84,11 +93,6 @@ const handleSearchInput = (value?: string) => {
 	}, 250);
 
 	emit('active', true);
-};
-
-const handleSelect = async (entry: SearchResultState) => {
-	await store.collections.add(entry.id)
-	router.push(`/collection/${entry.id}`);
 };
 
 </script>
@@ -124,7 +128,7 @@ const handleSelect = async (entry: SearchResultState) => {
 				:starred="item.starred"
 				:deckCount="item.size"
 				:score="item.score"
-				@click="handleSelect(item)" />
+				@click="emit('open', item)" />
 		</ContentList>
 
 		<div v-if="!state.busy" class="searh-summary">
