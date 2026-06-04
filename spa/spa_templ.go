@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/fs"
 	"log/slog"
+	"path"
 	"regexp"
 	"strings"
 	"time"
@@ -49,7 +50,7 @@ func spaGenerateIndex(fs fs.FS, props spaIndexProps) (*spaIndex, error) {
 
 	if props.AppDomain != "" {
 
-		ogPreview, err := spaGenerateOgPreviewHTML(fs, props.AppDomain)
+		ogPreview, err := spaFindAndGeneratePreviewMeta(fs, props.AppDomain)
 		if err != nil {
 			slog.Warn("SPA: Generate og:preview",
 				slog.String("err", err.Error()))
@@ -77,30 +78,24 @@ func spaGenerateIndex(fs fs.FS, props spaIndexProps) (*spaIndex, error) {
 	return &page, nil
 }
 
-func spaFindOgPreview(fs fs.FS) (fs.File, error) {
+func spaFindAndGeneratePreviewMeta(fs fs.FS, domain string) (template.HTML, error) {
 
-	for _, ext := range []string{"png", "jpg", "jpeg"} {
-		if file, _ := fs.Open("og_preview." + ext); file != nil {
-			return file, nil
+	for _, prefix := range []string{"/", "/static/previews/"} {
+
+		for _, ext := range []string{"png", "jpg", "jpeg"} {
+
+			location := path.Join(prefix, "og_preview."+ext)
+			if file, _ := fs.Open(location); file != nil {
+				defer file.Close()
+				return spaGenerateOGPreiewImageMeta(file, domain, location)
+			}
 		}
 	}
 
-	return nil, fmt.Errorf("preview not found")
+	return "", fmt.Errorf("image not found")
 }
 
-func spaGenerateOgPreviewHTML(fs fs.FS, domain string) (template.HTML, error) {
-
-	file, err := spaFindOgPreview(fs)
-	if err != nil {
-		return "", err
-	}
-
-	defer file.Close()
-
-	stat, err := file.Stat()
-	if err != nil {
-		return "", err
-	}
+func spaGenerateOGPreiewImageMeta(file fs.File, domain, location string) (template.HTML, error) {
 
 	img, mimetype, err := image.Decode(file)
 	if err != nil {
@@ -113,8 +108,8 @@ func spaGenerateOgPreviewHTML(fs fs.FS, domain string) (template.HTML, error) {
 		<meta property="og:image:width" content="%d" />
 		<meta property="og:image:height" content="%d" />
 		<meta property="og:image:type" content="image/%s" />
-		<meta property="og:image" content="https://%s/%s" />
-	`, bounds.Dx(), bounds.Dy(), mimetype, domain, stat.Name())), nil
+		<meta property="og:image" content="https://%s" />
+	`, bounds.Dx(), bounds.Dy(), mimetype, path.Join(domain, location))), nil
 }
 
 func MetaTemplateReplace(data []byte, props map[string]any) ([]byte, error) {
