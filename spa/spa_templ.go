@@ -3,6 +3,7 @@ package spa
 import (
 	"bytes"
 	"fmt"
+	"html/template"
 	"image"
 	"io"
 	"io/fs"
@@ -48,7 +49,7 @@ func spaGenerateIndex(fs fs.FS, props spaIndexProps) (*spaIndex, error) {
 
 	if props.AppDomain != "" {
 
-		ogPreview, err := spaGenerateOgPreview(fs, props.AppDomain)
+		ogPreview, err := spaGenerateOgPreviewHTML(fs, props.AppDomain)
 		if err != nil {
 			slog.Warn("SPA: Generate og:preview",
 				slog.String("err", err.Error()))
@@ -87,7 +88,7 @@ func spaFindOgPreview(fs fs.FS) (fs.File, error) {
 	return nil, fmt.Errorf("preview not found")
 }
 
-func spaGenerateOgPreview(fs fs.FS, domain string) (string, error) {
+func spaGenerateOgPreviewHTML(fs fs.FS, domain string) (template.HTML, error) {
 
 	file, err := spaFindOgPreview(fs)
 	if err != nil {
@@ -108,12 +109,12 @@ func spaGenerateOgPreview(fs fs.FS, domain string) (string, error) {
 
 	bounds := img.Bounds()
 
-	return fmt.Sprintf(`
+	return template.HTML(fmt.Sprintf(`
 		<meta property="og:image:width" content="%d" />
 		<meta property="og:image:height" content="%d" />
 		<meta property="og:image:type" content="image/%s" />
 		<meta property="og:image" content="https://%s/%s" />
-	`, bounds.Dx(), bounds.Dy(), mimetype, domain, stat.Name()), nil
+	`, bounds.Dx(), bounds.Dy(), mimetype, domain, stat.Name())), nil
 }
 
 func MetaTemplateReplace(data []byte, props map[string]any) ([]byte, error) {
