@@ -26,6 +26,7 @@ const toggleId = (id: string) => model.value?.has(id) ? model.value.delete(id) :
 	.card-selector-grid {
 		display: flex;
 		flex-flow: row wrap;
+		align-content: baseline;
 		gap: 0.5rem;
 		list-style: none;
 		padding: 0;
