@@ -4,7 +4,6 @@ import type { AuthState, CollectionMetadata } from '@/api_models';
 import AppUI from '@/components/App/Layout/AppUI.vue';
 import AppUiHeader from '@/components/App/Layout/AppUiHeader.vue';
 import CentralMessage from '@/components/App/Messages/CentralMessage.vue';
-import ErrorMessage from '@/components/App/Messages/ErrorMessage.vue';
 import GenericButton from '@/components/App/Inputs/GenericButton.vue';
 import LoadingMessage from '@/components/App/Messages/LoadingMessage.vue';
 import ContentList from '@/components/Content/ContentList.vue';
@@ -13,6 +12,7 @@ import { genericPageState, pageControls } from '@/dataloader';
 import { intl, useLanguage } from '@/intl';
 import { onMounted, reactive } from 'vue';
 import { useRouter } from 'vue-router';
+import InlineErrorMessage from '@/components/App/Messages/InlineErrorMessage.vue';
 
 const lang = useLanguage();
 const router = useRouter();
@@ -68,14 +68,12 @@ const openCollection = async (id: string) => {
 
 		</AppUiHeader>
 
-		<ErrorMessage v-if="state.page.error">
-			<template v-slot:message>
+		<InlineErrorMessage v-if="state.page.error">
+			<template v-slot:title>
 				Failed to load collection list
 			</template>
-			<template v-slot:details>
-				{{ state.page.error }}
-			</template>
-		</ErrorMessage>
+			{{ state.page.error }}
+		</InlineErrorMessage>
 
 		<LoadingMessage v-else-if="!state.page.entries">
 			{{ intl(lang, {

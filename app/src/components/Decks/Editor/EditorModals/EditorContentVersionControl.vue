@@ -3,10 +3,10 @@ import { onMounted, reactive } from 'vue';
 import { unwrapErrorMessage, useClient } from '@/api';
 import type { CardDeckVersionMetadata } from '@/api_models';
 import { genericPageState, pageControls } from '@/dataloader';
-import ErrorMessage from '@/components/App/Messages/ErrorMessage.vue';
 import GenericButton from '@/components/App/Inputs/GenericButton.vue';
 import LoadingMessage from '@/components/App/Messages/LoadingMessage.vue';
 import EditorModal from '../EditorModal.vue';
+import InlineErrorMessage from '@/components/App/Messages/InlineErrorMessage.vue';
 
 const client = useClient();
 
@@ -67,14 +67,12 @@ const rollbackVersion = async (versionID: string) => {
 
 		<div class="version-control">
 
-			<ErrorMessage v-if="state.page.error">
-				<template v-slot:message>
+			<InlineErrorMessage v-if="state.page.error">
+				<template v-slot:title>
 					Unable to load versions
 				</template>
-				<template v-slot:details>
-					{{ state.page.error }}
-				</template>
-			</ErrorMessage>
+				{{ state.page.error }}
+			</InlineErrorMessage>
 
 			<LoadingMessage v-else-if="!state.page.ready" />
 
@@ -82,14 +80,12 @@ const rollbackVersion = async (versionID: string) => {
 				No versions available
 			</div>
 
-			<ErrorMessage v-else-if="state.rollback.error">
-				<template v-slot:message>
+			<InlineErrorMessage v-else-if="state.rollback.error">
+				<template v-slot:title>
 					Unable to roll back a version
 				</template>
-				<template v-slot:details>
-					{{ state.rollback.error }}
-				</template>
-			</ErrorMessage>
+				{{ state.rollback.error }}
+			</InlineErrorMessage>
 
 			<LoadingMessage v-else-if="state.rollback.busy">
 				Rolling back...

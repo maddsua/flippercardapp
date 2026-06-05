@@ -4,11 +4,11 @@ import { useClient } from '@/api';
 import type { CollectionMetadata } from '@/api_models';
 import { intl, useLanguage } from '@/intl';
 import CentralMessage from '@/components/App/Messages/CentralMessage.vue';
-import ErrorMessage from '@/components/App/Messages/ErrorMessage.vue';
 import LoadingMessage from '@/components/App/Messages/LoadingMessage.vue';
 import ContentList from '@/components/Content/ContentList.vue';
 import ContentListEntry from '@/components/Content/ContentListEntry.vue';
 import { useStorage } from '@/storage/storage';
+import InlineErrorMessage from '@/components/App/Messages/InlineErrorMessage.vue';
 
 const client = useClient();
 const lang = useLanguage();
@@ -65,14 +65,12 @@ onMounted(async () => {
 			Recommended collections
 		</div>
 
-		<ErrorMessage v-if="state.error">
-			<template v-slot:message>
+		<InlineErrorMessage v-if="state.error">
+			<template v-slot:title>
 				Failed to search for collections
 			</template>
-			<template v-slot:details>
-				{{ state.error }}
-			</template>
-		</ErrorMessage>
+			{{ state.error }}
+		</InlineErrorMessage>
 
 		<LoadingMessage v-else-if="!state.data">
 			{{ intl(lang, {

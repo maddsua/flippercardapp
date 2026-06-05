@@ -8,10 +8,10 @@ import { useStorage } from '../../storage/storage';
 import AppUI from '../App/Layout/AppUI.vue';
 import AppUiHeader from '../App/Layout/AppUiHeader.vue';
 import CentralMessage from '../App/Messages/CentralMessage.vue';
-import ErrorMessage from '../App/Messages/ErrorMessage.vue';
 import LoadingMessage from '../App/Messages/LoadingMessage.vue';
 import ContentList from '../Content/ContentList.vue';
 import ContentListEntry from '../Content/ContentListEntry.vue';
+import InlineErrorMessage from '../App/Messages/InlineErrorMessage.vue';
 
 interface Entry extends CardDeckMetadata {
 	score: number;
@@ -83,9 +83,9 @@ const openDeck = (id: string) => {
 
 		<CentralMessage v-else>
 
-			<ErrorMessage v-if="state.error">
+			<InlineErrorMessage v-if="state.error">
 
-				<template v-slot:message>
+				<template v-slot:title>
 					{{ intl(lang, {
 						en: 'Unable to display content',
 						de: 'Inhalt kann nicht angezeigt werden',
@@ -93,11 +93,9 @@ const openDeck = (id: string) => {
 					}) }}
 				</template>
 				
-				<template v-slot:details>
-					{{ state.error }}
-				</template>
+				{{ state.error }}
 
-			</ErrorMessage>
+			</InlineErrorMessage>
 
 			<LoadingMessage v-else-if="!state.data">
 				{{ intl(lang, {

@@ -2,7 +2,7 @@
 import { unwrapErrorMessage, useClient } from '@/api';
 import type { AuthActor } from '@/api_models';
 import GenericButton from '@/components/App/Inputs/GenericButton.vue';
-import InlineErorrMessage from '@/components/App/Messages/InlineErorrMessage.vue';
+import InlineErrorMessage from '@/components/App/Messages/InlineErrorMessage.vue';
 import LoadingMessage from '@/components/App/Messages/LoadingMessage.vue';
 import { computed, onMounted, reactive } from 'vue';
 import { useRouter } from 'vue-router';
@@ -61,7 +61,7 @@ const signout = async () => {
 
 		<LoadingMessage v-if="!state.ready" />
 
-		<InlineErorrMessage v-else-if="state.error">
+		<InlineErrorMessage v-else-if="state.error">
 
 			<template v-slot:title>
 				Unable to check auth status
@@ -69,7 +69,7 @@ const signout = async () => {
 
 			{{ state.error }}
 
-		</InlineErorrMessage>
+		</InlineErrorMessage>
 
 		<div v-else class="session-state">
 

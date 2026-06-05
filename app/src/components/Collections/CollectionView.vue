@@ -8,13 +8,13 @@ import { useStorage } from '@/storage/storage';
 import AppUI from '../App/Layout/AppUI.vue';
 import AppUiHeader from '../App/Layout/AppUiHeader.vue';
 import CentralMessage from '../App/Messages/CentralMessage.vue';
-import ErrorMessage from '../App/Messages/ErrorMessage.vue';
 import GenericButton from '../App/Inputs/GenericButton.vue';
 import LoadingMessage from '../App/Messages/LoadingMessage.vue';
 import Skeleton from '../App/Messages/Skeleton.vue';
 import ContentList from '../Content/ContentList.vue';
 import ContentListEntry from '../Content/ContentListEntry.vue';
 import ContentEntryBadge from '../Content/ContentEntryBadge.vue';
+import InlineErrorMessage from '../App/Messages/InlineErrorMessage.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -241,21 +241,19 @@ const capitalize = (text: string) => text.slice(0, 1).toUpperCase() + text.slice
 
 		<CentralMessage v-else>
 
-			<ErrorMessage v-if="state.error">
+			<InlineErrorMessage v-if="state.error">
 
-				<template v-slot:message>
+				<template v-slot:title>
 					{{ intl(lang, {
 						en: 'Unable to display content',
 						de: 'Inhalt kann nicht angezeigt werden',
 						uk: 'Не вдається відобразити вміст'
 					}) }}
 				</template>
-				
-				<template v-slot:details>
-					{{ state.error }}
-				</template>
 
-			</ErrorMessage>
+				{{ state.error }}
+
+			</InlineErrorMessage>
 
 			<LoadingMessage v-else-if="!state.data">
 				{{ intl(lang, {

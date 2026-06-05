@@ -3,7 +3,7 @@ import { computed, onMounted, reactive } from 'vue';
 import AppUiHeader from '@/components/App/Layout/AppUiHeader.vue';
 import { unwrapErrorMessage, useClient } from '@/api';
 import { useRouter } from 'vue-router';
-import InlineErorrMessage from '@/components/App/Messages/InlineErorrMessage.vue';
+import InlineErrorMessage from '@/components/App/Messages/InlineErrorMessage.vue';
 import GenericButton from '@/components/App/Inputs/GenericButton.vue';
 import InputGroup from '@/components/App/Inputs/InputGroup.vue';
 import GenericInput from '@/components/App/Inputs/GenericInput.vue';
@@ -102,7 +102,7 @@ const checkCredentials = async () => {
 
 			<div v-if="state.session || state.error" class="status-messages">
 
-				<InlineErorrMessage v-if="state.error">
+				<InlineErrorMessage v-if="state.error">
 
 					<template v-slot:title>
 						Sign-in error
@@ -110,7 +110,7 @@ const checkCredentials = async () => {
 
 					{{ state.error }}
 
-				</InlineErorrMessage>
+				</InlineErrorMessage>
 
 				<div v-if="state.session" class="suceess-message">
 					Signed in successfully!

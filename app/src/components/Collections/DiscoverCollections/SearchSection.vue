@@ -3,12 +3,12 @@ import { reactive } from 'vue';
 import { useClient } from '@/api';
 import type { CollectionSearchResult } from '@/api_models';
 import { intl, useLanguage } from '@/intl';
-import ErrorMessage from '@/components/App/Messages/ErrorMessage.vue';
 import LoadingMessage from '@/components/App/Messages/LoadingMessage.vue';
 import ContentList from '@/components/Content/ContentList.vue';
 import ContentListEntry from '@/components/Content/ContentListEntry.vue';
 import Searchbar from './Searchbar.vue';
 import { useStorage } from '@/storage/storage';
+import InlineErrorMessage from '@/components/App/Messages/InlineErrorMessage.vue';
 
 const props = defineProps<{
 	starred: Set<string>;
@@ -102,14 +102,12 @@ const handleSearchInput = (value?: string) => {
 
 		<Searchbar @update:modelValue="handleSearchInput" />
 
-		<ErrorMessage v-if="state.error">
-			<template v-slot:message>
+		<InlineErrorMessage v-if="state.error">
+			<template v-slot:title>
 				Failed to search for collections
 			</template>
-			<template v-slot:details>
-				{{ state.error }}
-			</template>
-		</ErrorMessage>
+			{{ state.error }}
+		</InlineErrorMessage>
 
 		<LoadingMessage v-else-if="state.busy">
 			{{ intl(lang, {

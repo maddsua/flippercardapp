@@ -5,7 +5,6 @@ import { unwrapErrorMessage, useClient } from '@/api';
 import type { CardDeck, ResourceVisibility } from '@/api_models';
 import type { CardContentFace, CardNode } from '@/content';
 import { useStorage } from '@/storage/storage';
-import ErrorMessage from '@/components/App/Messages/ErrorMessage.vue';
 import FullscreenMessage from '@/components/App/Messages/FullscreenMessage.vue';
 import GenericButton from '@/components/App/Inputs/GenericButton.vue';
 import LoadingMessage from '@/components/App/Messages/LoadingMessage.vue';
@@ -20,6 +19,7 @@ import EditorCanvasColumn from './EditorCanvasColumn.vue';
 import DeckCardList from './EditorCardNavigationList.vue';
 import EditorScreenOverlay from './EditorScreenOverlay.vue';
 import EditorContentVersionControl from './EditorModals/EditorContentVersionControl.vue';
+import OverlayErrorMessage from '@/components/App/Messages/OverlayErrorMessage.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -178,16 +178,11 @@ const discardChanges = () => {
 	exitEditor();
 };
 
+const backHref = computed(() => state.publisher?.collectionID ? `/collection/${state.publisher.collectionID}` : '/collections');
+
 const exitEditor = () => {
-
 	clearStateSnapshot();
-
-	if (state.publisher?.collectionID) {
-		router.push(`/collection/${state.publisher.collectionID}`);
-		return;
-	}
-
-	router.push('/collections');
+	router.push(backHref.value);
 };
 
 const flipCardFace = () => {
@@ -402,19 +397,21 @@ const handleVersionRollback = async () => {
 
 		<EditorScreenOverlay v-if="!state.editor.ready || state.editor.error">
 
-			<template v-if="state.editor.error">
-				<ErrorMessage>
-					<template v-slot:message>
-						Unable to load editor
-					</template>
-					<template v-slot:details>
-						{{ state.editor.error }}
-					</template>
-				</ErrorMessage>
-				<GenericButton variant="thin" theme="orange" @click="exitEditor">
-					Close editor
-				</GenericButton>
-			</template>
+			<OverlayErrorMessage v-if="state.editor.error" :backHref="backHref">
+				
+				Unable to load editor
+
+				<template v-slot:details>
+					{{ state.editor.error }}
+				</template>
+
+				<template v-slot:after>
+					<GenericButton variant="thin" @click="exitEditor">
+						Go back
+					</GenericButton>
+				</template>
+
+			</OverlayErrorMessage>
 
 			<template v-else>
 				<LoadingMessage>
@@ -426,21 +423,21 @@ const handleVersionRollback = async () => {
 
 		<EditorScreenOverlay v-if="state.publisher?.busy || state.publisher?.error">
 
-			<template v-if="state.publisher.error">
-				<ErrorMessage>
-					<template v-slot:message>
-						Unable to publish changes
-					</template>
-					<template v-slot:details>
-						{{ state.publisher.error }}
-					</template>
-				</ErrorMessage>
+			<OverlayErrorMessage v-if="state.publisher.error" :backHref="backHref">
+				
+				Unable to publish changes
 
-				<GenericButton variant="thin" theme="orange" @click="resetPublisher">
-					Dismiss
-				</GenericButton>
+				<template v-slot:details>
+					{{ state.publisher.error }}
+				</template>
 
-			</template>
+				<template v-slot:after>
+					<GenericButton variant="thin" theme="orange" @click="resetPublisher">
+						Dismiss
+					</GenericButton>
+				</template>
+
+			</OverlayErrorMessage>
 
 			<template v-else>
 				<LoadingMessage>

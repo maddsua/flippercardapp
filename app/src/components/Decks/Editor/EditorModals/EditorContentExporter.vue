@@ -18,7 +18,7 @@ import GenericButton from '@/components/App/Inputs/GenericButton.vue';
 import GenericToggle from '@/components/App/Inputs/GenericToggle.vue';
 import GenericDropdown from '@/components/App/Inputs/GenericDropdown.vue';
 import GenericInput from '@/components/App/Inputs/GenericInput.vue';
-import InlineErorrMessage from '@/components/App/Messages/InlineErorrMessage.vue';
+import InlineErrorMessage from '@/components/App/Messages/InlineErrorMessage.vue';
 import InlineProgressIndicator from '@/components/App/Messages/InlineProgressIndicator.vue';
 import EditorCardSelectorGrid from '../EditorCardSelectorGrid.vue';
 import EditorModal from '../EditorModal.vue';
@@ -353,9 +353,9 @@ const exportDeckCSV = async () => {
 					<GenericToggle label="Include images" v-model="state.options.exportImages" :disabled="!activeFormatOption?.flags?.media" />
 				</div>
 
-				<InlineErorrMessage v-if="state.error">
+				<InlineErrorMessage v-if="state.error">
 					{{ state.error }}
-				</InlineErorrMessage>
+				</InlineErrorMessage>
 
 				<InlineProgressIndicator v-if="state.busy" title="Exporting cards" :total="state.total" :done="state.progress" />
 

@@ -6,18 +6,18 @@ import { resourceVisibilityOptions } from '@/inputs';
 import { useClient } from '@/api';
 import AppUI from '@/components/App/Layout/AppUI.vue';
 import AppUiHeader from '@/components/App/Layout/AppUiHeader.vue';
-import ErrorMessage from '@/components/App/Messages/ErrorMessage.vue';
 import FullscreenMessage from '@/components/App/Messages/FullscreenMessage.vue';
 import GenericButton from '@/components/App/Inputs/GenericButton.vue';
 import GenericDropdown from '@/components/App/Inputs/GenericDropdown.vue';
 import GenericInput from '@/components/App/Inputs/GenericInput.vue';
-import InlineErorrMessage from '@/components/App/Messages/InlineErorrMessage.vue';
+import InlineErrorMessage from '@/components/App/Messages/InlineErrorMessage.vue';
 import InputLabel from '@/components/App/Inputs/InputLabel.vue';
 import InputRow from '@/components/App/Inputs/InputRow.vue';
 import LoadingMessage from '@/components/App/Messages/LoadingMessage.vue';
 import Skeleton from '@/components/App/Messages/Skeleton.vue';
 import CollectionFormHeader from './CollectionFormHeader.vue';
 import CollectionFormWrapper from './CollectionFormWrapper.vue';
+import OverlayErrorMessage from '@/components/App/Messages/OverlayErrorMessage.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -143,22 +143,27 @@ const deleteCollection = async () => {
 				</Skeleton>
 			</template>
 		</AppUiHeader>
-	
-		<FullscreenMessage v-if="!state.data">
-	
-			<ErrorMessage v-if="state.error">
-				<template v-slot:message>
-					Unable to load collection
-				</template>
-				<template v-slot:details>
-					{{ state.error }}
-				</template>
-			</ErrorMessage>
-		
-			<LoadingMessage v-else>
+
+		<OverlayErrorMessage v-if="state.error">
+
+			Unable to load collection
+
+			<template v-slot:details>
+				{{ state.error }}
+			</template>
+
+			<template v-slot:after>
+				<GenericButton variant="thin" @click="router.push(backHref)">
+					Go back
+				</GenericButton>
+			</template>
+
+		</OverlayErrorMessage>
+
+		<FullscreenMessage v-else-if="!state.data">
+			<LoadingMessage>
 				Loading metadata...
 			</LoadingMessage>
-	
 		</FullscreenMessage>
 	
 		<CollectionFormWrapper v-else>
@@ -202,9 +207,9 @@ const deleteCollection = async () => {
 	
 			</InputLabel>
 	
-			<InlineErorrMessage v-if="state.error">
+			<InlineErrorMessage v-if="state.error">
 				{{ state.error }}
-			</InlineErorrMessage>
+			</InlineErrorMessage>
 	
 			<InputRow>
 				<GenericButton :disabled="!formValid" @click="updateCollection">

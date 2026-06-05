@@ -7,10 +7,10 @@ import FullscreenMessage from '../App/Messages/FullscreenMessage.vue';
 import { shuffleArray } from '../../arrays';
 import { useRoute, useRouter } from 'vue-router';
 import LoadingMessage from '../App/Messages/LoadingMessage.vue';
-import ErrorMessage from '../App/Messages/ErrorMessage.vue';
-import GenericButton from '../App/Inputs/GenericButton.vue';
 import { useClient } from '../../api';
 import { useStorage } from '../../storage/storage';
+import OverlayErrorMessage from '../App/Messages/OverlayErrorMessage.vue';
+import GenericButton from '../App/Inputs/GenericButton.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -149,14 +149,10 @@ const updateStats = async () => {
 	}).catch(() => null);
 };
 
+const backHref = computed(() => state.collectionID ? `/collection/${state.collectionID}` : '/');
+
 const exitView = () => {
-
-	if (state.collectionID) {
-		router.push(`/collection/${state.collectionID}`);
-		return;
-	}
-
-	router.push('/');
+	router.push(backHref.value);
 };
 
 </script>
@@ -165,7 +161,29 @@ const exitView = () => {
 
 	<div class="play-view">
 
-		<template v-if="cards?.length">
+		<OverlayErrorMessage v-if="state.error" :backHref="backHref">
+
+			Unable to load deck
+
+			<template v-slot:details>
+				{{ state.error }}
+			</template>
+
+			<template v-slot:after>
+				<GenericButton variant="thin" @click="exitView">
+					Go back
+				</GenericButton>
+			</template>
+
+		</OverlayErrorMessage>
+
+		<FullscreenMessage v-else-if="!cards?.length">
+			<LoadingMessage>
+				Loading cards...
+			</LoadingMessage>
+		</FullscreenMessage>
+
+		<template v-else>
 
 			<CardWidget v-if="!statsScreen"
 				:labels="state.labels"
@@ -180,34 +198,6 @@ const exitView = () => {
 			<Endscreen v-else :stats="statsScreen" @reset="initRound" @finish="exitView" />
 
 		</template>
-
-		<FullscreenMessage v-else>
-
-			<template v-if="state.error">
-
-				<ErrorMessage v-if="state.error">
-
-					<template v-slot:message>
-						Unable to load deck
-					</template>
-
-					<template v-slot:details>
-						{{ state.error }}
-					</template>
-
-				</ErrorMessage>
-
-				<GenericButton @click="exitView">
-					Go back
-				</GenericButton>
-
-			</template>
-
-			<LoadingMessage v-else>
-				Loading cards...
-			</LoadingMessage>
-
-		</FullscreenMessage>
 
 	</div>
 

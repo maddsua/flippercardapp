@@ -9,7 +9,7 @@ import AppUiHeader from '@/components/App/Layout/AppUiHeader.vue';
 import GenericButton from '@/components/App/Inputs/GenericButton.vue';
 import GenericDropdown from '@/components/App/Inputs/GenericDropdown.vue';
 import GenericInput from '@/components/App/Inputs/GenericInput.vue';
-import InlineErorrMessage from '@/components/App/Messages/InlineErorrMessage.vue';
+import InlineErrorMessage from '@/components/App/Messages/InlineErrorMessage.vue';
 import InputLabel from '@/components/App/Inputs/InputLabel.vue';
 import InputRow from '@/components/App/Inputs/InputRow.vue';
 import CollectionFormHeader from './CollectionFormHeader.vue';
@@ -99,9 +99,9 @@ const openCollection = (id: string) => {
 	
 			</InputLabel>
 	
-			<InlineErorrMessage v-if="state.error">
+			<InlineErrorMessage v-if="state.error">
 				{{ state.error }}
-			</InlineErorrMessage>
+			</InlineErrorMessage>
 	
 			<InputRow>
 				<GenericButton :disabled="!formValid" @click="createCollection">

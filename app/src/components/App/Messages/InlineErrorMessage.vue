@@ -21,6 +21,7 @@
 		background-color: var(--app-theme-bishop);
 		border-radius: 0.5rem;
 		border: 1px solid var(--app-theme-powder-trail);
+		width: 100%;
 
 		.message-title {
 			font-size: 0.85rem;

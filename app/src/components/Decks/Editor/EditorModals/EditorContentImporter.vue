@@ -10,13 +10,13 @@ import {
 	type ContentBundle,
 } from '@/content';
 import { pickLocalFiles } from '@/files';
-import ErrorMessage from '@/components/App/Messages/ErrorMessage.vue';
 import GenericButton from '@/components/App/Inputs/GenericButton.vue';
 import GenericToggle from '@/components/App/Inputs/GenericToggle.vue';
-import InlineErorrMessage from '@/components/App/Messages/InlineErorrMessage.vue';
+import InlineErrorMessage from '@/components/App/Messages/InlineErrorMessage.vue';
 import InlineProgressIndicator from '@/components/App/Messages/InlineProgressIndicator.vue';
 import EditorCardSelectorGrid from '../EditorCardSelectorGrid.vue';
 import EditorModal from '../EditorModal.vue';
+import OverlayErrorMessage from '@/components/App/Messages/OverlayErrorMessage.vue';
 
 const client = useClient();
 
@@ -437,16 +437,15 @@ const importData = async () => {
 	<EditorModal title="Import deck content" @close="exitTool">
 		<div class="importer-tool">
 
-			<div v-if="state.source.error" class="import-error">
-				<ErrorMessage>
-					<template v-slot:message>
-						Import failed
-					</template>
-					<template v-slot:details>
-						{{ state.source.error }}
-					</template>
-				</ErrorMessage>
-			</div>
+			<OverlayErrorMessage v-if="state.source.error">
+
+				Import failed
+
+				<template v-slot:details>
+					{{ state.source.error }}
+				</template>
+
+			</OverlayErrorMessage>
 
 			<div v-else-if="state.source.ready" class="content-selection">
 
@@ -526,9 +525,9 @@ const importData = async () => {
 
 				</div>
 
-				<InlineErorrMessage v-if="state.error">
+				<InlineErrorMessage v-if="state.error">
 					{{ state.error }}
-				</InlineErorrMessage>
+				</InlineErrorMessage>
 
 				<InlineProgressIndicator v-if="state.busy" title="Exporting cards" :total="state.total" :done="state.progress" />
 
@@ -576,13 +575,6 @@ const importData = async () => {
 				font-size: 0.8rem;
 				color: var(--app-theme-mysterious-white);
 			}
-		}
-
-		.import-error {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			flex-grow: 1;
 		}
 
 		.file-drop-zone {
