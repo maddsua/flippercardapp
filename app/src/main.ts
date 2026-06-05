@@ -13,11 +13,12 @@ import NewCollectionView from './components/Collections/CollectionEditor/NewColl
 import CollectionView from './components/Collections/CollectionView.vue';
 import DiscoverView from './components/Collections/DiscoverCollections/DiscoverView.vue';
 import MyCollectionsView from './components/Collections/MyCollectionsView.vue';
-import DashboardMainScreen from './components/Dashboard/DashboardMainScreen.vue';
+import DashboardSettingsScreen from './components/Dashboard/Settings/DashboardSettingsScreen.vue';
 import DashboardView from './components/Dashboard/DashboardView.vue';
 import DeckEditorView from './components/Decks/Editor/DeckEditorView.vue';
 import PlayView from './components/Play/PlayView.vue';
 import StarredView from './components/Starred/StarredView.vue';
+import DashboardSigninScreen from './components/Dashboard/Auth/DashboardSigninScreen.vue';
 
 const client = useClient();
 
@@ -101,8 +102,6 @@ const routes = [
 			requiresEditorPermission: true,
 		},
 	},
-
-	//	todo: remove dashboard routes entirely
 	{
 		path: '/dashboard',
 		component: DashboardView,
@@ -112,8 +111,16 @@ const routes = [
 		children: [
 			{
 				path: '',
-				component: DashboardMainScreen,
+				component: DashboardSettingsScreen,
 			},
+			{
+				path: 'settings',
+				component: DashboardSettingsScreen,
+			},
+			{
+				path: 'signin',
+				component: DashboardSigninScreen,
+			}
 		],
 	},
 	{

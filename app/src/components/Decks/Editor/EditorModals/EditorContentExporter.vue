@@ -15,7 +15,7 @@ import {
 } from '@/content';
 import { blobToJson, downloadBlob, escapeFileName } from '@/files';
 import GenericButton from '@/components/App/Inputs/GenericButton.vue';
-import GenericCheckbox from '@/components/App/Inputs/GenericCheckbox.vue';
+import GenericToggle from '@/components/App/Inputs/GenericToggle.vue';
 import GenericDropdown from '@/components/App/Inputs/GenericDropdown.vue';
 import GenericInput from '@/components/App/Inputs/GenericInput.vue';
 import InlineErorrMessage from '@/components/App/Messages/InlineErorrMessage.vue';
@@ -343,14 +343,14 @@ const exportDeckCSV = async () => {
 					<div class="title">
 						Deck details
 					</div>
-					<GenericCheckbox label="Include deck details" v-model="state.options.exportDetails" :disabled="!activeFormatOption?.flags?.metadata" />
+					<GenericToggle label="Include deck details" v-model="state.options.exportDetails" :disabled="!activeFormatOption?.flags?.metadata" />
 				</div>
 
 				<div class="options-group">
 					<div class="title">
 						Media
 					</div>
-					<GenericCheckbox label="Include images" v-model="state.options.exportImages" :disabled="!activeFormatOption?.flags?.media" />
+					<GenericToggle label="Include images" v-model="state.options.exportImages" :disabled="!activeFormatOption?.flags?.media" />
 				</div>
 
 				<InlineErorrMessage v-if="state.error">

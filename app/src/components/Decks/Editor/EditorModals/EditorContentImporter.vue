@@ -12,7 +12,7 @@ import {
 import { pickLocalFiles } from '@/files';
 import ErrorMessage from '@/components/App/Messages/ErrorMessage.vue';
 import GenericButton from '@/components/App/Inputs/GenericButton.vue';
-import GenericCheckbox from '@/components/App/Inputs/GenericCheckbox.vue';
+import GenericToggle from '@/components/App/Inputs/GenericToggle.vue';
 import InlineErorrMessage from '@/components/App/Messages/InlineErorrMessage.vue';
 import InlineProgressIndicator from '@/components/App/Messages/InlineProgressIndicator.vue';
 import EditorCardSelectorGrid from '../EditorCardSelectorGrid.vue';
@@ -517,11 +517,11 @@ const importData = async () => {
 						Content
 					</div>
 
-					<GenericCheckbox label="Replace existing metadata"
+					<GenericToggle label="Replace existing metadata"
 						v-model="state.options.setMetadata.value"
 						:disabled="!state.options.setMetadata.enabled" />
 
-					<GenericCheckbox label="Replace existing cards"
+					<GenericToggle label="Replace existing cards"
 						v-model="state.options.overwriteContent" />
 
 				</div>

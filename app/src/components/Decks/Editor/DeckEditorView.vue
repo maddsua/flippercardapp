@@ -391,7 +391,7 @@ const patchDeckMeta = (patch: { name: string | null; description: string | null;
 
 const handleVersionRollback = async () => {
 	await clearStateSnapshot();
-	document.location.reload();
+	window.location.reload();
 };
 
 </script>

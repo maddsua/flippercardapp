@@ -1,5 +1,5 @@
 import { useIDB } from "./idb";
-import { GenericKVStore } from "./kv";
+import { GenericKVStore, GenericKVStoreWithDefault } from "./kv";
 
 export interface DeckPlayStats {
 	deck_id: string;
@@ -84,6 +84,11 @@ export const useStorage = () => {
 			editor: {
 				snapshot: new GenericKVStore('deck_editor_state_snapshot'),
 			},
+		},
+
+		preferences: {
+			language: new GenericKVStore<string>('app_language'),
+			playModeShowNavigation: new GenericKVStoreWithDefault('play_mode_show_navigation', true),
 		},
 	};
 };

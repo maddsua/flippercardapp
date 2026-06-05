@@ -33,6 +33,7 @@ const state = reactive({
 	isMarked: false,
 	error: null as string | null,
 	round: null as RoundState | null,
+	showNavigation: false,
 });
 
 const statsScreen = computed(() => state.round?.isFinished ? ({
@@ -99,6 +100,8 @@ onMounted(async () => {
 	state.collectionID = data.collection_id;
 	state.labels = data.labels;
 	state.cards = data.cards;
+
+	state.showNavigation = store.preferences.playModeShowNavigation.load();
 
 	initRound();
 });
@@ -168,6 +171,7 @@ const exitView = () => {
 				:labels="state.labels"
 				:entries="cards"
 				:isMarked="state.isMarked"
+				:showNavigation="state.showNavigation"
 				@score="updateRoundScore"
 				@finish="finishDeck"
 				@exit="exitView"

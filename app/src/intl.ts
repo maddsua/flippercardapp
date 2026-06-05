@@ -1,7 +1,9 @@
+import { useStorage } from "./storage/storage";
+
+const store = useStorage();
 
 export const useLanguage = (): string => {
-	const langCode = navigator.language;
-	return langCode.split('-')[0] || 'en';
+	return store.preferences.language.load() || navigator.language.split('-')[0] || 'en';
 };
 
 export const intl = (lang: string, strings: Record<string, string>) => {

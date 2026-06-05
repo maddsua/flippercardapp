@@ -28,7 +28,10 @@
 			display: flex;
 			flex-direction: column;
 			gap: 0.75rem;
-			padding-left: 1rem;
+
+			@media (orientation: landscape) {
+				padding-left: 1rem;
+			}
 		}
 	}
 </style>

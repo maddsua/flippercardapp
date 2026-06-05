@@ -10,6 +10,7 @@ const props = defineProps<{
 	labels: string[];
 	entries: CardNode[];
 	isMarked?: boolean;
+	showNavigation?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -244,7 +245,7 @@ const handleExitPrompt = (confirmed?: boolean) => {
 			</div>
 		</div>
 
-		<CardControls
+		<CardControls v-if="showNavigation"
 			:has_prev="activeIdx > 0"
 			:has_next="activeIdx < entries.length - 1"
 			@prev="handleCtrlBack"
