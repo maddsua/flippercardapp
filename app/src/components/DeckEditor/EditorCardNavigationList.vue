@@ -36,8 +36,8 @@ watch(() => props.list.length, () => {
 
 <template>
 	<div class="editor-deck-navigation">
-		<div class="scroll-wrapper">
-			<ul class="card-list">
+		<div class="scroll-wrapper" :class="{ shaded: !!list.length }">
+			<ul v-if="list.length" class="card-list">
 				<li v-for="(card, idx) of list" :ref="elem => listRef[idx] = elem as Element | null">
 					<button type="button" class="card" @click="emit('select', idx)">
 						<CardThumbnail :card="card" :label="idx + 1" :active="idx === pointer" :showControls="true" @duplicate="emit('duplicate', idx)" @remove="emit('remove', idx)"/>
@@ -64,24 +64,27 @@ watch(() => props.list.length, () => {
 			min-height: 0;
 			max-height: 100%;
 
-			&::after, &::before {
-				content: "";
-				position: absolute;
-				left: 0;
-				z-index: 10;
-				display: block;
-				width: 100%;
-				height: 2rem;
-				background: linear-gradient(0deg,rgba(0, 0, 0, 0) 0%, #242424 100%);
-			}
+			&.shaded {
 
-			&::before {
-				top: 0;
-			}
+				&::after, &::before {
+					content: "";
+					position: absolute;
+					left: 0;
+					z-index: 10;
+					display: block;
+					width: 100%;
+					height: 2rem;
+					background: linear-gradient(0deg,rgba(0, 0, 0, 0) 0%, #2f2f2f 100%);
+				}
 
-			&::after {
-				bottom: 0;
-				transform: rotate(180deg);
+				&::before {
+					top: 0;
+				}
+
+				&::after {
+					bottom: 0;
+					transform: rotate(180deg);
+				}
 			}
 		}
 
