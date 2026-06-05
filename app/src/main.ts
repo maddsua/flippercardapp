@@ -142,7 +142,7 @@ router.beforeResolve(async (to) => {
 
 	if (requiresDashboardSession && !authState?.actor) {
 		console.warn('ROUTER: Unauthorized. Redirecting to the login screen');
-		return '/dashboard';
+		return '/dashboard/signin';
 	} else if (requiresEditorPermission && !authState?.actor?.permissions.content_edit) {
 		console.warn('ROUTER: Content editor permission missing. Redirecting to the dashboard home');
 		return '/dashboard';
