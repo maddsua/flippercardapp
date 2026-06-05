@@ -1,4 +1,4 @@
-import type { DeckPlayStats } from "./storage";
+import type { DeckPlayStats } from "@/play";
 import { GenericKVStore } from "./kv";
 
 interface dbOpenOptions {

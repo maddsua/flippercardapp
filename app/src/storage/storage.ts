@@ -1,17 +1,8 @@
+import type { CollectionPlayStats, DeckPlayStats } from "@/play";
 import { useIDB } from "./idb";
 import { GenericKVStore, GenericKVStoreWithDefault } from "./kv";
 
-export interface DeckPlayStats {
-	deck_id: string;
-	collection_id: string | null;
-	score: number;
-};
 
-export interface CollectionPlayStats {
-	collection_id: string | null;
-	avg_score: number;
-	decks_played: number;
-};
 
 export const useStorage = () => {
 	return {

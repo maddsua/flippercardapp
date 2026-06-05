@@ -15,6 +15,7 @@ import ContentListEntry from '../Content/ContentListEntry.vue';
 import CollectionBreak from './CollectionBreak.vue';
 import CollectionEndlistAction from './CollectionEndlistAction.vue';
 import InlineErrorMessage from '../App/Messages/InlineErrorMessage.vue';
+import { distributeCollectionPlayScore } from '@/play';
 
 const router = useRouter();
 const client = useClient();
@@ -47,14 +48,7 @@ onMounted(async () => {
 
 	state.data = data.entries.map(item => ({
 		...item,
-		//	todo: export
-		score: (() => {
-			const stat = collectionStats.get(item.id);
-			if (!stat) {
-				return 0;
-			}
-			return stat.avg_score * (stat.decks_played / (item.size ?? 1));
-		})(),
+		score: distributeCollectionPlayScore(collectionStats, item),
 	}));
 });
 
