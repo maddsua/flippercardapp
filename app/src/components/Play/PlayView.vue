@@ -3,12 +3,12 @@ import { computed, onMounted, reactive } from 'vue';
 import type { CardNode } from '../../content';
 import CardWidget from '../Cards/CardWidget.vue';
 import Endscreen from '../Endscreen/Endscreen.vue';
-import FullscreenMessage from '../App/FullscreenMessage.vue';
+import FullscreenMessage from '../App/Messages/FullscreenMessage.vue';
 import { shuffleArray } from '../../arrays';
 import { useRoute, useRouter } from 'vue-router';
-import LoadingMessage from '../App/LoadingMessage.vue';
-import ErrorMessage from '../App/ErrorMessage.vue';
-import GenericButton from '../App/GenericButton.vue';
+import LoadingMessage from '../App/Messages/LoadingMessage.vue';
+import ErrorMessage from '../App/Messages/ErrorMessage.vue';
+import GenericButton from '../App/Inputs/GenericButton.vue';
 import { useClient } from '../../api';
 import { useStorage } from '../../storage/storage';
 
@@ -153,7 +153,7 @@ const exitView = () => {
 		return;
 	}
 
-	router.push('/collections');
+	router.push('/');
 };
 
 </script>

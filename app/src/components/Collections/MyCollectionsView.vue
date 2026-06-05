@@ -5,12 +5,12 @@ import { useClient } from '../../api';
 import type { CollectionMetadata } from '../../api_models';
 import { intl, useLanguage } from '../../intl';
 import { useStorage } from '../../storage/storage';
-import AppUI from '../App/AppUI.vue';
-import AppUiHeader from '../App/AppUiHeader.vue';
-import CentralMessage from '../App/CentralMessage.vue';
-import ErrorMessage from '../App/ErrorMessage.vue';
-import GenericButton from '../App/GenericButton.vue';
-import LoadingMessage from '../App/LoadingMessage.vue';
+import AppUI from '../App/Layout/AppUI.vue';
+import AppUiHeader from '../App/Layout/AppUiHeader.vue';
+import CentralMessage from '../App/Messages/CentralMessage.vue';
+import ErrorMessage from '../App/Messages/ErrorMessage.vue';
+import GenericButton from '../App/Inputs/GenericButton.vue';
+import LoadingMessage from '../App/Messages/LoadingMessage.vue';
 import ContentList from '../Content/ContentList.vue';
 import ContentListEntry from '../Content/ContentListEntry.vue';
 import CollectionBreak from './CollectionBreak.vue';
@@ -62,8 +62,8 @@ const openCollection = (id: string) => {
 	router.push(`/collection/${id}`);
 };
 
-const openExplore = () => {
-	router.push('/discover');
+const openCollectionDiscover = () => {
+	router.push('/collections/discover');
 };
 
 const lang = useLanguage();
@@ -151,7 +151,7 @@ const lang = useLanguage();
 
 		<CollectionEndlistAction>
 
-			<GenericButton theme="orange" @click="openExplore">
+			<GenericButton theme="orange" variant="thin" @click="openCollectionDiscover">
 				{{ intl(lang, {
 					en: 'Explore cards',
 					de: 'Mehr Karten finden',

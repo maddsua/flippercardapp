@@ -46,7 +46,7 @@ const applyStyles = computed((): CSSProperties => ({
 
 <style lang="scss" scoped>
 
-	@use '../../media.scss';
+	@use '@/media.scss';
 
 	button {
 		display: block;

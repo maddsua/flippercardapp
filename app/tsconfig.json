@@ -16,6 +16,9 @@
 		"isolatedModules": true,
 		"noEmit": true,
 		"forceConsistentCasingInFileNames": true,
-		"types": ["vite/client"]
+		"types": ["vite/client"],
+		"paths": {
+			"@/*": ["./src/*"],
+		}
 	}
 }

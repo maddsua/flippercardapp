@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed } from 'vue';
 import type { ResourceVisibility } from '../../api_models';
+import GenericButton from '../App/Inputs/GenericButton.vue';
+import ContentEntryBadge from './ContentEntryBadge.vue';
 
 const props = defineProps<{
 	title: string;
@@ -11,168 +12,174 @@ const props = defineProps<{
 	cardCount?: number | null;
 	deckCount?: number | null;
 	score?: number | null;
+	editable?: boolean;
+	playable?: boolean;
 }>();
 
-//	don't display the icon for public resources to avoid icon cluttering
-const visibility = computed(() => props.visibility !== 'PUBLIC' ? (props.visibility || null) : null);
+const emit = defineEmits<{
+	(e: 'click'): void;
+	(e: 'edit'): void;
+	(e: 'delete'): void;
+}>();
 
 </script>
 
 <template>
-	<button type="button" class="content-list-entry">
 
-		<div class="flex-group">
+	<div class="content-list-entry" :class="{ editable }">
 
-			<div class="title">
-				{{ title }}
-			</div>
+		<div v-if="editable" class="editor-actions">
+			<GenericButton variant="thin" theme="green" @click="emit('click')">
+				<template v-if="playable">
+					Play
+				</template>
+				<template v-else>
+					Inspect
+				</template>
+			</GenericButton>
+			<GenericButton variant="thin" @click="emit('edit')">
+				Edit
+			</GenericButton>
+			<GenericButton variant="thin" theme="red" @click="emit('delete')">
+				Delete
+			</GenericButton>
+		</div>
 
-			<template v-if="starred || starrable || visibility || score || cardCount || deckCount">
+		<button type="button" class="primary-action" @click="emit('click')">
+	
+			<div class="row-group">
+	
+				<div class="title">
+					{{ title }}
+				</div>
+	
+				<div v-if="starred || starrable || visibility || score || cardCount || deckCount" class="entry-badges">
 
-				<div class="stats">
-					<div v-if="score" class="item score">
+					<ContentEntryBadge v-if="score" icon="score">
 						{{ score.toFixed(0) }}%
-					</div>
-					<div v-if="cardCount" class="item cards">
+					</ContentEntryBadge>
+
+					<ContentEntryBadge v-if="cardCount" icon="cards">
 						{{ cardCount.toFixed(0) }}
-					</div>
-					<div v-if="deckCount" class="item decks">
+					</ContentEntryBadge>
+
+					<ContentEntryBadge v-if="deckCount" icon="decks">
 						{{ deckCount.toFixed(0) }}
-					</div>
-					<div v-if="visibility" class="item visibility" :class="[ visibility.toLowerCase() ]"></div>
-					<div v-if="starred || starrable" class="item star" :class="{ starred }"></div>
+					</ContentEntryBadge>
+
+					<template v-if="visibility">
+						<ContentEntryBadge v-if="visibility === 'PRIVATE'" icon="lock" />
+						<ContentEntryBadge v-else-if="visibility === 'HIDDEN'" icon="link" />
+					</template>
+
+					<template v-if="starred || starrable">
+						<ContentEntryBadge v-if="starred" icon="star-filled" />
+						<ContentEntryBadge v-else icon="star" />
+					</template>
+
 				</div>
 
-			</template>
+			</div>
+	
+			<div v-if="summary" class="summary">
+				{{ summary }}
+			</div>
+	
+		</button>
 
-		</div>
+	</div>
 
-		<div v-if="summary" class="summary">
-			{{ summary }}
-		</div>
-
-	</button>
 </template>
 
 <style lang="scss" scoped>
 
-	@use '../../media.scss';
+	@use '@/media.scss';
 
 	.content-list-entry {
-		display: flex;
-		display: flex;
-		flex-direction: column;
-		align-items: start;
-		gap: 0.25rem;
-		padding: 1rem 2rem;
+		position: relative;
 		border-radius: 1rem;
-		border: none;
-		outline: none;
-		transition: all 150ms ease;
-		text-align: start;
-		text-align: unset;
+		overflow: hidden;
 
-		background-color: var(--app-theme-irish-green);
-		color: var(--app-theme-snow-white);
-
-		@media (orientation: portrait) {
-			padding: 1rem 1.5rem;
-		}
-
-		.flex-group {
+		.editor-actions {
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			z-index: 2;
+			background-color: rgba(0, 0, 0, 0.4);
 			display: flex;
 			flex-flow: row nowrap;
-			align-items: start;
-			width: 100%;
+			align-items: center;
+			justify-content: end;
 			gap: 1rem;
+			padding: 1rem;
+			opacity: 0;
+			transition: all 150ms ease;
 		}
 
-		.title {
-			font-size: 1rem;
-			font-weight: 600;
+		.primary-action {
+			display: flex;
+			flex-direction: column;
+			align-items: start;
+			gap: 0.25rem;
 			width: 100%;
-		}
-
-		.summary {
-			font-size: 0.85rem;
-			font-weight: 400;
-			width: 100%;
-		}
-
-		hr {
-			display: block;
-			width: 100%;
-			height: 1px;
-			background-color: var(--app-theme-powder-trail);
+			padding: 1rem 1.5rem;
 			border: none;
 			outline: none;
-		}
+			transition: all 150ms ease;
+			text-align: start;
+			text-align: unset;
 
-		.stats {
-			display: flex;
-			flex-flow: row nowrap;
-			flex-shrink: 0;
-			gap: 0.5rem;
+			background-color: var(--app-theme-irish-green);
+			color: var(--app-theme-snow-white);
 
-			.item {
-				display: flex;
-				flex-flow: row nowrap;
-				align-items: center;
-				white-space: nowrap;
-				gap: 0.25em;
-				font-size: 0.75rem;
-				flex-shrink: 0;
-				font-weight: 600;
+			@media (orientation: portrait) {
+				padding: 1rem 1.25rem;
+			}
 
-				&::before {
-					content: "";
-					display: block;
-					width: 1.35em;
-					height: 1.35em;
-					background-size: contain;
-					background-repeat: no-repeat;
-					background-position: center;
-				}
-
-				&.cards::before {
-					background-image: url(/src/assets/icons/quiz-card-mask.svg);
-				}
-
-				&.decks::before {
-					background-image: url(/src/assets/icons/card-deck-mask.svg);
-				}
-
-				&.score::before {
-					background-image: url(/src/assets/icons/target-mask.svg);
-				}
-
-				&.star {
-					
-					&::before {
-						background-image: url(/src/assets/icons/star-mask.svg);
-					}
-
-					&.starred::before {
-						background-image: url(/src/assets/icons/star-filled-mask.svg);
-					}
-				}
-
-				&.visibility.public::before {
-					background-image: url(/src/assets/icons/world-mask.svg);
-				}
-
-				&.visibility.hidden::before {
-					background-image: url(/src/assets/icons/link-mask.svg);
-				}
-
-				&.visibility.private::before {
-					background-image: url(/src/assets/icons/lock-mask.svg);
-				}
+			@include media.non-sticky-hover {
+				background-color: var(--app-theme-spooky-orange);
 			}
 		}
 
-		@include media.non-sticky-hover {
-			background-color: var(--app-theme-spooky-orange);
+		&.editable:hover {
+			.primary-action {
+				pointer-events: none;
+				filter: blur(2px);
+				opacity: 0.75;
+			}
+			.editor-actions {
+				opacity: 1;
+			}
 		}
 	}
+
+	.row-group {
+		display: flex;
+		flex-flow: row nowrap;
+		align-items: start;
+		width: 100%;
+		gap: 1rem;
+	}
+
+	.title {
+		font-size: 1rem;
+		font-weight: 600;
+		width: 100%;
+	}
+
+	.summary {
+		font-size: 0.85rem;
+		font-weight: 400;
+		width: 100%;
+	}
+
+	.entry-badges {
+		display: flex;
+		flex-flow: row nowrap;
+		flex-shrink: 0;
+		gap: 0.5rem;
+	}
+
 </style>

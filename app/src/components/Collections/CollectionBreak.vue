@@ -9,11 +9,11 @@
 <style lang="scss" scoped>
 	hr {
 		display: block;
-		width: 65%;
+		width: 100%;
 		height: 1px;
 		border: none;
 		outline: none;
-		background-color: var(--app-theme-powder-trail);
+		background-color: var(--app-theme-ghostly-glow);
 		flex-shrink: 0;
 	}
 </style>

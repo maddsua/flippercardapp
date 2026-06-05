@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { reactive } from 'vue';
-import GenericButton from '../App/GenericButton.vue';
-import type { SignInParams } from '../../api_models';
-import GenericInput from '../App/GenericInput.vue';
-import InputGroup from '../App/InputGroup.vue';
-import InlineErorrMessage from '../App/InlineErorrMessage.vue';
+import GenericButton from '../App/Inputs/GenericButton.vue';
+import type { SignInParams } from '@/api_models';
+import GenericInput from '../App/Inputs/GenericInput.vue';
+import InputGroup from '../App/Inputs/InputGroup.vue';
+import InlineErorrMessage from '../App/Messages/InlineErorrMessage.vue';
 
 const props = defineProps<{
 	locked?: boolean;

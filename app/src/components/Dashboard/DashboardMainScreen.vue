@@ -2,12 +2,7 @@
 import { reactive } from 'vue';
 import DashboardSessionWidget from './DashboardSessionWidget.vue';
 import type { AuthState } from '../../api_models';
-import DashboardMenuSection from './DashboardMenuSection.vue';
-import GenericButton from '../App/GenericButton.vue';
-import { useRouter } from 'vue-router';
-import AppUiHeader from '../App/AppUiHeader.vue';
-
-const router = useRouter();
+import AppUiHeader from '../App/Layout/AppUiHeader.vue';
 
 const state = reactive({
 	auth: null as  AuthState | null,
@@ -27,19 +22,7 @@ const state = reactive({
 
 		<template v-if="state.auth.actor.permissions.team_member">
 
-			<DashboardMenuSection>
-
-				<template v-slot:title>
-					Content
-				</template>
-
-				<template v-slot:content>
-					<GenericButton variant="wide" @click="router.push('/dashboard/content')">
-						Manage content
-					</GenericButton>
-				</template>
-
-			</DashboardMenuSection>
+			Congrats, you're an admin!
 
 		</template>
 

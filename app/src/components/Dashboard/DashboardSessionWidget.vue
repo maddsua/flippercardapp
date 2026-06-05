@@ -2,8 +2,8 @@
 import { onMounted, reactive } from 'vue';
 import { useClient } from '../../api';
 import type { AuthState, SignInParams } from '../../api_models';
-import ErrorMessage from '../App/ErrorMessage.vue';
-import LoadingMessage from '../App/LoadingMessage.vue';
+import ErrorMessage from '../App/Messages/ErrorMessage.vue';
+import LoadingMessage from '../App/Messages/LoadingMessage.vue';
 import DashboardSigninForm from './DashboardSigninForm.vue';
 import DashboardSessionState from './DashboardSessionState.vue';
 

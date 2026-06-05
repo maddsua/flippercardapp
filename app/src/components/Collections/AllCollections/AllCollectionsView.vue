@@ -1,0 +1,119 @@
+<script setup lang="ts">
+import { useClient, type Pagination } from '@/api';
+import type { AuthState, CollectionMetadata } from '@/api_models';
+import AppUI from '@/components/App/Layout/AppUI.vue';
+import AppUiHeader from '@/components/App/Layout/AppUiHeader.vue';
+import CentralMessage from '@/components/App/Messages/CentralMessage.vue';
+import ErrorMessage from '@/components/App/Messages/ErrorMessage.vue';
+import GenericButton from '@/components/App/Inputs/GenericButton.vue';
+import LoadingMessage from '@/components/App/Messages/LoadingMessage.vue';
+import ContentList from '@/components/Content/ContentList.vue';
+import ContentListEntry from '@/components/Content/ContentListEntry.vue';
+import { genericPageState, pageControls } from '@/dataloader';
+import { intl, useLanguage } from '@/intl';
+import { onMounted, reactive } from 'vue';
+import { useRouter } from 'vue-router';
+
+const lang = useLanguage();
+const router = useRouter();
+const client = useClient();
+
+const state = reactive({
+	page: genericPageState<CollectionMetadata>(),
+	auth: null as  AuthState | null,
+});
+
+const { more: loadMore } = pageControls(state.page, async (pagination: Pagination) => {
+	return client.collections.list(pagination);
+});
+
+onMounted(loadMore);
+
+onMounted(async () => {
+	state.auth = await client.auth.whoami({ cached: true }).then(res => res.data || null);
+});
+
+const openNewCollectionEditor = () => {
+	router.push('/collections/new');
+};
+
+const openCollection = async (id: string) => {
+	router.push(`/collection/${id}`);
+};
+
+</script>
+
+<template>
+	<AppUI>
+
+		<AppUiHeader backHref="/collections">
+
+			<template v-slot:title>
+				{{ intl(lang, {
+					en: 'All collections',
+					uk: 'Всі колекції',
+					de: 'Alle Sammlungen'
+				}) }}
+			</template>
+
+			<template v-slot:summary>
+				Full content list
+			</template>
+	
+			<template v-if="state.auth?.actor?.permissions.team_member" v-slot:actions>
+				<GenericButton variant="thin" theme="green" @click="openNewCollectionEditor">
+					+ Add collection
+				</GenericButton>
+			</template>
+
+		</AppUiHeader>
+
+		<ErrorMessage v-if="state.page.error">
+			<template v-slot:message>
+				Failed to load collection list
+			</template>
+			<template v-slot:details>
+				{{ state.page.error }}
+			</template>
+		</ErrorMessage>
+
+		<LoadingMessage v-else-if="!state.page.entries">
+			{{ intl(lang, {
+				en: 'Loading collection...',
+				uk: 'Завантажуємо колекції...',
+				de: 'Sammlungen laden...'
+			}) }}
+		</LoadingMessage>
+
+		<ContentList v-else-if="state.page.entries.length">
+			<ContentListEntry v-for="item of state.page.entries"
+				:title="item.name"
+				:summary="item.description"
+				:visibility="item.visibility"
+				:deckCount="item.size"
+				@click="openCollection(item.id)" />
+		</ContentList>
+
+		<div v-else-if="state.page.has_next" class="actions">
+			<GenericButton theme="green" variant="thin" @click="loadMore">
+				Load more
+			</GenericButton>
+		</div>
+
+		<template v-else>
+			<CentralMessage>
+				No collections yet
+			</CentralMessage>
+		</template>
+
+	</AppUI>
+</template>
+
+<style lang="scss" scoped>
+	.actions {
+		display: flex;
+		flex-flow: row nowrap;
+		justify-content: center;
+		align-items: center;
+	}
+</style>

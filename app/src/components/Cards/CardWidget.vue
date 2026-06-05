@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref } from 'vue';
-import type { CardNode } from '../../content';
+import type { CardNode } from '@/content';
 import Card from './Card.vue';
 import CardControls from './CardControls.vue';
 import CardDeckInfo from './CardDeckInfo.vue';
-import UIPrompt from '../App/UIPrompt.vue';
+import UIPrompt from '../App/Prompts/UIPrompt.vue';
 
 const props = defineProps<{
 	labels: string[];

@@ -1,26 +1,26 @@
 <script setup lang="ts">
-import { onMounted, reactive } from 'vue';
+import { computed, onMounted, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { useClient } from '@/api';
+import type { AuthState, CardDeckMetadata, CollectionMetadata } from '@/api_models';
+import { intl, useLanguage } from '@/intl';
+import { useStorage } from '@/storage/storage';
+import AppUI from '../App/Layout/AppUI.vue';
+import AppUiHeader from '../App/Layout/AppUiHeader.vue';
+import CentralMessage from '../App/Messages/CentralMessage.vue';
+import ErrorMessage from '../App/Messages/ErrorMessage.vue';
+import GenericButton from '../App/Inputs/GenericButton.vue';
+import LoadingMessage from '../App/Messages/LoadingMessage.vue';
+import Skeleton from '../App/Messages/Skeleton.vue';
 import ContentList from '../Content/ContentList.vue';
-import ErrorMessage from '../App/ErrorMessage.vue';
 import ContentListEntry from '../Content/ContentListEntry.vue';
-import CollectionEndlistAction from './CollectionEndlistAction.vue';
-import CollectionBreak from './CollectionBreak.vue';
-import GenericButton from '../App/GenericButton.vue';
-import AppUI from '../App/AppUI.vue';
-import { intl, useLanguage } from '../../intl';
-import CentralMessage from '../App/CentralMessage.vue';
-import LoadingMessage from '../App/LoadingMessage.vue';
-import Skeleton from '../App/Skeleton.vue';
-import AppUiHeader from '../App/AppUiHeader.vue';
-import { useClient } from '../../api';
-import type { CardDeckMetadata, CollectionMetadata } from '../../api_models';
-import { useStorage } from '../../storage/storage';
+import ContentEntryBadge from '../Content/ContentEntryBadge.vue';
 
 const router = useRouter();
 const route = useRoute();
 const client = useClient();
 const store = useStorage();
+const lang = useLanguage();
 
 interface DeckEntry extends CardDeckMetadata {
 	starred: boolean;
@@ -34,8 +34,11 @@ interface CollectionEntry extends CollectionMetadata {
 const state = reactive({
 	data: null as CollectionEntry | null,
 	starred: false,
+	auth: null as  AuthState | null,
 	error: null as string | null,
 });
+
+const backRef = computed(() => state.auth?.actor?.permissions.team_member ? '/collections/all' : '/');
 
 onMounted(async () => {
 
@@ -72,17 +75,13 @@ onMounted(async () => {
 	};
 
 	state.starred = await store.collections.starred.has(data.id).catch(() => false);
+
+	state.auth = await client.auth.whoami({ cached: true }).then(res => res.data || null);
 });
 
-const openDeck = (id: string) => {
+const playDeck = (id: string) => {
 	router.push(`/play/deck/${id}`);
 };
-
-const closeCollection = () => {
-	router.push('/collections');
-};
-
-const lang = useLanguage();
 
 const toggleStar = async () => {
 
@@ -99,12 +98,60 @@ const toggleStar = async () => {
 	}
 };
 
+const openMetadataEditor = () => {
+	router.push(`/collection/${state.data!.id}/edit`);
+};
+
+const openNewDeckEditor = () => {
+	router.push(`/decks/editor?collection_id=${state.data!.id}`);
+};
+
+const openDeckEditor = (id: string) => {
+	router.push(`/decks/editor/${id}`);
+};
+
+const deleteDeck = async (deckID: string) => {
+
+	if (!state.data) {
+		throw new Error('Invalid state');
+	}
+
+	if (!confirm('Delete deck?')) {
+		return;
+	}
+
+	const { error } = await client.decks.remove(deckID);
+	if (error) {
+		console.error('Unable to delete collection deck:', error.message);
+		return;
+	}
+
+	state.data.decks = state.data.decks?.filter(item => item.id !== deckID) || null;
+};
+
+const visibilityIcons = {
+	'PUBLIC': 'world',
+	'HIDDEN': 'link',
+	'PRIVATE': 'lock',
+} as const;
+
+const fmtDate = (date: string) => new Date(date).toLocaleDateString('en-UK', {
+	year: 'numeric',
+	month: 'numeric',
+	day: 'numeric',
+	hour: 'numeric',
+	minute: 'numeric',
+	second: 'numeric',
+});
+
+const capitalize = (text: string) => text.slice(0, 1).toUpperCase() + text.slice(1).toLowerCase();
+
 </script>
 
 <template>
 	<AppUI>
 
-		<AppUiHeader backHref="/collections" :starrable="true" :starred="state.starred" @toggleStar="toggleStar">
+		<AppUiHeader :backHref="backRef" :starrable="true" :starred="state.starred" @toggleStar="toggleStar">
 
 			<template v-slot:title>
 
@@ -146,6 +193,35 @@ const toggleStar = async () => {
 
 			</template>
 
+			<template v-if="state.data" v-slot:badges>
+
+				<div class="badges-row">
+
+					<ContentEntryBadge :icon="visibilityIcons[state.data.visibility]">
+						{{ capitalize(state.data.visibility) }}
+					</ContentEntryBadge>
+
+					<ContentEntryBadge icon="clock">
+						{{ fmtDate(state.data.updated) }}
+					</ContentEntryBadge>
+
+					<ContentEntryBadge icon="decks">
+						{{ state.data?.size.toFixed(0) }}
+					</ContentEntryBadge>
+
+				</div>
+
+			</template>
+
+			<template v-if="state.data && state.auth?.actor?.permissions.team_member" v-slot:actions>
+				<GenericButton variant="thin" theme="green" @click="openNewDeckEditor">
+					+ Add deck
+				</GenericButton>
+				<GenericButton variant="thin" theme="orange" @click="openMetadataEditor">
+					Manage
+				</GenericButton>
+			</template>
+
 		</AppUiHeader>
 
 		<ContentList v-if="state.data && state.data.decks.length">
@@ -156,7 +232,11 @@ const toggleStar = async () => {
 				:cardCount="item.size"
 				:starred="item.starred"
 				:score="item.score"
-				@click="openDeck(item.id)" />
+				:editable="state.auth?.actor?.permissions.content_edit"
+				:playable="true"
+				@click="playDeck(item.id)"
+				@edit="openDeckEditor(item.id)"
+				@delete="deleteDeck(item.id)" />
 		</ContentList>
 
 		<CentralMessage v-else>
@@ -194,20 +274,16 @@ const toggleStar = async () => {
 			</p>
 			
 		</CentralMessage>
-
-		<CollectionBreak />
-
-		<CollectionEndlistAction>
-
-			<GenericButton @click="closeCollection">
-				{{ intl(lang, {
-					en: 'Back to the list',
-					de: 'Zurück zur Liste',
-					uk: 'Назад до списку'
-				}) }}
-			</GenericButton>
-
-		</CollectionEndlistAction>
 	
 	</AppUI>
 </template>
+
+<style lang="scss" scoped>
+	.badges-row {
+		display: flex;
+		flex-flow: row wrap;
+		font-size: 0.75rem;
+		gap: 1em;
+		align-items: center;
+	}
+</style>

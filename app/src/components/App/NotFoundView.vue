@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import GenericButton from '../App/GenericButton.vue';
-import AppUI from '../App/AppUI.vue';
-import FullscreenMessage from './FullscreenMessage.vue';
+import GenericButton from './Inputs/GenericButton.vue';
+import AppUI from './Layout/AppUI.vue';
+import FullscreenMessage from './Messages/FullscreenMessage.vue';
 
 const router = useRouter();
 

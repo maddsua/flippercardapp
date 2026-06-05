@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { AuthActor } from '../../api_models';
-import GenericButton from '../App/GenericButton.vue';
+import GenericButton from '../App/Inputs/GenericButton.vue';
 
 const props = defineProps<{
 	actor: AuthActor;

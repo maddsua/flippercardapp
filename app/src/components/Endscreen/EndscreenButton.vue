@@ -18,7 +18,7 @@ const props = defineProps<{
 
 <style lang="scss" scoped>
 
-	@use '../../media.scss';
+	@use '@/media.scss';
 
 	button {
 		display: flex;

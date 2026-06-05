@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import AppUI from '../App/AppUI.vue';
+import AppUI from '../App/Layout/AppUI.vue';
 </script>
 
 <template>

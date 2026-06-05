@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, watch } from 'vue';
 import type { CardImageNode } from '../../content';
-import LoadingMessage from '../App/LoadingMessage.vue';
+import LoadingMessage from '../App/Messages/LoadingMessage.vue';
 
 const props = defineProps<{
 	entry: CardImageNode;
