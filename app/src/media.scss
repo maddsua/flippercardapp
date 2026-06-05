@@ -12,3 +12,9 @@
 		@content;
 	}
 };
+
+@mixin phone {
+	@media (orientation: portrait) and (max-width: 720px) {
+		@content;
+	}
+};

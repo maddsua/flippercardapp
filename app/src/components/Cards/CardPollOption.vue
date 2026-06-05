@@ -62,6 +62,10 @@ const applyStyles = computed((): CSSProperties => ({
 		border: none;
 		transition: color, background-color, transform 150ms ease;
 
+		@include media.phone {
+			padding: 0.75em 1.25em;
+		}
+
 		@include media.non-sticky-hover {
 			transform: scale(1.025);
 			background-color: var(--app-theme-deep-lavender);
