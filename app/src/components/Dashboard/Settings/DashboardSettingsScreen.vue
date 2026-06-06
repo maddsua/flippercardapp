@@ -12,7 +12,7 @@ const lang = useLanguage();
 
 <template>
 
-	<AppUiHeader>
+	<AppUiHeader backHref="/">
 		<template v-slot:title>
 			{{ intl(lang, {
 				en: 'Dashboard',
