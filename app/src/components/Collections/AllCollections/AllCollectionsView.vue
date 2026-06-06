@@ -75,7 +75,7 @@ const openCollection = async (id: string) => {
 			{{ state.page.error }}
 		</InlineErrorMessage>
 
-		<LoadingMessage v-else-if="!state.page.entries">
+		<LoadingMessage v-else-if="!state.page.ready">
 			{{ intl(lang, {
 				en: 'Loading collection...',
 				uk: 'Завантажуємо колекції...',
@@ -83,25 +83,33 @@ const openCollection = async (id: string) => {
 			}) }}
 		</LoadingMessage>
 
-		<ContentList v-else-if="state.page.entries.length">
-			<ContentListEntry v-for="item of state.page.entries"
-				:title="item.name"
-				:summary="item.description"
-				:visibility="item.visibility"
-				:deckCount="item.size"
-				@click="openCollection(item.id)" />
-		</ContentList>
-
-		<div v-else-if="state.page.has_next" class="actions">
-			<GenericButton theme="green" variant="thin" @click="loadMore">
-				Load more
-			</GenericButton>
-		</div>
-
 		<template v-else>
-			<CentralMessage>
-				No collections yet
-			</CentralMessage>
+
+			<template v-if="state.page.entries.length">
+
+				<ContentList>
+					<ContentListEntry v-for="item of state.page.entries"
+						:title="item.name"
+						:summary="item.description"
+						:visibility="item.visibility"
+						:deckCount="item.size"
+						@click="openCollection(item.id)" />
+				</ContentList>
+
+				<div v-if="state.page.has_next" class="actions">
+					<GenericButton theme="green" variant="thin" @click="loadMore">
+						Load more
+					</GenericButton>
+				</div>
+
+			</template>
+
+			<template v-else>
+				<CentralMessage>
+					No collections yet
+				</CentralMessage>
+			</template>
+
 		</template>
 
 	</AppUI>
