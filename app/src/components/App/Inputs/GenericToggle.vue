@@ -33,6 +33,8 @@ const model = defineModel<boolean>();
 	align-items: center;
 	padding: 0.25rem;
 	cursor: pointer;
+	width: fit-content;
+	max-width: 100%;
 
 	.toggle {
 		width: 2.85rem;
