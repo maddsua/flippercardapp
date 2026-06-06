@@ -45,6 +45,7 @@ const model = defineModel<boolean>();
 		position: relative;
 		padding: 0.25rem;
 		transition: all 200ms ease;
+		flex-shrink: 0;
 
 		&::after {
 			content: "";
