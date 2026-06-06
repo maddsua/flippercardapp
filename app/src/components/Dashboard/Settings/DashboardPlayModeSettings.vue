@@ -19,11 +19,13 @@ watch(() => state.showNavigation, async (value) => {
 
 <template>
 	<div class="preferences-group">
-		<GenericToggle v-model="state.showNavigation" :label="intl(lang, {
-			en: 'Show navigation buttons in Play Mode',
-			de: 'Navigationsschaltflächen im Spielmodus anzeigen',
-			uk: 'Показувати кнопки навігації в режимі гри'
-		})" />
+		<GenericToggle v-model="state.showNavigation">
+			{{ intl(lang, {
+				en: 'Show navigation buttons in Play Mode',
+				de: 'Navigationsschaltflächen im Spielmodus anzeigen',
+				uk: 'Показувати кнопки навігації в режимі гри'
+			}) }}
+		</GenericToggle>
 	</div>
 </template>
 

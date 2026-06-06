@@ -15,8 +15,10 @@ const model = defineModel<boolean>();
 
 		<div class="toggle" :class="{ active: model }"></div>
 
-		<span v-if="label" class="label-text">
-			{{ label }}
+		<span v-if="label || $slots.default" class="label-text">
+			<slot>
+				{{ label }}
+			</slot>
 		</span>
 
 	</div>
