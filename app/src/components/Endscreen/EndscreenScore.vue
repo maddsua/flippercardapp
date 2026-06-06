@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue';
+import { useLanguage, intl } from '@/intl';
 
 const props = defineProps<{
 	rate: number;
 }>();
+
+const lang = useLanguage();
 
 const percentage = computed(() => props.rate > 1 ? 100 : props.rate < 0 ? 0 : props.rate * 100);
 
@@ -13,7 +16,11 @@ const percentage = computed(() => props.rate > 1 ? 100 : props.rate < 0 ? 0 : pr
 	<div class="endscreen-score">
 		<div class="labels">
 			<div class="title">
-				Your score
+				{{ intl(lang, {
+					en: 'Your score',
+					de: 'Deine Punktzahl',
+					uk: 'Результат'
+				}) }}
 			</div>
 			<div class="score">
 				{{ Math.floor(percentage) }}%

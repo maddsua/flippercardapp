@@ -28,6 +28,9 @@ const props = defineProps<{
 </template>
 
 <style lang="scss" scoped>
+
+	@use '@/media.scss';
+
 	.endscreen-stat-tile {
 		display: flex;
 		flex-direction: column;
@@ -37,12 +40,20 @@ const props = defineProps<{
 		border-radius: 0.5rem;
 		min-width: 0;
 
+		@include media.phone {
+			gap: 0.25rem;
+		}
+
 		.header {
 			display: flex;
 			flex-flow: row nowrap;
 			gap: 0.5rem;
 			align-items: center;
 			min-width: 0;
+
+			@include media.phone {
+				gap: 0.25rem;
+			}
 
 			.icon {
 				display: block;

@@ -10,7 +10,7 @@ const lang = useLanguage();
 			<h1>
 				{{ intl(lang, {
 					en: 'Deck complete!',
-					de: 'Deck fertig!',
+					de: 'Spiel fertig!',
 					uk: 'Фініш!'
 				}) }}
 			</h1>
@@ -22,11 +22,18 @@ const lang = useLanguage();
 </template>
 
 <style lang="scss" scoped>
+
+	@use '@/media.scss';
+
 	header {
 		display: flex;
 		flex-direction: column;
 		gap: 3rem;
 		align-items: center;
+
+		@include media.phone {
+			gap: 1.5rem;
+		}
 
 		.prize-icon {
 			display: block;
@@ -52,24 +59,36 @@ const lang = useLanguage();
 			display: flex;
 			flex-direction: column;
 			gap: 2rem;
-			align-items: center;
+
+			@include media.phone {
+				gap: 1.25rem;
+			}
 		}
 
 		h1, h2 {
-			line-height: 1rem;
+			line-height: 1.25em;
 			margin: 0;
 			padding: 0;
 			font-weight: 500;
+			text-align: center;
 		}
 
 		h1 {
 			font-size: 2.25rem;
 			color: var(--app-theme-snow-white);
+
+			@include media.phone {
+				font-size: 2rem;
+			}
 		}
 
 		h2 {
 			font-size: 1.75rem;
 			color: var(--app-theme-deep-lavender);
+
+			@include media.phone {
+				font-size: 1.25rem;
+			}
 		}
 	}
 </style>
