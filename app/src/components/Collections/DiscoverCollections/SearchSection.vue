@@ -98,7 +98,11 @@ const handleSearchInput = (value?: string) => {
 
 		<InlineErrorMessage v-if="state.error">
 			<template v-slot:title>
-				Failed to search for collections
+				{{ intl(lang, {
+					en: 'Failed to search for collections',
+					de: 'Suchmaschine Fehler',
+					uk: 'Помилка пошуку',
+				}) }}
 			</template>
 			{{ state.error }}
 		</InlineErrorMessage>
@@ -129,7 +133,11 @@ const handleSearchInput = (value?: string) => {
 					{{ state.data.length }} result(s)
 				</template>
 				<template v-else-if="!state.prompted">
-					Thinking about anything special?
+					{{ intl(lang, {
+						en: 'Thinking about anything special?',
+						de: 'Wonach suchen wir?',
+						uk: 'Що шукаємо?',
+					}) }}
 				</template>
 				<template v-else>
 					{{ intl(lang, {

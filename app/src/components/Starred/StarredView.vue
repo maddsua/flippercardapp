@@ -65,7 +65,7 @@ const openDeck = (id: string) => {
 				{{ intl(lang, {
 					en: 'Starred cards',
 					de: 'Markierte Karten',
-					uk: 'Фаворити',
+					uk: 'Збережені',
 				}) }}
 			</template>
 		</AppUiHeader>
@@ -89,7 +89,7 @@ const openDeck = (id: string) => {
 					{{ intl(lang, {
 						en: 'Unable to display content',
 						de: 'Inhalt kann nicht angezeigt werden',
-						uk: 'Не вдається відобразити вміст'
+						uk: 'Не вдається відобразити картки'
 					}) }}
 				</template>
 				

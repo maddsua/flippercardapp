@@ -8,9 +8,11 @@ import GenericButton from '@/components/App/Inputs/GenericButton.vue';
 import InputGroup from '@/components/App/Inputs/InputGroup.vue';
 import GenericInput from '@/components/App/Inputs/GenericInput.vue';
 import type { AuthSession } from '@/api_models';
+import { useLanguage, intl } from '@/intl';
 
 const client = useClient();
 const router = useRouter();
+const lang = useLanguage();
 
 const state = reactive({
 	inputs: {
@@ -77,7 +79,11 @@ const checkCredentials = async () => {
 
 	<AppUiHeader :backHref="backHref">
 		<template v-slot:title>
-			Sign in
+			{{ intl(lang, {
+				en: 'Account',
+				de: 'Konto',
+				uk: 'Обліковий запис'
+			}) }}
 		</template>
 	</AppUiHeader>
 
@@ -87,17 +93,24 @@ const checkCredentials = async () => {
 	
 			<div class="header">
 				<div class="message-title">
-					Account sign-in
+					{{ intl(lang, {
+						en: 'Account sign-in',
+						de: 'Anmeldung am Konto',
+						uk: 'Вхід в обліковий запис'
+					}) }}
 				</div>
 			</div>
 	
 			<InputGroup>
-	
 				<GenericInput type="text" placeholder="Username" v-model="state.inputs.username" />
 				<GenericInput type="password" placeholder="Password" v-model="state.inputs.password" />
-	
-				<GenericButton variant="wide" :disabled="state.busy || !valid" :spinner="state.busy" @click="signin">Sign in</GenericButton>
-	
+				<GenericButton variant="wide" :disabled="state.busy || !valid" :spinner="state.busy" @click="signin">
+					{{ intl(lang, {
+						en: 'Sign in',
+						de: 'Anmelden',
+						uk: 'Увійти'
+					}) }}
+				</GenericButton>
 			</InputGroup>
 
 			<div v-if="state.session || state.error" class="status-messages">
@@ -105,7 +118,11 @@ const checkCredentials = async () => {
 				<InlineErrorMessage v-if="state.error">
 
 					<template v-slot:title>
-						Sign-in error
+						{{ intl(lang, {
+							en: 'Sign-in error',
+							de: 'Anmeldefehler',
+							uk: 'Помилка входу'
+						}) }}
 					</template>
 
 					{{ state.error }}
@@ -113,7 +130,11 @@ const checkCredentials = async () => {
 				</InlineErrorMessage>
 
 				<div v-if="state.session" class="suceess-message">
-					Signed in successfully!
+					{{ intl(lang, {
+						en: 'Signed in successfully!',
+						de: 'Erfolgreich angemeldet!',
+						uk: 'Вхід виконано!'
+					}) }}
 				</div>
 
 			</div>

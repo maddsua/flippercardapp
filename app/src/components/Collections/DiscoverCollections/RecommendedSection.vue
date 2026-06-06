@@ -56,21 +56,29 @@ onMounted(async () => {
 	<div class="recommended-section">
 
 		<div class="section-header">
-			Recommended collections
+			{{ intl(lang, {
+				en: 'Recommended collections',
+				de: 'Empfohlene Kollektionen',
+				uk: 'Рекомендації'
+			}) }}
 		</div>
 
 		<InlineErrorMessage v-if="state.error">
 			<template v-slot:title>
-				Failed to search for collections
+				{{ intl(lang, {
+					en: 'Unable to load data',
+					de: 'Daten können nicht geladen werden',
+					uk: 'Не вдалося завантажити дані'
+				}) }}
 			</template>
 			{{ state.error }}
 		</InlineErrorMessage>
 
 		<LoadingMessage v-else-if="!state.data">
 			{{ intl(lang, {
-				en: 'Loading recommended...',
-				uk: 'Завантажуємо рекомендовані...',
-				de: 'Empfehlungen lädt...'
+				en: 'Loading recommendations...',
+				de: 'Empfehlungen werden geladen...',
+				uk: 'Завантажуємо рекомендації...'
 			}) }}
 		</LoadingMessage>
 
@@ -88,7 +96,11 @@ onMounted(async () => {
 
 		<template v-else>
 			<CentralMessage>
-				Nothing to recommend yet
+				{{ intl(lang, {
+					en: 'Nothing to recommend yet',
+					de: 'Noch nichts zu empfehlen',
+					uk: 'Немає доступних рекомендацій'
+				}) }}
 			</CentralMessage>
 		</template>
 

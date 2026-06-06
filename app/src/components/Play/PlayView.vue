@@ -11,11 +11,13 @@ import { useClient } from '../../api';
 import { useStorage } from '../../storage/storage';
 import OverlayErrorMessage from '../App/Messages/OverlayErrorMessage.vue';
 import GenericButton from '../App/Inputs/GenericButton.vue';
+import { useLanguage, intl } from '@/intl';
 
 const router = useRouter();
 const route = useRoute();
 const client = useClient();
 const store = useStorage();
+const lang = useLanguage();
 
 interface RoundState {
 	startTime: Date;
@@ -163,7 +165,11 @@ const exitView = () => {
 
 		<OverlayErrorMessage v-if="state.error" :backHref="backHref">
 
-			Unable to load deck
+			{{ intl(lang, {
+				en: 'Unable to load deck',
+				de: 'Datei konnten nicht geladen werden',
+				uk: 'Не вдалося завантажити картки'
+			}) }}
 
 			<template v-slot:details>
 				{{ state.error }}
@@ -171,7 +177,11 @@ const exitView = () => {
 
 			<template v-slot:after>
 				<GenericButton variant="thin" @click="exitView">
-					Go back
+					{{ intl(lang, {
+						en: 'Go back',
+						de: 'Zurück',
+						uk: 'Назад'
+					}) }}
 				</GenericButton>
 			</template>
 
@@ -179,7 +189,11 @@ const exitView = () => {
 
 		<FullscreenMessage v-else-if="!cards?.length">
 			<LoadingMessage>
-				Loading cards...
+				{{ intl(lang, {
+					en: 'Loading cards...',
+					de: 'Datei lädt...',
+					uk: 'Завантаження...'
+				}) }}
 			</LoadingMessage>
 		</FullscreenMessage>
 

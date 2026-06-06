@@ -4,6 +4,9 @@ import DashboardMenuSection from '../DashboardMenuSection.vue';
 import DashboardLanguageSettings from './DashboardLanguageSettings.vue';
 import DashboardPlayModeSettings from './DashboardPlayModeSettings.vue';
 import DashboardAccountSettings from './DashboardAccountSettings.vue';
+import { useLanguage, intl } from '@/intl';
+
+const lang = useLanguage();
 
 </script>
 
@@ -11,14 +14,22 @@ import DashboardAccountSettings from './DashboardAccountSettings.vue';
 
 	<AppUiHeader>
 		<template v-slot:title>
-			Dashboard
+			{{ intl(lang, {
+				en: 'Dashboard',
+				de: 'Einstellungen',
+				uk: 'Налаштування'
+			}) }}
 		</template>
 	</AppUiHeader>
 
 	<DashboardMenuSection>
 
 		<template v-slot:title>
-			App language
+			{{ intl(lang, {
+				en: 'App language',
+				de: 'Sprache der App',
+				uk: 'Мова застосунку'
+			}) }}
 		</template>
 
 		<template v-slot:content>
@@ -30,7 +41,11 @@ import DashboardAccountSettings from './DashboardAccountSettings.vue';
 	<DashboardMenuSection>
 
 		<template v-slot:title>
-			Play mode
+			{{ intl(lang, {
+				en: 'Play mode',
+				de: 'Spielmodus',
+				uk: 'Режим гри'
+			}) }}
 		</template>
 
 		<template v-slot:content>
@@ -42,7 +57,11 @@ import DashboardAccountSettings from './DashboardAccountSettings.vue';
 	<DashboardMenuSection>
 
 		<template v-slot:title>
-			Account
+			{{ intl(lang, {
+				en: 'Account',
+				de: 'Konto',
+				uk: 'Акаунт'
+			}) }}
 		</template>
 
 		<template v-slot:content>
@@ -54,7 +73,11 @@ import DashboardAccountSettings from './DashboardAccountSettings.vue';
 	<DashboardMenuSection>
 
 		<template v-slot:title>
-			App info
+			{{ intl(lang, {
+				en: 'App info',
+				de: 'Angaben der App',
+				uk: 'Інформація про застосунок'
+			}) }}
 		</template>
 
 		<template v-slot:content>

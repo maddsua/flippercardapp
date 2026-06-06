@@ -4,11 +4,13 @@ import type { AuthActor } from '@/api_models';
 import GenericButton from '@/components/App/Inputs/GenericButton.vue';
 import InlineErrorMessage from '@/components/App/Messages/InlineErrorMessage.vue';
 import LoadingMessage from '@/components/App/Messages/LoadingMessage.vue';
+import { useLanguage, intl } from '@/intl';
 import { computed, onMounted, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 
 const client = useClient();
 const router = useRouter();
+const lang = useLanguage();
 
 const state = reactive({
 	actor: null as AuthActor | null,
@@ -76,10 +78,21 @@ const signout = async () => {
 			<div v-if="state.actor" class="session-info">
 				<div class="actor-id">
 					<div class="summary">
-						Authorized as <span class="username">{{ state.actor.name }}</span>
+						<span>
+							{{ intl(lang, {
+								en: 'Authorized as',
+								de: 'Angemeldet als',
+								uk: 'Авторизовані як'
+							}) }}
+						</span>
+						<span class="username">{{ state.actor.name }}</span>
 					</div>
 					<GenericButton theme="orange" variant="thin" @click="signout">
-						Sign out?
+						{{ intl(lang, {
+							en: 'Sign out?',
+							de: 'Abmelden?',
+							uk: 'Вийти?'
+						}) }}
 					</GenericButton>
 				</div>
 				<div class="actor-permissions">
@@ -92,11 +105,19 @@ const signout = async () => {
 			<div v-else class="signin-prompt">
 				
 				<div class="status-message">
-					Not signed in
+					{{ intl(lang, {
+						en: 'Not signed in',
+						de: 'Nicht angemeldet',
+						uk: 'Ви не авторизовані'
+					}) }}
 				</div>
 
 				<GenericButton variant="thin" @click="signin">
-					Sign in
+					{{ intl(lang, {
+						en: 'Sign in',
+						de: 'Anmelden',
+						uk: 'Авторизуватися'
+					}) }}
 				</GenericButton>
 			</div>
 

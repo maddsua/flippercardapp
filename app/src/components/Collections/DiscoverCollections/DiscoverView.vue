@@ -56,7 +56,11 @@ const openFullList = () => {
 			</template>
 
 			<template v-slot:summary>
-				Dicover new content
+				{{ intl(lang, {
+					en: 'Get new stuff to exercise with',
+					de: 'Hol dir neue Material fürs Training',
+					uk: 'Знаходь нові штуки для тренувань',
+				}) }}
 			</template>
 
 			<template v-slot:actions>
@@ -64,7 +68,11 @@ const openFullList = () => {
 					+ Add collection
 				</GenericButton>
 				<GenericButton variant="thin" @click="openFullList">
-					Show all
+					{{ intl(lang, {
+						en: 'Show all',
+						de: 'Alle anzeigen',
+						uk: 'Показати всі',
+					}) }}
 				</GenericButton>
 			</template>
 		</AppUiHeader>

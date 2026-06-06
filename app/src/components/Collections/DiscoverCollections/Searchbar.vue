@@ -8,7 +8,8 @@ const lang = useLanguage();
 
 const placehoder = computed(() => intl(lang, {
 	en: 'Name, topic or a keyword',
-	de: 'Name, Thema oder ein Schlüsselwort'
+	de: 'Name, Thema oder ein Schlüsselwort',
+	uk: 'Назва, тема або ключове слово'
 }));
 
 const captureInput = (event: InputEvent) => {

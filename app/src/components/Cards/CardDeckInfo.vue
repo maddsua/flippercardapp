@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useLanguage, intl } from '@/intl';
 
 const props = defineProps<{
 	labels: string[]
@@ -11,6 +12,8 @@ const emit = defineEmits<{
 	(e: 'exit'): void;
 	(e: 'toggleMarked'): void;
 }>();
+
+const lang = useLanguage();
 
 </script>
 
@@ -41,10 +44,18 @@ const emit = defineEmits<{
 			<div class="actions">
 				<button type="button" class="labeled save" :class="{ active: isMarked }" @click="emit('toggleMarked')">
 					<template v-if="isMarked">
-						Unmark
+						{{ intl(lang, {
+							en: 'Unmark',
+							de: 'Markiert',
+							uk: 'Збережено'
+						}) }}
 					</template>
 					<template v-else>
-						Mark
+						{{ intl(lang, {
+							en: 'Mark',
+							de: 'Markieren',
+							uk: 'Зберігти'
+						}) }}
 					</template>
 				</button>
 			</div>
