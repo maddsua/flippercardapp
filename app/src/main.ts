@@ -31,17 +31,22 @@ const routes = [
 		},
 	},
 	{
-		path: '/collections',
+		path: '/collections/discover',
 		component: DiscoverView,
 		meta: {
 			app_view: 'discover'
 		},
 	},
 	{
-		path: '/collections/discover',
-		component: DiscoverView,
-		meta: {
-			app_view: 'discover'
+		path: '/collections',
+		redirect: () => {
+			return { path: '/collections/discover' };
+		},
+	},
+	{
+		path: '/discover',
+		redirect: () => {
+			return { path: '/collections/discover' };
 		},
 	},
 	{
