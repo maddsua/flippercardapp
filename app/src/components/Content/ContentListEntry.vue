@@ -29,20 +29,22 @@ const emit = defineEmits<{
 	<div class="content-list-entry" :class="{ editable }">
 
 		<div v-if="editable" class="editor-actions">
-			<GenericButton variant="thin" theme="green" @click="emit('click')">
-				<template v-if="playable">
-					Play
-				</template>
-				<template v-else>
-					Inspect
-				</template>
-			</GenericButton>
-			<GenericButton variant="thin" @click="emit('edit')">
-				Edit
-			</GenericButton>
-			<GenericButton variant="thin" theme="red" @click="emit('delete')">
-				Delete
-			</GenericButton>
+			<div class="actions-row">
+				<GenericButton variant="thin" theme="green" @click="emit('click')">
+					<template v-if="playable">
+						Play
+					</template>
+					<template v-else>
+						Inspect
+					</template>
+				</GenericButton>
+				<GenericButton variant="thin" @click="emit('edit')">
+					Edit
+				</GenericButton>
+				<GenericButton variant="thin" theme="red" @click="emit('delete')">
+					Delete
+				</GenericButton>
+			</div>
 		</div>
 
 		<button type="button" class="primary-action" @click="emit('click')">
@@ -99,6 +101,7 @@ const emit = defineEmits<{
 		position: relative;
 		border-radius: 1rem;
 		overflow: hidden;
+		user-select: none;
 
 		.editor-actions {
 			position: absolute;
@@ -107,15 +110,20 @@ const emit = defineEmits<{
 			right: 0;
 			bottom: 0;
 			z-index: 2;
-			background-color: rgba(0, 0, 0, 0.4);
-			display: flex;
-			flex-flow: row nowrap;
-			align-items: center;
-			justify-content: end;
-			gap: 1rem;
 			padding: 1rem;
+			background-color: rgba(0, 0, 0, 0.4);
 			opacity: 0;
-			transition: all 150ms ease;
+			
+			.actions-row {
+				display: flex;
+				flex-flow: row nowrap;
+				align-items: center;
+				justify-content: end;
+				gap: 1rem;
+				transition: all 150ms ease;
+				width: 100%;
+				height: 100%;
+			}
 		}
 
 		.primary-action {
@@ -143,14 +151,31 @@ const emit = defineEmits<{
 			}
 		}
 
-		&.editable:hover {
+		&.editable {
+
 			.primary-action {
 				pointer-events: none;
-				filter: blur(2px);
-				opacity: 0.75;
 			}
-			.editor-actions {
-				opacity: 1;
+
+			@media (orientation: portrait) {
+				.actions-row {
+					visibility: collapse;
+				}
+
+				&:hover .actions-row {
+					visibility: unset;
+				}
+			}
+			
+			&:hover {
+				.primary-action {
+					pointer-events: none;
+					filter: blur(2px);
+					opacity: 0.75;
+				}
+				.editor-actions {
+					opacity: 1;
+				}
 			}
 		}
 	}
