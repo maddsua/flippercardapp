@@ -1,3 +1,8 @@
+arg APP_VERSION="development"
+arg APP_BUILD_TS="unknown"
+
+# build app frontend
+
 from node:22-alpine3.22 as app-builder
 
 workdir /app
@@ -5,7 +10,17 @@ workdir /app
 copy ./app .
 
 run npm i
+
+arg APP_VERSION
+arg APP_BUILD_TS
+
+env VITE_APP_VERSION=${APP_VERSION}
+env VITE_APP_BUILD_TS=${APP_BUILD_TS}
+env VITE_APP_PLATFORM="docker-containerized"
+
 run npm run build
+
+# build backend service
 
 from golang:1.26.3-alpine as svc-builder
 
@@ -17,8 +32,8 @@ copy --from=app-builder /app/dist /app/cmd/service/web/dist
 
 run apk add --no-cache make build-base libwebp-dev
 
-arg APP_VERSION="development"
-arg APP_BUILD_TS="unknown"
+arg APP_VERSION
+arg APP_BUILD_TS
 
 env CGO_ENABLED=1
 

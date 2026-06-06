@@ -12,6 +12,10 @@ import type {
 	SignInParams,
 } from "./api_models";
 
+declare let window: Window & {
+	appAPIClient?: ApiClient;
+};
+
 export interface Result <T> {
 	data: T | null;
 	error: Error | null;

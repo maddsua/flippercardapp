@@ -1,6 +1,10 @@
 import type { DeckPlayStats } from "@/play";
 import { GenericKVStore } from "./kv";
 
+declare let window: Window & {
+	appUserDB?: IDBDatabase;
+};
+
 interface dbOpenOptions {
 	onUpgrade?: (db: IDBDatabase, event: IDBVersionChangeEvent) => void;
 };

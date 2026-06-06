@@ -1,10 +1,11 @@
 /// <reference types="vite/client" />
 
-import type { ApiClient } from "./api";
+interface ImportMeta {
+    readonly env: ImportMetaEnv
+}
 
-declare global {
-    interface Window {
-        appAPIClient?: ApiClient;
-        appUserDB?: IDBDatabase;
-    }
+interface ImportMetaEnv {
+    readonly VITE_APP_VERSION?: string
+    readonly VITE_APP_BUILD_TS?: string
+    readonly VITE_APP_PLATFORM?: string;
 }

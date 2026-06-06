@@ -4,6 +4,7 @@ import DashboardMenuSection from '../DashboardMenuSection.vue';
 import DashboardLanguageSettings from './DashboardLanguageSettings.vue';
 import DashboardPlayModeSettings from './DashboardPlayModeSettings.vue';
 import DashboardAccountSettings from './DashboardAccountSettings.vue';
+import DashboardAppInfo from './DashboardAppInfo.vue';
 import { useLanguage, intl } from '@/intl';
 
 const lang = useLanguage();
@@ -81,17 +82,9 @@ const lang = useLanguage();
 		</template>
 
 		<template v-slot:content>
-			<p class="service-notice">
-				Designed by maddsua. Provided by MWS via Railway Corp.
-			</p>
+			<DashboardAppInfo />
 		</template>
 
 	</DashboardMenuSection>
 
 </template>
-
-<style lang="scss" scoped>
-	.service-notice {
-		font-size: 0.75rem;
-	}
-</style>
