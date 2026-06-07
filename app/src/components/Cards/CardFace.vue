@@ -14,21 +14,19 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-	(e: 'flip'): void;
-	(e: 'next'): void;
-	(e: 'score', score: number): void;
+	(e: 'pollScore', score: number, final?: boolean): void;
 }>();
 
 const canvasStyle = computed((): CSSProperties => ({
 	color: props.entry.theme?.card?.mask_color
 }));
 
-const canvasClasses = computed(() => ({
+const faceClasses = computed(() => ({
 	[`decoration-${props.decoration}`]: !!props.decoration,
 	backface: props.is3dBackface,
 }));
 
-const contentStyle = computed((): CSSProperties => {
+const faceStyle = computed((): CSSProperties => {
 
 	const { card } = props.entry.theme || {};
 
@@ -42,9 +40,9 @@ const contentStyle = computed((): CSSProperties => {
 </script>
 
 <template>
-	<div class="card-canvas" :style="canvasStyle" :class="canvasClasses">
+	<div class="card-face" :style="canvasStyle" :class="faceClasses">
 
-		<div class="card-content" :style="contentStyle">
+		<div class="card-canvas" :style="faceStyle">
 
 			<template v-for="node of entry.content">
 
@@ -66,9 +64,7 @@ const contentStyle = computed((): CSSProperties => {
 				<CardPoll v-else-if="node.type === 'poll'"
 					:entry="node"
 					:theme="entry.theme?.interactives"
-					@score="(score) => emit('score', score)"
-					@flip="emit('flip')"
-					@next="emit('next')" />
+					@score="(score, final) => emit('pollScore', score, final)" />
 
 			</template>
 		</div>
@@ -77,7 +73,7 @@ const contentStyle = computed((): CSSProperties => {
 
 <style lang="scss" scoped>
 
-	.card-canvas {
+	.card-face {
 		position: absolute;
 		top: 0;
 		bottom: 0;
@@ -119,7 +115,7 @@ const contentStyle = computed((): CSSProperties => {
 		}
 	}
 
-	.card-content {
+	.card-canvas {
 		display: flex;
 		flex-direction: column;
 		gap: 1.5em;

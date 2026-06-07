@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref } from 'vue';
 import type { CardNode } from '@/content';
-import Card from './Card.vue';
-import CardControls from './CardControls.vue';
-import CardDeckInfo from './CardDeckInfo.vue';
+import Card from '../Cards/Card.vue';
+import CardControls from '../Cards/CardControls.vue';
+import CardDeckInfo from '../Cards/CardDeckInfo.vue';
 import UIPrompt from '../App/Prompts/UIPrompt.vue';
 
 const props = defineProps<{
@@ -229,7 +229,7 @@ const handleExitPrompt = (confirmed?: boolean) => {
 </script>
 
 <template>
-	<div class="card-widget">
+	<div class="deck-screen">
 
 		<CardDeckInfo
 			:labels="labels"
@@ -239,8 +239,8 @@ const handleExitPrompt = (confirmed?: boolean) => {
 			@toggleMarked="emit('toggleMarked')"
 			@exit="triggerExit" />
 
-		<div class="card-screen-container" :class="{ noinput: state.animating }">
-			<div class="card-transition-slot" v-for="(item, idx) of cardSlots" :key="cardSlotKey(item, idx)" :class="item?.flags">
+		<div class="card-viewport" :class="{ noinput: state.animating }">
+			<div class="card-transition" v-for="(item, idx) of cardSlots" :key="cardSlotKey(item, idx)" :class="item?.flags">
 				<Card v-if="item" :key="item.card.id" :card="item.card" @score="countScore" @next="nextCard" @prev="prevCard" />
 			</div>
 		</div>
@@ -259,7 +259,7 @@ const handleExitPrompt = (confirmed?: boolean) => {
 </template>
 
 <style lang="scss" scoped>
-	.card-widget {
+	.deck-screen {
 		position: relative;
 		width: 100%;
 		height: 100%;
@@ -273,7 +273,7 @@ const handleExitPrompt = (confirmed?: boolean) => {
 			max-width: 50rem;
 		}
 
-		.card-screen-container {
+		.card-viewport {
 			position: relative;
 			width: 55vh;
 			height: 100%;
@@ -292,7 +292,7 @@ const handleExitPrompt = (confirmed?: boolean) => {
 			}
 		}
 
-		.card-transition-slot {
+		.card-transition {
 			position: absolute;
 			top: 0;
 			left: 0;

@@ -16,10 +16,13 @@ const emit = defineEmits<{
 const state = reactive({
 	flipped: false,
 	rotation: (Math.random() - 0.5) * 6,
+	shake: false,
 	animating: false,
 });
 
 const containerRef = ref<HTMLElement | null>(null);
+
+const hasBackface = computed(() => props.card.back.content.length > 0);
 
 const flip = () => {
 
@@ -27,8 +30,19 @@ const flip = () => {
 		return;
 	}
 
+	if (!hasBackface.value) {
+
+		state.animating = true;
+		setTimeout(() => state.animating = false, 500);
+
+		state.shake = true;
+		setTimeout(() => state.shake = false, 450);
+
+		return;
+	}
+
 	state.animating = true;
-	setTimeout(() => state.animating = false, 500);
+	setTimeout(() => state.animating = false, 350);
 
 	state.flipped = !state.flipped
 };
@@ -66,6 +80,7 @@ const dragging = computed(() => dragDelta.value ? Math.abs(dragDelta.value.x) + 
 const containerClasses = computed((): Record<string, boolean> => ({
 	flipped: state.flipped,
 	noinput: state.animating,
+	shake: state.shake,
 	dragging: dragging.value,
 }));
 
@@ -220,6 +235,19 @@ const handleDragDone = (event: PointerEvent) => {
 	dragState.value = null;
 };
 
+const handlePollScore = (score: number, final?: boolean) => {
+
+	if (final) {
+		if (score === 0 && hasBackface.value && !state.flipped) {
+			setTimeout(flip, 300);
+		} else {
+			setTimeout(() => emit('next'), 500);
+		}
+	}
+
+	emit('score', score);
+};
+
 </script>
 
 <template>
@@ -237,20 +265,21 @@ const handleDragDone = (event: PointerEvent) => {
 			:entry="card.front"
 			decoration="question-mark"
 			@flip="flip"
-			@score="(score) => emit('score', score)"
+			@pollScore="handlePollScore"
 			@next="emit('next')" />
 
 		<CardFace
 			:entry="card.back"
 			:is3dBackface="true"
 			@flip="flip"
-			@score="(score) => emit('score', score)"
+			@pollScore="handlePollScore"
 			@next="emit('next')" />
 
 	</div>
 </template>
 
 <style lang="scss" scoped>
+
 	.card-container {
 
 		// set fixed-ish size
@@ -270,7 +299,7 @@ const handleDragDone = (event: PointerEvent) => {
 		perspective: 50cm;
 
 		scale: 0.95;
-		transition: transform 400ms ease;
+		transition: transform 300ms ease;
 
 		&.noinput {
 			pointer-events: none;
@@ -284,6 +313,17 @@ const handleDragDone = (event: PointerEvent) => {
 			scale: 0.9;
 			transition: none;
 		}
+
+		&.shake {
+			animation: horizontal-flip-shake 300ms;
+		}
+	}
+
+	@keyframes horizontal-flip-shake {
+		0% { transform: rotateY(0deg) }
+		25% { transform: rotateY(20deg) }
+		66% { transform: rotateY(-10deg) }
+		100% { transform: rotateY(0deg) }
 	}
 	
 </style>

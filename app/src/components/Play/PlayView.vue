@@ -1,17 +1,17 @@
 <script setup lang="ts">
+import { intl, useLanguage } from '@/intl';
 import { computed, onMounted, reactive } from 'vue';
-import type { CardNode } from '../../content';
-import CardWidget from '../Cards/CardWidget.vue';
-import Endscreen from '../Endscreen/Endscreen.vue';
-import FullscreenMessage from '../App/Messages/FullscreenMessage.vue';
-import { shuffleArray } from '../../arrays';
 import { useRoute, useRouter } from 'vue-router';
-import LoadingMessage from '../App/Messages/LoadingMessage.vue';
 import { useClient } from '../../api';
+import { shuffleArray } from '../../arrays';
+import type { CardNode } from '../../content';
 import { useStorage } from '../../storage/storage';
-import OverlayErrorMessage from '../App/Messages/OverlayErrorMessage.vue';
 import GenericButton from '../App/Inputs/GenericButton.vue';
-import { useLanguage, intl } from '@/intl';
+import FullscreenMessage from '../App/Messages/FullscreenMessage.vue';
+import LoadingMessage from '../App/Messages/LoadingMessage.vue';
+import OverlayErrorMessage from '../App/Messages/OverlayErrorMessage.vue';
+import Endscreen from '../Endscreen/Endscreen.vue';
+import PlayableDeckScreen from './PlayableDeckScreen.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -199,7 +199,7 @@ const exitView = () => {
 
 		<template v-else>
 
-			<CardWidget v-if="!statsScreen"
+			<PlayableDeckScreen v-if="!statsScreen"
 				:labels="state.labels"
 				:entries="cards"
 				:isMarked="state.isMarked"

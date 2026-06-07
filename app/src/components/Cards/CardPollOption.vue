@@ -71,19 +71,20 @@ const applyStyles = computed((): CSSProperties => ({
 			background-color: var(--app-theme-deep-lavender);
 		}
 
-		&:disabled {
-			pointer-events: none;
-			filter: saturate(0);
-		}
-
 		&.answered {
 			pointer-events: none;
 			cursor: default;
 			filter: unset;
 		}
 
+		&:disabled {
+			pointer-events: none;
+			filter: saturate(0.75);
+			opacity: 0.75;
+		}
+
 		&.wrong {
-			animation: horizontal-shaking 200ms 2;
+			animation: horizontal-shake 200ms 2;
 			color: var(--app-theme-snow-white) !important;
 			background-color: var(--app-theme-blood-red) !important;
 		}
@@ -99,11 +100,12 @@ const applyStyles = computed((): CSSProperties => ({
 		}
 	}
 
-	@keyframes horizontal-shaking {
+	@keyframes horizontal-shake {
 		0% { transform: translateX(0) }
 		25% { transform: translateX(5px) }
 		50% { transform: translateX(-5px) }
 		75% { transform: translateX(5px) }
 		100% { transform: translateX(0) }
 	}
+
 </style>
