@@ -17,37 +17,41 @@ const emit = defineEmits<{
 </script>
 
 <template>
-	<div class="card-item-tile" :class="{ outline: active }">
+	<div class="card-thumbnail" :class="{ outline: active }">
+
 		<div class="controls-layer" :class="{ active: active }">
+
 			<div class="label-small">
 				{{ label ?? '?' }}
 			</div>
+
 			<div class="col label-large">
 				{{ label ?? '?' }}
 			</div>
+
 			<div v-if="showControls" class="col controls">
 				<button type="button" class="remove" title="Remove card" @click.self.stop="emit('remove')"></button>
 				<button type="button" class="duplicate" title="Remove card" @click.self.stop="emit('duplicate')"></button>
 			</div>
+
 		</div>
+
 		<div class="preview-canvas">
 			<CardFace :entry="card" />
 		</div>
+
 	</div>
 </template>
 
 <style lang="scss" scoped>
-	.card-item-tile {
+	.card-thumbnail {
 		position: relative;
-		display: flex;
-		flex-flow: column;
-		justify-content: center;
-		align-items: center;
 		height: 8rem;
 		width: 5rem;
 		border-radius: 0.25rem;
 		border: 2px solid transparent;
 		flex-shrink: 0;
+		overflow: hidden;
 
 		.preview-canvas {
 			position: relative;

@@ -8,7 +8,8 @@
 
 <style lang="scss" scoped>
 	.card-text-box {
-		display: inline-block;
+		display: block;
+		text-align: start;
 		width: 100%;
 	}
 </style>
