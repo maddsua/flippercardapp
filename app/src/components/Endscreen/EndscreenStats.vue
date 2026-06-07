@@ -15,7 +15,7 @@
 		grid-template-columns: 1fr 1fr 1fr;
 		gap: 1rem;
 
-		@include media.phone {
+		@include media.mobile {
 			gap: 0.5rem;
 		}
 	}

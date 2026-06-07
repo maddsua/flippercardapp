@@ -1,54 +1,103 @@
 <script setup lang="ts">
-import AppNavigation from './AppNavigation.vue';
+import { computed } from 'vue';
+import { useRoute } from 'vue-router';
+import AppViewButton from './AppViewButton.vue';
+
+const route = useRoute();
+const appView = computed((): string | null => typeof route.meta.app_view === 'string' ? route.meta.app_view : null);
+
 </script>
 
 <template>
-	<div class="app-ui">
-		<div class="app-viewport">
-			<div class="app-container">
+	<div class="app-viewport">
+
+		<div class="app-content-viewport">
+			<div class="app-content">
 				<slot>
 					[App content]
 				</slot>
 			</div>
-			<AppNavigation />
 		</div>
+
+		<div class="app-toolbar">
+			<div class="app-navigation">
+				<AppViewButton href="/" :active="appView === 'home'" icon="home" />
+				<AppViewButton href="/starred" :active="appView === 'starred'" icon="star" />
+				<AppViewButton href="/collections/discover" :active="appView === 'discover'" icon="search" />
+				<AppViewButton href="/dashboard" :active="appView === 'menu'" icon="menu" />
+			</div>
+		</div>
+
 	</div>
 </template>
 
 <style lang="scss" scoped>
-	.app-ui {
+
+	@use '@/media.scss';
+
+	.app-viewport {
 		position: relative;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
 		width: 100%;
 		height: 100%;
 		height: 100dvh;
+		min-height: 0;
+		overflow: hidden auto;
+		scrollbar-width: thin;
 
-		.app-viewport {
+		@include media.pwa {
+			height: 100vh;
+		}
+
+		.app-content-viewport {
+			position: relative;
 			display: flex;
-			flex-direction: column;
-			height: 100%;
+			justify-content: center;
 			width: 100%;
+			min-height: 100%;
+			padding-bottom: 6rem;
 
-			@media (orientation: landscape) {
-				max-width: 40rem;
+			.app-content {
+				position: relative;
+				display: flex;
+				flex-direction: column;
+				gap: 2.5rem;
+				width: 100%;
+				padding: 2rem 1rem;
+
+				@include media.pwa {
+					padding: 1rem;
+				}
+
+				@include media.desktop {
+					max-width: 40rem;
+				}
 			}
 		}
 
-		.app-container {
+		.app-toolbar {
+			position: fixed;
+			bottom: 0;
+			left: 0;
 			display: flex;
-			flex-direction: column;
-			gap: 2.5rem;
-			position: relative;
-			min-height: 0;
-			overflow: hidden auto;
-			scrollbar-width: thin;
-			padding: 2rem;
-			flex-grow: 1;
+			align-items: center;
+			justify-content: center;
+			width: 100%;
+			background-color: var(--app-theme-carbon);
 
-			@media (orientation: portrait) {
-				padding: 2rem 1rem;
+			.app-navigation {
+				display: flex;
+				flex-flow: row nowrap;
+				align-items: center;
+				justify-content: space-between;
+				padding: 0.5rem 1rem;
+				width: 100%;
+				flex-shrink: 0;
+				border-radius: 1rem;
+				background-color: var(--app-theme-ghostly-glow);
+
+				@include media.desktop {
+					max-width: 40rem;
+				}
 			}
 		}
 	}

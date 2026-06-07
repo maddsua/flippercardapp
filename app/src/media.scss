@@ -13,8 +13,20 @@
 	}
 };
 
-@mixin phone {
+@mixin mobile {
 	@media (orientation: portrait) and (max-width: 720px) {
+		@content;
+	}
+};
+
+@mixin desktop {
+	@media (orientation: landscape) and (min-width: 720px) {
+		@content;
+	}
+};
+
+@mixin pwa {
+	@media (display-mode: standalone) or (display-mode: fullscreen) {
 		@content;
 	}
 };

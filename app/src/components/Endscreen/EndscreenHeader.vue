@@ -31,7 +31,7 @@ const lang = useLanguage();
 		gap: 3rem;
 		align-items: center;
 
-		@include media.phone {
+		@include media.mobile {
 			gap: 1.5rem;
 		}
 
@@ -60,7 +60,7 @@ const lang = useLanguage();
 			flex-direction: column;
 			gap: 2rem;
 
-			@include media.phone {
+			@include media.mobile {
 				gap: 1.25rem;
 			}
 		}
@@ -77,7 +77,7 @@ const lang = useLanguage();
 			font-size: 2.25rem;
 			color: var(--app-theme-snow-white);
 
-			@include media.phone {
+			@include media.mobile {
 				font-size: 2rem;
 			}
 		}
@@ -86,7 +86,7 @@ const lang = useLanguage();
 			font-size: 1.75rem;
 			color: var(--app-theme-deep-lavender);
 
-			@include media.phone {
+			@include media.mobile {
 				font-size: 1.25rem;
 			}
 		}

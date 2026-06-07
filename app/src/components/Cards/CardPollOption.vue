@@ -62,7 +62,7 @@ const applyStyles = computed((): CSSProperties => ({
 		border: none;
 		transition: color, background-color, transform 150ms ease;
 
-		@include media.phone {
+		@include media.mobile {
 			padding: 0.75em 1.25em;
 		}
 

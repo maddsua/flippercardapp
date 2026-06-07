@@ -40,7 +40,7 @@ const props = defineProps<{
 		border-radius: 0.5rem;
 		min-width: 0;
 
-		@include media.phone {
+		@include media.mobile {
 			gap: 0.25rem;
 		}
 
@@ -51,7 +51,7 @@ const props = defineProps<{
 			align-items: center;
 			min-width: 0;
 
-			@include media.phone {
+			@include media.mobile {
 				gap: 0.25rem;
 			}
 
