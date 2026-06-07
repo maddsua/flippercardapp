@@ -74,7 +74,7 @@ watch(() => props.list.length, () => {
 					display: block;
 					width: 100%;
 					height: 2rem;
-					background: linear-gradient(0deg,rgba(0, 0, 0, 0) 0%, #2f2f2f 100%);
+					background: linear-gradient(0deg,rgba(0, 0, 0, 0) 0%, var(--app-theme-carbon) 100%);
 				}
 
 				&::before {
