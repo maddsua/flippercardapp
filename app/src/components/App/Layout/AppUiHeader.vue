@@ -1,10 +1,13 @@
 <script setup lang="ts">
+import { getAppInfo } from '@/app';
+import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 
 const props = defineProps<{
 	backHref?: string;
 	starrable?: boolean;
 	starred?: boolean;
+	share?: ShareData | null;
 }>();
 
 const emit = defineEmits<{
@@ -13,7 +16,10 @@ const emit = defineEmits<{
 
 const router = useRouter();
 
+const canShare = computed(() => props.share && getAppInfo().mode === 'PWA' && 'share' in navigator);
+
 const goBack = () => props.backHref ? router.push(props.backHref) : null;
+const share = () => props.share ? navigator.share(props.share) : null;
 
 </script>
 
@@ -43,8 +49,9 @@ const goBack = () => props.backHref ? router.push(props.backHref) : null;
 			</div>
 		</div>
 
-		<div v-if="starrable" class="side-actions">
-			<button type="button" class="star" :class="{ starred }" @click="emit('toggleStar')"></button>
+		<div v-if="starred || starrable || canShare" class="side-actions">
+			<button v-if="starred || starrable" type="button" class="star" :class="{ starred }" @click="emit('toggleStar')"></button>
+			<button v-if="canShare" type="button" class="share" @click="share"></button>
 		</div>
 
 	</header>
@@ -112,7 +119,7 @@ const goBack = () => props.backHref ? router.push(props.backHref) : null;
 		.side-actions {
 			display: flex;
 			flex-direction: column;
-			gap: 0.75rem;
+			gap: 1.5rem;
 			flex-shrink: 0;
 			margin-top: 0.25rem;
 
@@ -135,10 +142,16 @@ const goBack = () => props.backHref ? router.push(props.backHref) : null;
 				
 				&.star {
 					background-image: url(/src/assets/icons/star-mask.svg);
+					background-size: 1.75rem;
 				}
 				
 				&.starred {
 					background-image: url(/src/assets/icons/star-filled-mask.svg);
+					background-size: 1.75rem;
+				}
+
+				&.share {
+					background-image: url(/src/assets/icons/share-arrow-mask.svg);
 				}
 
 				&.go-back {

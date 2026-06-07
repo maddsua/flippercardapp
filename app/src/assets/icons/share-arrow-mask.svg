@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+
+<svg
+   fill="#000000"
+   width="800px"
+   height="800px"
+   viewBox="0 0 32 32"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="share-mask.svg"
+   inkscape:version="1.4 (e7c3feb100, 2024-10-09)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050"
+     inkscape:zoom="0.64924805"
+     inkscape:cx="619.94796"
+     inkscape:cy="515.21141"
+     inkscape:window-width="1920"
+     inkscape:window-height="1010"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1" />
+  <title
+     id="title1">share</title>
+  <path
+     d="m 1.3465501,24.02424 c 0,2.189296 0.4327677,4.289492 1.2983032,6.300589 0.4073108,-2.342038 1.2983032,-4.467691 2.6729772,-6.37696 1.3746741,-1.90927 3.0802878,-3.449414 5.1168415,-4.620432 2.036555,-1.171018 4.276764,-1.832899 6.720629,-1.98564 V 24.02424 L 30.711114,12.721364 17.155301,1.4184876 v 6.7588139 c -2.138382,0 -4.187664,0.4200402 -6.147848,1.2601188 C 9.0472698,10.2775 7.3671127,11.410332 5.9669822,12.835921 4.5668513,14.261509 3.434018,15.941666 2.5684825,17.876392 1.7029471,19.811118 1.2956362,21.860401 1.3465501,24.02424 Z"
+     id="path1"
+     sodipodi:nodetypes="ccsscccccsssc"
+     style="fill:#ffffff;fill-opacity:1;stroke-width:1.19329" />
+</svg>

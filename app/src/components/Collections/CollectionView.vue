@@ -34,6 +34,7 @@ interface CollectionEntry extends CollectionMetadata {
 const state = reactive({
 	data: null as CollectionEntry | null,
 	starred: false,
+	shareable: null as ShareData | null,
 	auth: null as  AuthState | null,
 	error: null as string | null,
 });
@@ -74,8 +75,13 @@ onMounted(async () => {
 		decks: deckEntries.sort((a,b) => (b.starred ? 1 : 0) - (a.starred ? 1 : 0)),
 	};
 
-	state.starred = await store.collections.starred.has(data.id).catch(() => false);
+	state.shareable = {
+		title: data.name,
+		text: data.description || undefined,
+		url: window.location.href,
+	};
 
+	state.starred = await store.collections.starred.has(data.id).catch(() => false);
 	state.auth = await client.auth.whoami({ cached: true }).then(res => res.data || null);
 });
 
@@ -151,7 +157,7 @@ const capitalize = (text: string) => text.slice(0, 1).toUpperCase() + text.slice
 <template>
 	<AppUI>
 
-		<AppUiHeader :backHref="backRef" :starrable="true" :starred="state.starred" @toggleStar="toggleStar">
+		<AppUiHeader :backHref="backRef" :starrable="true" :starred="state.starred" :share="state.shareable" @toggleStar="toggleStar">
 
 			<template v-slot:title>
 
