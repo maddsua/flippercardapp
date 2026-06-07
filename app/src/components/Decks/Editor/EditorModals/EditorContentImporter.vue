@@ -51,7 +51,7 @@ const state = reactive({
 	selectedCards: new Set<string>(),
 	options: {
 		setMetadata: {
-			enabled: false,
+			available: false,
 			value: false,
 		},
 		overwriteContent: false,
@@ -278,7 +278,7 @@ const parseBundleJSON = async (bundle: ContentBundle | null) => {
 	filterImageNodes(cards).forEach(item => item.media_url = imageUrlMap.get(item.media_id || ''));
 
 	state.content = { cards, images, meta };
-	state.options = { setMetadata: { enabled: true, value: true }, overwriteContent: true };
+	state.options = { setMetadata: { available: true, value: true }, overwriteContent: true };
 	state.source.ready = true;
 };
 
@@ -365,7 +365,7 @@ const loadFileCSV = async (file: File) => {
 	}
 
 	state.content = { cards, images: [], meta: { name: null, description: null } };
-	state.options = { setMetadata: { enabled: false, value: false }, overwriteContent: true };
+	state.options = { setMetadata: { available: false, value: false }, overwriteContent: true };
 	state.source.ready = true;
 };
 
@@ -422,7 +422,7 @@ const importData = async () => {
 		emit('addCards', selectedCards.value);
 	}
 
-	if (state.options.setMetadata.enabled) {
+	if (state.options.setMetadata.value) {
 		emit('updateMeta', state.content.meta);
 	}
 
@@ -518,7 +518,7 @@ const importData = async () => {
 
 					<GenericToggle label="Replace existing metadata"
 						v-model="state.options.setMetadata.value"
-						:disabled="!state.options.setMetadata.enabled" />
+						:disabled="!state.options.setMetadata.available" />
 
 					<GenericToggle label="Replace existing cards"
 						v-model="state.options.overwriteContent" />
