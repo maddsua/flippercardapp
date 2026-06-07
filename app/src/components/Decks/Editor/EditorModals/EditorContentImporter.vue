@@ -286,7 +286,7 @@ const loadFileCSV = async (file: File) => {
 
 	state.source.name = file.name;
 
-	const { data, errors } = parse<Partial<CardContentCSVRow>>(await file.text(), { header: true });
+	const { data, errors } = parse<Partial<CardContentCSVRow>>(await file.text(), { header: true, skipEmptyLines: true });
 	if (!data || errors.length) {
 		state.source.error = errors.at(0)?.message || 'Invalid CSV data source';
 		return;
