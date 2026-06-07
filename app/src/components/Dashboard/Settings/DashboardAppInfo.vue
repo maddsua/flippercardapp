@@ -1,37 +1,17 @@
 <script setup lang="ts">
-import appManifest from '@/../public/manifest.json';
+import { getAppInfo } from '@/app';
 import { computed } from 'vue';
 
-const appBuildTime = computed(() => {
+const info = computed(() => {
 
-	const buildTs = import.meta.env.VITE_APP_BUILD_TS;
-	if (buildTs) {
-		try {
-			return new Date(buildTs).toISOString();
-		} catch (_) {}
-	}
+	const info = getAppInfo();
 
-	return 'unknown time';
-});
-
-const appVersion = import.meta.env.VITE_APP_VERSION || 'unknown';
-const appPlatform = import.meta.env.VITE_APP_PLATFORM || 'unknown platform';
-
-const appDistribution = computed(() => {
-
-	const queries = [appManifest.display, ...appManifest.display_override];
-
-	for (const query of queries) {
-		try {
-			if (window.matchMedia(`(display-mode: ${query})`).matches) {
-				return 'PWA';
-			}
-		} catch (_) {
-			return 'Web-Limited';
-		}
-	}
-
-	return 'Web';
+	return {
+		version: info.version || 'unknown',
+		buildTime: info.buildTime?.toISOString() || 'unknown time',
+		distribution: info.mode,
+		platform: info.platform || 'unknown platform',
+	};
 });
 
 </script>
@@ -39,7 +19,7 @@ const appDistribution = computed(() => {
 <template>
 	<div class="app-info">
 		<p>
-			Version: {{ appVersion }} built at {{ appBuildTime }}; {{ appPlatform }}; distribution: {{ appDistribution }}
+			Version: {{ info.version }} built at {{ info.buildTime }}; {{ info.platform }}; distribution: {{ info.distribution }}
 		</p>
 		<p>
 			Designed by maddsua. Provided by MWS via Railway Corp.
