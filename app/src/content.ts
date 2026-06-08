@@ -266,3 +266,8 @@ export const parseTextBoxContent = (value: string): CardTextBoxElementNode[] => 
 
 	return nodes;
 };
+
+export const parseQuizOptions = (value: string): CardPollNodeOption[] => {
+	const tokens = value.split(value.includes('|') ? '|' : ',').map(item => item.trim()).filter(item => item.length);
+	return tokens.map((item, idx) => ({ is_answer: idx === 0, value: item }))
+};

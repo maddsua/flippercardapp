@@ -3,6 +3,7 @@ import { parse } from 'papaparse';
 import { computed, onMounted, onUnmounted, reactive } from 'vue';
 import { useClient } from '@/api';
 import {
+	parseQuizOptions,
 	parseTextBoxContent,
 	type CardContentCSVRow,
 	type CardImageNode,
@@ -313,7 +314,6 @@ const loadFileCSV = async (file: File) => {
 		}
 
 		if (typeof row.front_textarea === 'string' && row.front_textarea.length) {
-
 			const content = parseTextBoxContent(row.front_textarea);
 			if (content.length) {
 				next.valid = true;
@@ -322,14 +322,10 @@ const loadFileCSV = async (file: File) => {
 		}
 
 		if (typeof row.front_quiz === 'string' && row.front_quiz.length) {
-
-			const content = row.front_quiz.split(',')
-				.map(item => item.trim())
-				.filter(item => item.length).map((item, idx) => ({ is_answer: idx === 0, value: item }));
-
-			if (content.length) {
+			const options = parseQuizOptions(row.front_quiz);
+			if (options.length) {
 				next.valid = true;
-				next.front.content.push({ type: 'poll', content, is_quiz: true });
+				next.front.content.push({ type: 'poll', content: options, is_quiz: true });
 			}
 		}
 
