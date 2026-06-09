@@ -106,6 +106,12 @@ set
 where id = sqlc.arg(id)
 returning *;
 
+-- name: UpdateCollectionChildrenVisibility :execrows
+update decks
+set visibility = sqlc.arg(new_visibility)
+where visibility = sqlc.arg(old_visibility)
+	and collection_id = sqlc.arg(collection_id);
+
 -- name: CollectionSize :one
 select count(decks.id)
 from collections

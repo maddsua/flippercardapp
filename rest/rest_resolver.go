@@ -39,9 +39,9 @@ type resolver struct {
 	db *db_pkg.Wrapper
 }
 
-func (rslv *resolver) LoadCardDeck(ctx context.Context, id uuid.UUID) (*model.CardDeck, error) {
+func (rslv *resolver) LoadCardDeck(ctx context.Context, deckID uuid.UUID) (*model.CardDeck, error) {
 
-	deck, err := rslv.db.GetDeckById(ctx, id)
+	deck, err := rslv.db.GetDeckById(ctx, deckID)
 	if db_pkg.IsNull(err) {
 		return nil, &model.Error{Message: "deck not found", Code: http.StatusNotFound}
 	} else if err != nil {
@@ -202,9 +202,9 @@ func (rslv *resolver) ListCardDeckBatch(ctx context.Context, ids uuid.UUIDs, pag
 	return TransformPage(page, entries, db_pkg.TransformBatchRow[model.CardDeckMetadata, db_gen.GetDecksBatchRow]), nil
 }
 
-func (rslv *resolver) LoadCollection(ctx context.Context, id uuid.UUID) (*model.Collection, error) {
+func (rslv *resolver) LoadCollection(ctx context.Context, collectionID uuid.UUID) (*model.Collection, error) {
 
-	collection, err := rslv.db.GetCollectionById(ctx, id)
+	collection, err := rslv.db.GetCollectionById(ctx, collectionID)
 	if db_pkg.IsNull(err) {
 		return nil, &model.Error{Message: "collection not found", Code: http.StatusNotFound}
 	} else if err != nil {
@@ -375,7 +375,7 @@ func (rslv *resolver) CreateContentCollection(ctx context.Context, params model.
 	return &result, nil
 }
 
-func (rslv *resolver) UpdateContentCollection(ctx context.Context, id uuid.UUID, params model.CollectionPatch) (*model.CollectionMetadata, error) {
+func (rslv *resolver) UpdateContentCollection(ctx context.Context, collectionID uuid.UUID, params model.CollectionPatch) (*model.CollectionMetadata, error) {
 
 	if perms, err := auth.For(ctx).Permissions(); err != nil {
 		return nil, err
@@ -387,24 +387,48 @@ func (rslv *resolver) UpdateContentCollection(ctx context.Context, id uuid.UUID,
 		return nil, &model.Error{Message: fmt.Sprintf("Invalid collection details: %v", err)}
 	}
 
-	entry, err := rslv.db.UpdateCollection(ctx, db_gen.UpdateCollectionParams{
-		ID:          id,
+	tx, err := rslv.db.BeginTx(ctx)
+	if err != nil {
+		return nil, InternalError("sqlc.BeginTx", err)
+	}
+	defer tx.Rollback()
+
+	entry, err := tx.GetCollectionById(ctx, collectionID)
+	if db_pkg.IsNull(err) {
+		return nil, &model.Error{Message: "Collection not found", Code: http.StatusNotFound}
+	} else if err != nil {
+		return nil, InternalError("sqlc.GetCollectionById", err)
+	}
+
+	if entry.Visibility != params.Visibility {
+		if _, err = tx.UpdateCollectionChildrenVisibility(ctx, db_gen.UpdateCollectionChildrenVisibilityParams{
+			CollectionID:  entry.ID,
+			OldVisibility: entry.Visibility,
+			NewVisibility: params.Visibility,
+		}); err != nil {
+			return nil, InternalError("sqlc.UpdateCollectionChildrenVisibility", err)
+		}
+	}
+
+	if entry, err = tx.UpdateCollection(ctx, db_gen.UpdateCollectionParams{
+		ID:          collectionID,
 		Name:        params.Name,
 		Description: types.NewNullString(params.Description),
 		Visibility:  params.Visibility,
 		UpdatedAt:   types.NewTime(time.Now()),
-	})
-	if db_pkg.IsNull(err) {
-		return nil, &model.Error{Message: "Collection not found", Code: http.StatusNotFound}
-	} else if err != nil {
+	}); err != nil {
 		return nil, InternalError("sqlc.UpdateCollection", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, InternalError("sqlc.Commit", err)
 	}
 
 	result := db_pkg.TransformRow[model.CollectionMetadata](entry)
 	return &result, nil
 }
 
-func (rslv *resolver) DeleteCollection(ctx context.Context, id uuid.UUID, recursive bool) error {
+func (rslv *resolver) DeleteCollection(ctx context.Context, collectionID uuid.UUID, recursive bool) error {
 
 	if perms, err := auth.For(ctx).Permissions(); err != nil {
 		return err
@@ -420,7 +444,7 @@ func (rslv *resolver) DeleteCollection(ctx context.Context, id uuid.UUID, recurs
 
 	if !recursive {
 
-		if count, err := tx.CollectionSize(ctx, id); err != nil {
+		if count, err := tx.CollectionSize(ctx, collectionID); err != nil {
 
 			if db_pkg.IsNull(err) {
 				return &model.Error{Message: "Collection not found", Code: http.StatusNotFound}
@@ -433,7 +457,7 @@ func (rslv *resolver) DeleteCollection(ctx context.Context, id uuid.UUID, recurs
 		}
 	}
 
-	if count, err := tx.DeleteCollection(ctx, id); err != nil {
+	if count, err := tx.DeleteCollection(ctx, collectionID); err != nil {
 		return InternalError("sqlc.DeleteCollection", err)
 	} else if count == 0 {
 		return &model.Error{Message: "Collectcion not found", Code: http.StatusNotFound}
@@ -534,7 +558,7 @@ func (rslv *resolver) addDeckVersion(ctx context.Context, tx *db_gen.Queries, de
 	return entry, nil
 }
 
-func (rslv *resolver) UpdateCardDeck(ctx context.Context, id uuid.UUID, params model.CardDeckPatch) (*model.CardDeckMetadata, error) {
+func (rslv *resolver) UpdateCardDeck(ctx context.Context, deckID uuid.UUID, params model.CardDeckPatch) (*model.CardDeckMetadata, error) {
 
 	if perms, err := auth.For(ctx).Permissions(); err != nil {
 		return nil, err
@@ -549,7 +573,7 @@ func (rslv *resolver) UpdateCardDeck(ctx context.Context, id uuid.UUID, params m
 	defer tx.Rollback()
 
 	deck, err := tx.SetDeckUpdateTime(ctx, db_gen.SetDeckUpdateTimeParams{
-		DeckID:    id,
+		DeckID:    deckID,
 		UpdatedAt: types.NewTime(time.Now()),
 	})
 
@@ -574,7 +598,7 @@ func (rslv *resolver) UpdateCardDeck(ctx context.Context, id uuid.UUID, params m
 		}
 
 		if deck, err = tx.UpdateDeckMetadata(ctx, db_gen.UpdateDeckMetadataParams{
-			ID:           id,
+			ID:           deckID,
 			CollectionID: params.CollectionID,
 			Name:         params.Meta.Name,
 			Description:  types.NewNullString(params.Meta.Description),
@@ -604,7 +628,7 @@ func (rslv *resolver) UpdateCardDeck(ctx context.Context, id uuid.UUID, params m
 	return &result, nil
 }
 
-func (rslv *resolver) DeleteDeck(ctx context.Context, id uuid.UUID) error {
+func (rslv *resolver) DeleteDeck(ctx context.Context, deckID uuid.UUID) error {
 
 	if perms, err := auth.For(ctx).Permissions(); err != nil {
 		return err
@@ -612,7 +636,7 @@ func (rslv *resolver) DeleteDeck(ctx context.Context, id uuid.UUID) error {
 		return err
 	}
 
-	if count, err := rslv.db.DeleteDeck(ctx, id); err != nil {
+	if count, err := rslv.db.DeleteDeck(ctx, deckID); err != nil {
 		return InternalError("sqlc.DeleteDeck", err)
 	} else if count == 0 {
 		return &model.Error{Message: "Deck not found", Code: http.StatusNotFound}

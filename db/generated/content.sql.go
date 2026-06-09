@@ -752,6 +752,27 @@ func (q *Queries) UpdateCollection(ctx context.Context, arg UpdateCollectionPara
 	return i, err
 }
 
+const updateCollectionChildrenVisibility = `-- name: UpdateCollectionChildrenVisibility :execrows
+update decks
+set visibility = ?1
+where visibility = ?2
+	and collection_id = ?3
+`
+
+type UpdateCollectionChildrenVisibilityParams struct {
+	NewVisibility model.ResourceVisibility
+	OldVisibility model.ResourceVisibility
+	CollectionID  uuid.UUID
+}
+
+func (q *Queries) UpdateCollectionChildrenVisibility(ctx context.Context, arg UpdateCollectionChildrenVisibilityParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, updateCollectionChildrenVisibility, arg.NewVisibility, arg.OldVisibility, arg.CollectionID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const updateDeckMetadata = `-- name: UpdateDeckMetadata :one
 update decks
 set
