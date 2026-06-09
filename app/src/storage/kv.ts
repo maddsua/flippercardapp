@@ -38,21 +38,37 @@ export class GenericKVStore <T> {
 	};
 };
 
-export class GenericKVStoreWithDefault <T> {
+export class KVFlagStore {
 
-	private readonly defaultValue: T;
+	private readonly key: string;
+	private readonly defaultValue: boolean;
 
-	//	doing this because fuck the way java/type-script handles classes
-	private base: GenericKVStore<T>;
-
-	constructor(key: string, defaultValue: T) {
-		this.base = new GenericKVStore<T>(key);
+	constructor(key: string, defaultValue: boolean) {
+		this.key = key;
 		this.defaultValue = defaultValue;
 	}
 
-	load = (): T => this.base.load() ?? this.defaultValue;
+	load = (): boolean => {
 
-	store = (val: T | null) => this.base.store(val);
+		const value = localStorage.getItem(this.key);
+		if (value === 'true') {
+			return true;
+		} else if (value === 'false') {
+			return false;
+		}
 
-	clear = () => this.base.clear();
+		return this.defaultValue;
+	};
+
+	store = (value: boolean) => {
+
+		if (value === this.defaultValue) {
+			this.clear();
+			return;
+		}
+
+		localStorage.setItem(this.key, value ? 'true' : 'false');
+	};
+
+	clear = () => localStorage.removeItem(this.key);
 };
