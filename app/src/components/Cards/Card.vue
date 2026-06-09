@@ -5,6 +5,7 @@ import CardFace from './CardFace.vue';
 
 const props = defineProps<{
 	card: CardNode;
+	disableRotation?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -15,7 +16,7 @@ const emit = defineEmits<{
 
 const state = reactive({
 	flipped: false,
-	rotation: (Math.random() - 0.5) * 6,
+	rotation: !props.disableRotation ? (Math.random() - 0.5) * 6 : 0,
 	shake: false,
 	animating: false,
 });
@@ -86,18 +87,18 @@ const containerClasses = computed((): Record<string, boolean> => ({
 
 const containterTransforms = computed((): CSSProperties => {
 
-	const baseR = state.rotation;
+	const baseRot = state.rotation;
 
 	if (!dragDelta.value) {
-		return { rotate: `${baseR.toFixed(1)}deg` };
+		return { rotate: `${baseRot.toFixed(1)}deg` };
 	}
 
 	const { x: deltaX, y: deltaY } = dragDelta.value;
 
-	const deltaR = (deltaX / 25);
+	const deltaRot = (deltaX / 25);
 
 	return {
-		rotate: `${(deltaR + baseR).toFixed(1)}deg`,
+		rotate: `${(deltaRot + baseRot).toFixed(1)}deg`,
 		transform: `translateX(${deltaX}px) translateY(${deltaY}px) rotateY(${state.flipped ? 180 : 0}deg)`,
 	};
 });

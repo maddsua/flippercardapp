@@ -8,17 +8,18 @@ const store = useStorage();
 const lang = useLanguage();
 
 const state = reactive({
-	showNavigation: store.preferences.playModeShowNavigation.load(),
+	showNavigation: store.preferences.playMode.showNavigation.load(),
+	disableCardRotation: store.preferences.playMode.disableCardRotation.load(),
 });
 
-watch(() => state.showNavigation, async (value) => {
-	store.preferences.playModeShowNavigation.store(value);
-});
+watch(() => state.showNavigation, value => store.preferences.playMode.showNavigation.store(value));
+watch(() => state.disableCardRotation, value => store.preferences.playMode.disableCardRotation.store(value));
 
 </script>
 
 <template>
 	<div class="preferences-group">
+
 		<GenericToggle v-model="state.showNavigation">
 			{{ intl(lang, {
 				en: 'Show navigation buttons in Play Mode',
@@ -26,6 +27,15 @@ watch(() => state.showNavigation, async (value) => {
 				uk: 'Показувати кнопки навігації в режимі гри'
 			}) }}
 		</GenericToggle>
+
+		<GenericToggle v-model="state.disableCardRotation">
+			{{ intl(lang, {
+				en: 'Disable card rotation',
+				de: 'Kartendrehung deaktivieren',
+				uk: 'Не нахиляти картки'
+			}) }}
+		</GenericToggle>
+
 	</div>
 </template>
 

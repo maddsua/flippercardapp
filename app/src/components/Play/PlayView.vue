@@ -35,7 +35,10 @@ const state = reactive({
 	isMarked: false,
 	error: null as string | null,
 	round: null as RoundState | null,
-	showNavigation: false,
+	options: {
+		showNavigation: false,
+		disableRotation: false,
+	},
 });
 
 const statsScreen = computed(() => state.round?.isFinished ? ({
@@ -103,7 +106,10 @@ onMounted(async () => {
 	state.labels = data.labels;
 	state.cards = data.cards;
 
-	state.showNavigation = store.preferences.playModeShowNavigation.load();
+	state.options = {
+		showNavigation: store.preferences.playMode.showNavigation.load(),
+		disableRotation: store.preferences.playMode.disableCardRotation.load(),
+	};
 
 	initRound();
 });
@@ -203,7 +209,8 @@ const exitView = () => {
 				:labels="state.labels"
 				:entries="cards"
 				:isMarked="state.isMarked"
-				:showNavigation="state.showNavigation"
+				:showNavigation="state.options.showNavigation"
+				:disableRotation="state.options.disableRotation"
 				@score="updateRoundScore"
 				@finish="finishDeck"
 				@exit="exitView"

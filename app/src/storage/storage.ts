@@ -79,7 +79,10 @@ export const useStorage = () => {
 
 		preferences: {
 			language: new GenericKVStore<string>('app_language'),
-			playModeShowNavigation: new GenericKVStoreWithDefault('play_mode_show_navigation', true),
+			playMode: {
+				showNavigation: new GenericKVStoreWithDefault('play_mode_show_navigation', true),
+				disableCardRotation: new GenericKVStoreWithDefault('play_mode_disable_card_rotation', false),
+			},
 		},
 	};
 };

@@ -11,6 +11,7 @@ const props = defineProps<{
 	entries: CardNode[];
 	isMarked?: boolean;
 	showNavigation?: boolean;
+	disableRotation?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -241,7 +242,13 @@ const handleExitPrompt = (confirmed?: boolean) => {
 
 		<div class="card-viewport" :class="{ noinput: state.animating }">
 			<div class="card-transition" v-for="(item, idx) of cardSlots" :key="cardSlotKey(item, idx)" :class="item?.flags">
-				<Card v-if="item" :key="item.card.id" :card="item.card" @score="countScore" @next="nextCard" @prev="prevCard" />
+				<Card v-if="item"
+					:key="item.card.id"
+					:card="item.card"
+					:disableRotation="disableRotation"
+					@score="countScore"
+					@next="nextCard"
+					@prev="prevCard" />
 			</div>
 		</div>
 
