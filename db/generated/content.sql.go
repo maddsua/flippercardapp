@@ -256,11 +256,16 @@ func (q *Queries) GetDeckLatestVersion(ctx context.Context, deckID uuid.UUID) (D
 
 const getDeckVersion = `-- name: GetDeckVersion :one
 select id, created_at, deck_id, card_count, content, label from deck_versions
-where id = ?1
+where id = ?1 and (deck_id = ?2 or ?2 is null)
 `
 
-func (q *Queries) GetDeckVersion(ctx context.Context, id uuid.UUID) (DeckVersion, error) {
-	row := q.db.QueryRowContext(ctx, getDeckVersion, id)
+type GetDeckVersionParams struct {
+	VersionID uuid.UUID
+	DeckID    uuid.NullUUID
+}
+
+func (q *Queries) GetDeckVersion(ctx context.Context, arg GetDeckVersionParams) (DeckVersion, error) {
+	row := q.db.QueryRowContext(ctx, getDeckVersion, arg.VersionID, arg.DeckID)
 	var i DeckVersion
 	err := row.Scan(
 		&i.ID,
@@ -659,46 +664,20 @@ func (q *Queries) InsertImage(ctx context.Context, arg InsertImageParams) (Image
 
 const setDeckLatestVersion = `-- name: SetDeckLatestVersion :one
 update decks
-set latest_version_id = ?1
-where id = ?2
+set latest_version_id = ?1,
+	updated_at = coalesce(?2, updated_at)
+where id = ?3
 returning id, collection_id, created_at, updated_at, name, description, visibility, latest_version_id
 `
 
 type SetDeckLatestVersionParams struct {
 	LatestVersionID uuid.NullUUID
+	UpdatedAt       types.NullTime
 	DeckID          uuid.UUID
 }
 
 func (q *Queries) SetDeckLatestVersion(ctx context.Context, arg SetDeckLatestVersionParams) (Deck, error) {
-	row := q.db.QueryRowContext(ctx, setDeckLatestVersion, arg.LatestVersionID, arg.DeckID)
-	var i Deck
-	err := row.Scan(
-		&i.ID,
-		&i.CollectionID,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.Name,
-		&i.Description,
-		&i.Visibility,
-		&i.LatestVersionID,
-	)
-	return i, err
-}
-
-const setDeckUpdateTime = `-- name: SetDeckUpdateTime :one
-update decks
-set updated_at = ?1
-where id = ?2
-returning id, collection_id, created_at, updated_at, name, description, visibility, latest_version_id
-`
-
-type SetDeckUpdateTimeParams struct {
-	UpdatedAt types.Time
-	DeckID    uuid.UUID
-}
-
-func (q *Queries) SetDeckUpdateTime(ctx context.Context, arg SetDeckUpdateTimeParams) (Deck, error) {
-	row := q.db.QueryRowContext(ctx, setDeckUpdateTime, arg.UpdatedAt, arg.DeckID)
+	row := q.db.QueryRowContext(ctx, setDeckLatestVersion, arg.LatestVersionID, arg.UpdatedAt, arg.DeckID)
 	var i Deck
 	err := row.Scan(
 		&i.ID,
@@ -779,8 +758,9 @@ set
 	collection_id = coalesce(?1, collection_id),
 	name = ?2,
 	description = ?3,
-	visibility = ?4
-where id = ?5
+	visibility = ?4,
+	updated_at = coalesce(?5, updated_at)
+where id = ?6
 returning id, collection_id, created_at, updated_at, name, description, visibility, latest_version_id
 `
 
@@ -789,6 +769,7 @@ type UpdateDeckMetadataParams struct {
 	Name         string
 	Description  sql.NullString
 	Visibility   model.ResourceVisibility
+	UpdatedAt    types.NullTime
 	ID           uuid.UUID
 }
 
@@ -798,6 +779,7 @@ func (q *Queries) UpdateDeckMetadata(ctx context.Context, arg UpdateDeckMetadata
 		arg.Name,
 		arg.Description,
 		arg.Visibility,
+		arg.UpdatedAt,
 		arg.ID,
 	)
 	var i Deck

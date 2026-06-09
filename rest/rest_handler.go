@@ -114,7 +114,19 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return rslv.ListCardDeckVersions(req.Context(), deckID, Pagination(req))
 	}))
 
-	mux.Handle("POST /decks/{id}/versions/{vid}/rollback", MethodHandleFunc(func(req *http.Request) (*model.CardDeckMetadata, error) {
+	mux.Handle("GET /decks/{id}/version/{vid}", MethodHandleFunc(func(req *http.Request) (*model.CardDeckVersion, error) {
+		deckID, err := ParseUUID(req.PathValue("id"))
+		if err != nil {
+			return nil, err
+		}
+		versionID, err := ParseUUID(req.PathValue("vid"))
+		if err != nil {
+			return nil, err
+		}
+		return rslv.LoadCardDeckVersion(req.Context(), deckID, versionID)
+	}))
+
+	mux.Handle("POST /decks/{id}/version/{vid}/rollback", MethodHandleFunc(func(req *http.Request) (*model.CardDeckMetadata, error) {
 		deckID, err := ParseUUID(req.PathValue("id"))
 		if err != nil {
 			return nil, err

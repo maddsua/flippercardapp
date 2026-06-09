@@ -27,9 +27,12 @@ export interface CardDeckMetadata extends ContentEntryMetaBase{
 	size: number;
 };
 
-export interface CardDeck extends CardDeckMetadata {
-	labels: string[];
+export interface CardDeckContent {
 	cards: CardNode[];
+};
+
+export interface CardDeck extends CardDeckMetadata, CardDeckContent {
+	labels: string[];
 };
 
 export interface Collection extends CollectionMetadata {
@@ -73,7 +76,7 @@ export interface CardDeckPatch {
 	content?: CardDeckContentPatch | null;
 };
 
-export interface CardDeckContentPatch  {
+export interface CardDeckContentPatch {
 	cards: CardPatch[];
 };
 
@@ -99,3 +102,5 @@ export interface CardDeckVersionMetadata {
 	is_latest: boolean;
 	label?: string | null;
 };
+
+export interface CardDeckVersion extends CardDeckVersionMetadata, CardDeckContent {};

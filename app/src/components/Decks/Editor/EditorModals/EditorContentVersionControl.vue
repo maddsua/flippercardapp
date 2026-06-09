@@ -27,7 +27,7 @@ const state = reactive({
 	}
 });
 
-const { reload } = pageControls(state.page, (page) => client.decks.versions(props.deckID, page));
+const { reload } = pageControls(state.page, (page) => client.decks.versions.list(props.deckID, page));
 
 onMounted(reload);
 
@@ -48,7 +48,7 @@ const rollbackVersion = async (versionID: string) => {
 
 	state.rollback.busy = true;
 
-	const { data, error } = await client.decks.rollbackVersion(props.deckID, versionID);
+	const { data, error } = await client.decks.versions.rollback(props.deckID, versionID);
 	if (!data || error) {
 		state.rollback.error = unwrapErrorMessage(error);
 		return;

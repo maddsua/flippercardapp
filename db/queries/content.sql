@@ -21,7 +21,7 @@ limit sqlc.arg(limit) offset sqlc.arg(offset);
 
 -- name: GetDeckVersion :one
 select * from deck_versions
-where id = sqlc.arg(id);
+where id = sqlc.arg(version_id) and (deck_id = sqlc.narg(deck_id) or sqlc.narg(deck_id) is null);
 
 -- name: GetDeckVersionsBatch :many
 select
@@ -158,15 +158,10 @@ insert into deck_versions (
 	sqlc.arg(label)
 ) returning *;
 
--- name: SetDeckUpdateTime :one
-update decks
-set updated_at = sqlc.arg(updated_at)
-where id = sqlc.arg(deck_id)
-returning *;
-
 -- name: SetDeckLatestVersion :one
 update decks
-set latest_version_id = sqlc.arg(latest_version_id)
+set latest_version_id = sqlc.arg(latest_version_id),
+	updated_at = coalesce(sqlc.narg(updated_at), updated_at)
 where id = sqlc.arg(deck_id)
 returning *;
 
@@ -176,7 +171,8 @@ set
 	collection_id = coalesce(sqlc.narg(collection_id), collection_id),
 	name = sqlc.arg(name),
 	description = sqlc.arg(description),
-	visibility = sqlc.arg(visibility)
+	visibility = sqlc.arg(visibility),
+	updated_at = coalesce(sqlc.narg(updated_at), updated_at)
 where id = sqlc.arg(id)
 returning *;
 

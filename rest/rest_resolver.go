@@ -76,7 +76,7 @@ func (rslv *resolver) getDeckLatestVersion(ctx context.Context, tx *db_gen.Queri
 
 	if latestVersionID.Valid {
 
-		if version, err := tx.GetDeckVersion(ctx, latestVersionID.UUID); err != nil && !db_pkg.IsNull(err) {
+		if version, err := tx.GetDeckVersion(ctx, db_gen.GetDeckVersionParams{VersionID: latestVersionID.UUID}); err != nil && !db_pkg.IsNull(err) {
 			return sql.Null[db_gen.DeckVersion]{}, InternalError("sqlc.GetDeckVersion", err)
 		} else if err == nil {
 			return sql.Null[db_gen.DeckVersion]{V: version, Valid: true}, nil
@@ -133,7 +133,6 @@ func (rslv *resolver) ListCardDeckVersions(ctx context.Context, deckID uuid.UUID
 
 	return result, nil
 }
-
 func (rslv *resolver) RollbackCardDeckVersion(ctx context.Context, deckID uuid.UUID, versionID uuid.UUID) (*model.CardDeckMetadata, error) {
 
 	if perms, err := auth.For(ctx).Permissions(); err != nil {
@@ -148,34 +147,25 @@ func (rslv *resolver) RollbackCardDeckVersion(ctx context.Context, deckID uuid.U
 	}
 	defer tx.Rollback()
 
-	deck, err := tx.GetDeckById(ctx, deckID)
-	if db_pkg.IsNull(err) {
-		return nil, &model.Error{Message: "Deck not found", Code: http.StatusNotFound}
-	} else if err != nil {
-		return nil, InternalError("sqlc.GetDeckById", err)
-	}
+	version, err := tx.GetDeckVersion(ctx, db_gen.GetDeckVersionParams{
+		DeckID:    types.NewNullUUID(deckID),
+		VersionID: versionID,
+	})
 
-	version, err := tx.GetDeckVersion(ctx, versionID)
 	if db_pkg.IsNull(err) {
 		return nil, &model.Error{Message: "Version not found", Code: http.StatusNotFound}
 	} else if err != nil {
 		return nil, InternalError("sqlc.GetDeckVersion", err)
-	} else if version.ID == deck.LatestVersionID.UUID {
-		return nil, &model.Error{Message: "Version is already the latest", Code: http.StatusBadRequest}
 	}
 
-	if deck, err = tx.SetDeckLatestVersion(ctx, db_gen.SetDeckLatestVersionParams{
-		DeckID:          deck.ID,
+	deck, err := tx.SetDeckLatestVersion(ctx, db_gen.SetDeckLatestVersionParams{
+		DeckID:          deckID,
+		UpdatedAt:       types.NewNullTime(time.Now()),
 		LatestVersionID: types.NewNullUUID(version.ID),
-	}); err != nil {
-		return nil, InternalError("sqlc.SetDeckLatestVersion", err)
-	}
+	})
 
-	if deck, err = tx.SetDeckUpdateTime(ctx, db_gen.SetDeckUpdateTimeParams{
-		DeckID:    deck.ID,
-		UpdatedAt: types.NewTime(time.Now()),
-	}); err != nil {
-		return nil, InternalError("sqlc.SetDeckUpdateTime", err)
+	if err != nil {
+		return nil, InternalError("sqlc.SetDeckLatestVersion", err)
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -183,6 +173,25 @@ func (rslv *resolver) RollbackCardDeckVersion(ctx context.Context, deckID uuid.U
 	}
 
 	result := db_pkg.TransformRow[model.CardDeckMetadata](deck)
+	return &result, nil
+}
+
+func (rslv *resolver) LoadCardDeckVersion(ctx context.Context, deckID uuid.UUID, versionID uuid.UUID) (*model.CardDeckVersion, error) {
+
+	if perms, err := auth.For(ctx).Permissions(); err != nil {
+		return nil, err
+	} else if err := perms.AsTeamMember(); err != nil {
+		return nil, err
+	}
+
+	entry, err := rslv.db.GetDeckVersion(ctx, db_gen.GetDeckVersionParams{DeckID: types.NewNullUUID(deckID), VersionID: versionID})
+	if db_pkg.IsNull(err) {
+		return nil, &model.Error{Message: "Version not found", Code: http.StatusNotFound}
+	} else if err != nil {
+		return nil, InternalError("sqlc.GetDeckVersion", err)
+	}
+
+	result := db_pkg.TransformRow[model.CardDeckVersion](entry)
 	return &result, nil
 }
 
@@ -550,6 +559,7 @@ func (rslv *resolver) addDeckVersion(ctx context.Context, tx *db_gen.Queries, de
 
 	if _, err = tx.SetDeckLatestVersion(ctx, db_gen.SetDeckLatestVersionParams{
 		DeckID:          entry.DeckID,
+		UpdatedAt:       types.NewNullTime(time.Now()),
 		LatestVersionID: types.NewNullUUID(entry.ID),
 	}); err != nil {
 		return db_gen.DeckVersion{}, InternalError("sqlc.SetDeckLatestVersion", err)
@@ -572,15 +582,11 @@ func (rslv *resolver) UpdateCardDeck(ctx context.Context, deckID uuid.UUID, para
 	}
 	defer tx.Rollback()
 
-	deck, err := tx.SetDeckUpdateTime(ctx, db_gen.SetDeckUpdateTimeParams{
-		DeckID:    deckID,
-		UpdatedAt: types.NewTime(time.Now()),
-	})
-
+	deck, err := tx.GetDeckById(ctx, deckID)
 	if db_pkg.IsNull(err) {
 		return nil, &model.Error{Message: "Deck ID not found", Code: http.StatusNotFound}
 	} else if err != nil {
-		return nil, InternalError("sqlc.SetDeckUpdateTime", err)
+		return nil, InternalError("sqlc.GetDeckById", err)
 	}
 
 	if params.CollectionID.Valid {
@@ -603,6 +609,7 @@ func (rslv *resolver) UpdateCardDeck(ctx context.Context, deckID uuid.UUID, para
 			Name:         params.Meta.Name,
 			Description:  types.NewNullString(params.Meta.Description),
 			Visibility:   params.Meta.Visibility,
+			UpdatedAt:    types.NewNullTime(time.Now()),
 		}); err != nil {
 			return nil, InternalError("sqlc.UpdateDeckMetadata", err)
 		}

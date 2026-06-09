@@ -3,6 +3,7 @@ import type {
 	CardDeck,
 	CardDeckMetadata,
 	CardDeckPatch,
+	CardDeckVersion,
 	CardDeckVersionMetadata,
 	Collection,
 	CollectionMetadata,
@@ -311,11 +312,17 @@ export class ApiClient {
 		remove: async (id: string) =>
 			this.execJSON<null>('DELETE', `/decks/${id}`),
 
-		versions: async (id: string, params?: Partial<Pagination>) =>
-			this.execJSON<Page<CardDeckVersionMetadata>>('GET', `/decks/${id}/versions`, params),
+		versions: {
 
-		rollbackVersion: async (deckID: string, versionID: string) =>
-			this.execJSON<CardDeckVersionMetadata>('POST', `/decks/${deckID}/versions/${versionID}/rollback`),
+			list: async (id: string, params?: Partial<Pagination>) =>
+				this.execJSON<Page<CardDeckVersionMetadata>>('GET', `/decks/${id}/versions`, params),
+
+			load: async (deckID: string, versionID: string) =>
+				this.execJSON<CardDeckVersion>('GET', `/decks/${deckID}/version/${versionID}`),
+
+			rollback: async (deckID: string, versionID: string) =>
+				this.execJSON<CardDeckVersionMetadata>('POST', `/decks/${deckID}/version/${versionID}/rollback`),
+		},
 	};
 
 	images = {

@@ -222,6 +222,16 @@ func (meta *CardDeckVersionMetadata) FromBatchRow(row db_gen.GetDeckVersionsBatc
 	meta.Label = row.Label.String
 }
 
+type CardDeckVersion struct {
+	CardDeckVersionMetadata
+	Content db_model.DeckVersionContent `json:"content"`
+}
+
+func (version *CardDeckVersion) FromRow(row db_gen.DeckVersion) {
+	version.CardDeckVersionMetadata.FromRow(row)
+	version.Content = row.Content
+}
+
 type CollectionPatch struct {
 	ContentEntryMetaBase
 }
