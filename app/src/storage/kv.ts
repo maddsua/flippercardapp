@@ -12,7 +12,7 @@ export class GenericKVStore <T> {
 		try {
 			return val ? JSON.parse(val) : null;
 		} catch (error) {
-			console.error('GenericKVStore.load:' ,error);
+			console.error(`GenericKVStore.load '${this.key}':`, error);
 			return null;
 		}
 	};
@@ -25,7 +25,7 @@ export class GenericKVStore <T> {
 				localStorage.setItem(this.key, JSON.stringify(val));
 			}
 		} catch (error) {
-			console.error('GenericKVStore.store:' ,error);
+			console.error(`GenericKVStore.store '${this.key}':`, error);
 		}
 	};
 
@@ -33,7 +33,7 @@ export class GenericKVStore <T> {
 		try {
 			localStorage.removeItem(this.key);
 		} catch (error) {
-			console.error('GenericKVStore.clear:' ,error);
+			console.error(`GenericKVStore.clear '${this.key}':`, error);
 		}
 	};
 };
@@ -70,5 +70,18 @@ export class KVFlagStore {
 		localStorage.setItem(this.key, value ? 'true' : 'false');
 	};
 
+	clear = () => localStorage.removeItem(this.key);
+};
+
+export class KVStringStore {
+
+	private readonly key: string;
+
+	constructor(key: string) {
+		this.key = key;
+	}
+
+	load = () => localStorage.getItem(this.key);
+	store = (value: string) => localStorage.setItem(this.key, value);
 	clear = () => localStorage.removeItem(this.key);
 };

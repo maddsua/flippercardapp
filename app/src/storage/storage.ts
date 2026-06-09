@@ -1,6 +1,6 @@
 import type { CollectionPlayStats, DeckPlayStats } from "@/play";
 import { useIDB } from "./idb";
-import { GenericKVStore, KVFlagStore } from "./kv";
+import { GenericKVStore, KVFlagStore, KVStringStore } from "./kv";
 
 
 
@@ -78,7 +78,7 @@ export const useStorage = () => {
 		},
 
 		preferences: {
-			language: new GenericKVStore<string>('app_language'),
+			language: new KVStringStore('app_language'),
 			playMode: {
 				showNavigation: new KVFlagStore('play_mode_show_navigation', true),
 				disableCardRotation: new KVFlagStore('play_mode_disable_card_rotation', false),
