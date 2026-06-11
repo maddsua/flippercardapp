@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue';
 import type { ResourceVisibility } from '../../api_models';
 import GenericButton from '../App/Inputs/GenericButton.vue';
 import ContentEntryBadge from './ContentEntryBadge.vue';
@@ -6,6 +7,7 @@ import ContentEntryBadge from './ContentEntryBadge.vue';
 const props = defineProps<{
 	title: string;
 	summary?: string | null;
+	date?: string | null;
 	visibility?: ResourceVisibility;
 	starrable?: boolean | null;
 	starred?: boolean | null;
@@ -22,11 +24,24 @@ const emit = defineEmits<{
 	(e: 'delete'): void;
 }>();
 
+const showNewBadge = computed(() => {
+
+	if (!props.date) {
+		return false;
+	}
+
+	try {
+		return new Date().getTime() - new Date(props.date).getTime() < 2 * 24 * 60 * 60 * 1000;
+	} catch (_) {
+		return false;
+	}
+});
+
 </script>
 
 <template>
 
-	<div class="content-list-entry" :class="{ editable }">
+	<div class="content-list-entry" :class="{ editable, new_badge: showNewBadge }">
 
 		<div v-if="editable" class="editor-actions">
 			<div class="actions-row">
@@ -99,9 +114,23 @@ const emit = defineEmits<{
 
 	.content-list-entry {
 		position: relative;
-		border-radius: 1rem;
-		overflow: hidden;
 		user-select: none;
+
+		&.new_badge::before {
+			content: "NEW!";
+			position: absolute;
+			left: 0;
+			top: 0;
+			font-size: 0.55rem;
+			font-weight: 600;
+			padding: 0.25em;
+			background-color: var(--app-theme-spooky-orange);
+			color: var(--app-theme-snow-white);
+			border-radius: 0.5em;
+			transform: rotate(-25deg);
+			z-index: 10;
+			box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.25);
+		}
 
 		.editor-actions {
 			position: absolute;
@@ -113,6 +142,7 @@ const emit = defineEmits<{
 			padding: 1rem;
 			background-color: rgba(0, 0, 0, 0.4);
 			opacity: 0;
+			border-radius: 1rem;
 			
 			.actions-row {
 				display: flex;
@@ -138,6 +168,7 @@ const emit = defineEmits<{
 			transition: all 150ms ease;
 			text-align: start;
 			text-align: unset;
+			border-radius: 1rem;
 
 			background-color: var(--app-theme-irish-green);
 			color: var(--app-theme-snow-white);

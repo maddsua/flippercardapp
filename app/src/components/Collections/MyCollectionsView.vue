@@ -93,6 +93,7 @@ const lang = useLanguage();
 				:title="item.name"
 				:summary="item.description"
 				:visibility="item.visibility"
+				:date="item.created"
 				:starred="true"
 				:deckCount="item.size"
 				:score="item.score"

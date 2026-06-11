@@ -64,15 +64,13 @@ onMounted(async () => {
 		.catch(() => [])
 		.then(entries => entries.map(entry => [entry.deck_id, entry.score])));
 
-	const deckEntries = data.decks.map(item => ({
-		... item,
-		starred: starredDecks.has(item.id),
-		score: deckScoreMap.get(item.id) || 0,
-	}));
-
 	state.data = {
 		... data,
-		decks: deckEntries.sort((a,b) => (b.starred ? 1 : 0) - (a.starred ? 1 : 0)),
+		decks: data.decks.map(item => ({
+			... item,
+			starred: starredDecks.has(item.id),
+			score: deckScoreMap.get(item.id) || 0,
+		})),
 	};
 
 	state.shareable = {
@@ -234,6 +232,7 @@ const capitalize = (text: string) => text.slice(0, 1).toUpperCase() + text.slice
 			<ContentListEntry v-for="item of state.data.decks"
 				:title="item.name"
 				:summary="item.description"
+				:date="item.created"
 				:visibility="item.visibility"
 				:cardCount="item.size"
 				:starred="item.starred"

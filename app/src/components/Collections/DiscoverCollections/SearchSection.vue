@@ -120,6 +120,7 @@ const handleSearchInput = (value?: string) => {
 				:title="item.name"
 				:summary="item.description"
 				:visibility="item.visibility"
+				:date="item.created"
 				:starrable="true"
 				:starred="item.starred"
 				:deckCount="item.size"

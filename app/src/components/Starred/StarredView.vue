@@ -75,6 +75,7 @@ const openDeck = (id: string) => {
 				:title="item.name"
 				:summary="item.description"
 				:visibility="item.visibility"
+				:date="item.created"
 				:starred="true"
 				:cardCount="item.size"
 				:score="item.score"
