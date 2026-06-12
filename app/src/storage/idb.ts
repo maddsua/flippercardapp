@@ -31,7 +31,7 @@ const initDB = (name: string, migrations: Migration[]): Promise<IDBDatabase> => 
 
 	try {
 
-		migrations = migrationList.sort((a, b) => a.version - b.version);
+		migrations = migrations.sort((a, b) => a.version - b.version);
 		const latest = migrations[migrations.length - 1];
 		if (!latest) {
 			throw new Error('Unable to find latest IDB migration');
@@ -91,7 +91,7 @@ class IDSetStore <T extends string> {
 
 	static create = (db: IDBDatabase, name: string, initEntries?: string[]) => {
 		const store = db.createObjectStore(name, { keyPath: 'id' satisfies keyof IDSetStoreValue<string> });
-		store.createIndex(name + '_id', 'id', { unique: true });
+		store.createIndex('set_idx', 'id', { unique: true });
 		initEntries?.forEach(entry => store.put({ id: entry } satisfies IDSetStoreValue<string>));
 	};
 
@@ -123,9 +123,9 @@ class UniqueCollectionStore <T extends {}> {
 		this.storeName = storeName;
 	}
 
-	static create = <T extends {}>(db: IDBDatabase, name: string, keyPath: string, initEntries?: T[]) => {
-		const store = db.createObjectStore(name, { keyPath });
-		store.createIndex(name + '_id', 'id', { unique: true });
+	static create = <T extends {}>(db: IDBDatabase, name: string, keyPath: keyof T, initEntries?: T[]) => {
+		const store = db.createObjectStore(name, { keyPath: String(keyPath) });
+		store.createIndex(`${String(keyPath)}_idx`, 'id', { unique: true });
 		initEntries?.forEach(entry => store.put(entry));
 	};
 
@@ -212,30 +212,7 @@ const migrationList: Migration[] = [
 export const useIDB = async () => {
 
 	if (!window.appUserDB) {
-
-		window.appUserDB = await initDB('usercontent', [
-			{
-				version: 1,
-				onUpgrade: (db) => {
-
-					const kvIdList = (key: string): string[] => {
-						const values: string[] = new GenericKVStore<string[]>(key).load() || [];
-						if (!Array.isArray(values)) {
-							return [];
-						}
-						return values.filter(item => typeof item === 'string');
-					};
-
-					IDSetStore.create(db, 'starred_collections', kvIdList('saved_collections'));
-					IDSetStore.create(db, 'starred_decks', kvIdList('starred_decks'));
-
-					const statEntries = Object.values(new GenericKVStore('play_stats').load() || {})
-						.filter(item => typeof item === 'object' && !!item && 'deck_id' in item);
-
-					UniqueCollectionStore.create(db, 'deck_play_stats', 'deck_id' satisfies keyof DeckPlayStats, statEntries);
-				},
-			},
-		]);
+		window.appUserDB = await initDB('usercontent', migrationList);
 	}
 
 	return {
