@@ -19,7 +19,6 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-	(e: 'flip'): void;
 	(e: 'updateMeta', meta: DeckMeta): void;
 	(e: 'disacard'): void;
 	(e: 'publish'): void;
@@ -38,10 +37,6 @@ const metaEditorOpen = ref(false);
 		<div class="wrapper">
 
 			<DeckEditorTitle :meta="meta" @click="metaEditorOpen = true" />
-
-			<div class="view-actions">
-				<button type="button" class="icon flip" title="Flip view" @click="emit('flip')"></button>
-			</div>
 
 			<div class="publish-actions">
 				<GenericButton variant="thin" theme="orange" @click="emit('disacard')">
@@ -84,7 +79,7 @@ const metaEditorOpen = ref(false);
 		.wrapper {
 			position: relative;
 			display: grid;
-			grid-template-columns: 1fr 1fr 1fr;
+			grid-template-columns: 1fr 1fr;
 			gap: 1rem;
 			width: 100%;
 			max-width: 50rem;
@@ -94,40 +89,11 @@ const metaEditorOpen = ref(false);
 			border-bottom-right-radius: 0.75rem;
 		}
 
-		.view-actions {
-			display: flex;
-			align-items: center;
-			justify-content: center;
-		}
-
 		.publish-actions {
 			display: flex;
 			align-items: center;
 			justify-content: end;
 			gap: 1rem;
-		}
-
-		button.icon {
-			display: block;
-			width: 1.25rem;
-			height: 1.25rem;
-			flex-shrink: 0;
-			mask-type: alpha;
-			mask-size: contain;
-			mask-position: center;
-			mask-repeat: no-repeat;
-			background-color: rgba(255, 255, 255, 0.8);
-			
-			&:hover {
-				cursor: pointer;
-				background-color: white;
-			}
-			
-			&.flip {
-				width: 2rem;
-				height: 2rem;
-				mask-image: url(/src/assets/icons/flip-mask.svg);
-			}
 		}
 	}
 </style>

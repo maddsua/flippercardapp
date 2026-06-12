@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, watch } from 'vue';
 import { parseTextBoxContent, stringifyTextBoxContent, type CardTextBoxElementNode } from '@/content';
-import CardNodeHarness from './CardNodeHarness.vue';
+import EditableNodeHarness from './EditableNodeHarness.vue';
 
 const model = defineModel<CardTextBoxElementNode[]>();
 
@@ -21,7 +21,7 @@ onMounted(() => {
 </script>
 
 <template>
-	<CardNodeHarness>
+	<EditableNodeHarness>
 		<template v-slot:title>
 			Text
 		</template>
@@ -29,7 +29,7 @@ onMounted(() => {
 		<template v-slot:content>
 			<textarea type="text" placeholder="Text" v-model="state.raw" @focus="state.editing = true" @blur="state.editing = false"></textarea>
 		</template>
-	</CardNodeHarness>
+	</EditableNodeHarness>
 </template>
 
 <style lang="scss" scoped>

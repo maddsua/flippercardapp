@@ -3,9 +3,11 @@ import type { CardContentFace } from '@/content';
 import CardFace from '@/components/Cards/CardFace.vue';
 
 const props = defineProps<{
-	card: CardContentFace;
+	face: CardContentFace;
+	size?: 'small' | 'normal';
 	active?: boolean;
-	showControls?: boolean;
+	interactive?: boolean;
+	controls?: boolean;
 	label?: string | number;
 }>();
 
@@ -17,19 +19,23 @@ const emit = defineEmits<{
 </script>
 
 <template>
-	<div class="card-thumbnail" :class="{ outline: active }">
+	<div class="card-thumbnail" :class="{ outline: active, interactive, [`size-${size}`]: !!size }">
 
-		<div class="controls-layer" :class="{ active: active }">
+		<div v-if="interactive" class="controls-layer" :class="{ active: active }">
 
-			<div class="label-small">
-				{{ label ?? '?' }}
-			</div>
+			<template v-if="label">
 
-			<div class="col label-large">
-				{{ label ?? '?' }}
-			</div>
+				<div class="label-small">
+					{{ label }}
+				</div>
 
-			<div v-if="showControls" class="col controls">
+				<div class="col label-large">
+					{{ label }}
+				</div>
+
+			</template>
+
+			<div v-if="controls" class="col controls">
 				<button type="button" class="remove" title="Remove card" @click.self.stop="emit('remove')"></button>
 				<button type="button" class="duplicate" title="Remove card" @click.self.stop="emit('duplicate')"></button>
 			</div>
@@ -37,7 +43,7 @@ const emit = defineEmits<{
 		</div>
 
 		<div class="preview-canvas">
-			<CardFace :entry="card" />
+			<CardFace :entry="face" />
 		</div>
 
 	</div>
@@ -52,6 +58,11 @@ const emit = defineEmits<{
 		border: 2px solid transparent;
 		flex-shrink: 0;
 		overflow: hidden;
+
+		&.size-small {
+			height: 5rem;
+			width: 3.125rem;
+		}
 
 		.preview-canvas {
 			position: relative;
@@ -178,7 +189,7 @@ const emit = defineEmits<{
 			}
 		}
 
-		&:hover {
+		&.interactive:hover {
 			cursor: pointer;
 			border-color: var(--app-theme-sporty-yellow);
 			background-color: var(--app-theme-sporty-yellow);

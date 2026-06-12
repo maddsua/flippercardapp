@@ -2,10 +2,11 @@
 import { computed } from 'vue';
 import { UploadReadyState, type CardContentNode } from '@/content';
 import GenericButton from '@/components/App/Inputs/GenericButton.vue';
-import CardTitleNodeEditor from './CardTitleNodeEditor.vue';
-import CardTextNodeEditor from './CardTextNodeEditor.vue';
-import CardPollEditor from './CardPollEditor.vue';
-import CardImageNodeEditor from './CardImageNodeEditor.vue';
+import EditableTitleNode from './EditableTitleNode.vue';
+import EditableTextNode from './EditableTextNode.vue';
+import EditablePollNode from './EditablePollNode.vue';
+import EditableImageNode from './EditableImageNode.vue';
+import EditorGroup from '../EditorGroup.vue';
 
 const props = defineProps<{
 	isFront?: boolean;
@@ -87,86 +88,77 @@ const availableNodes = computed((): Record<NodeType, boolean> => {
 </script>
 
 <template>
-	<div class="card-face-content-editor">
-		<div class="title">
-			Face content
-		</div>
-		<div class="tree">
 
+	<EditorGroup title="Content">
+
+		<div class="content-tree">
 			<template v-for="(item, idx) of model">
-
-				<CardTitleNodeEditor v-if="item.type === 'title'"
+	
+				<EditableTitleNode v-if="item.type === 'title'"
 					v-model="item.content"
 					@up="reorderNode(idx, -1)"
 					@down="reorderNode(idx, 1)"
 					@remove="removeNode(idx)" />
-
-				<CardImageNodeEditor v-else-if="item.type === 'image'"
+	
+				<EditableImageNode v-else-if="item.type === 'image'"
 					v-model="item.media_id"
 					@up="reorderNode(idx, -1)"
 					@down="reorderNode(idx, 1)"
 					@remove="removeNode(idx)" />
-
-				<CardTextNodeEditor v-else-if="item.type === 'textbox'"
+	
+				<EditableTextNode v-else-if="item.type === 'textbox'"
 					v-model="item.content"
 					@up="reorderNode(idx, -1)"
 					@down="reorderNode(idx, 1)"
 					@remove="removeNode(idx)" />
-
-				<CardPollEditor v-else-if="item.type === 'poll'"
+	
+				<EditablePollNode v-else-if="item.type === 'poll'"
 					v-model="item.content"
 					@up="reorderNode(idx, -1)"
 					@down="reorderNode(idx, 1)"
 					@setQuizFlag="flag => item.is_quiz = flag"
 					@remove="removeNode(idx)" />
 			</template>
-			
-			<div class="add-actions">
-
-				<GenericButton v-if="availableNodes.title" variant="thin" @click="addNode('title')">
-					+ Add title
-				</GenericButton>
-
-				<GenericButton v-if="availableNodes.image" variant="thin" @click="addNode('image')">
-					+ Add image
-				</GenericButton>
-
-				<GenericButton v-if="availableNodes.textbox" variant="thin" @click="addNode('textbox')">
-					+ Add textbox
-				</GenericButton>
-
-				<GenericButton v-if="availableNodes.poll" variant="thin" @click="addNode('poll')">
-					+ Add poll
-				</GenericButton>
-
-			</div>
 		</div>
-	</div>
+
+		<div class="add-actions">
+
+			<GenericButton v-if="availableNodes.title" variant="thin" @click="addNode('title')">
+				+ Add title
+			</GenericButton>
+
+			<GenericButton v-if="availableNodes.image" variant="thin" @click="addNode('image')">
+				+ Add image
+			</GenericButton>
+
+			<GenericButton v-if="availableNodes.textbox" variant="thin" @click="addNode('textbox')">
+				+ Add textbox
+			</GenericButton>
+
+			<GenericButton v-if="availableNodes.poll" variant="thin" @click="addNode('poll')">
+				+ Add poll
+			</GenericButton>
+
+		</div>
+
+	</EditorGroup>
+
 </template>
 
 <style lang="scss" scoped>
-	.card-face-content-editor {
+
+	.content-tree {
 		display: flex;
 		flex-direction: column;
-		gap: 2rem;
-
-		.title {
-			font-size: 0.75rem;
-			font-weight: 600;
-		}
-
-		.tree {
-			display: flex;
-			flex-direction: column;
-			gap: 1rem;
-			height: 100%;
-		}
-
-		.add-actions {
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			gap: 1.25rem;
-		}
+		gap: 1rem;
+		height: 100%;
 	}
+
+	.add-actions {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1.25rem;
+	}
+
 </style>

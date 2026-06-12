@@ -121,7 +121,7 @@ const faceStyle = computed((): CSSProperties => {
 		gap: 1.5em;
 		align-items: center;
 		flex-grow: 1;
-		border: 3px solid var(--app-theme-spooky-orange);
+		border: 0.25em solid var(--app-theme-spooky-orange);
 		border-radius: 1.5em;
 		padding: 2em;
 		color: var(--app-theme-midnight);

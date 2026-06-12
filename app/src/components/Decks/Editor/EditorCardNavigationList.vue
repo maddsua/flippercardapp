@@ -40,7 +40,14 @@ watch(() => props.list.length, () => {
 			<ul v-if="list.length" class="card-list">
 				<li v-for="(card, idx) of list" :ref="elem => listRef[idx] = elem as Element | null">
 					<button type="button" class="card" @click="emit('select', idx)">
-						<CardThumbnail :card="card" :label="idx + 1" :active="idx === pointer" :showControls="true" @duplicate="emit('duplicate', idx)" @remove="emit('remove', idx)"/>
+						<CardThumbnail
+							:face="card"
+							:label="idx + 1"
+							:active="idx === pointer"
+							:controls="true"
+							:interactive="true"
+							@duplicate="emit('duplicate', idx)"
+							@remove="emit('remove', idx)"/>
 					</button>
 				</li>
 			</ul>

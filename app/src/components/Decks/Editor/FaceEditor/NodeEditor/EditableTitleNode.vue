@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import CardNodeHarness from './CardNodeHarness.vue';
+import EditableNodeHarness from './EditableNodeHarness.vue';
 
 const model = defineModel<string>();
 
 </script>
 
 <template>
-	<CardNodeHarness>
+	<EditableNodeHarness>
 		<template v-slot:title>
 			Title
 		</template>
@@ -14,7 +14,7 @@ const model = defineModel<string>();
 		<template v-slot:content>
 			<input type="text" placeholder="Title" v-model="model" />
 		</template>
-	</CardNodeHarness>
+	</EditableNodeHarness>
 </template>
 
 <style lang="scss" scoped>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { CardPollNodeOption } from '@/content';
-import CardNodeHarness from './CardNodeHarness.vue';
-import CardPollOptionEditor from './CardPollOptionEditor.vue';
+import EditableNodeHarness from './EditableNodeHarness.vue';
+import EditablePollNodeOption from './EditablePollNodeOption.vue';
 
 const model = defineModel<CardPollNodeOption[]>();
 
@@ -37,7 +37,7 @@ const removeOption = (idx: number) => {
 </script>
 
 <template>
-	<CardNodeHarness>
+	<EditableNodeHarness>
 		<template v-slot:title>
 			Poll / Quiz
 		</template>
@@ -46,7 +46,7 @@ const removeOption = (idx: number) => {
 
 			<div class="option-list">
 				<template v-if="model?.length">
-					<CardPollOptionEditor v-for="(option, idx) of model"
+					<EditablePollNodeOption v-for="(option, idx) of model"
 						:checked="option.is_answer"
 						v-model="option.value"
 						@check="setOptionCheck(idx)"
@@ -64,7 +64,7 @@ const removeOption = (idx: number) => {
 			</div>
 			
 		</template>
-	</CardNodeHarness>
+	</EditableNodeHarness>
 </template>
 
 <style lang="scss" scoped>

@@ -16,7 +16,12 @@ const toggleId = (id: string) => model.value?.has(id) ? model.value.delete(id) :
 	<ul class="card-selector-grid">
 		<li v-for="(card, idx) of cards">
 			<button type="button" class="card" >
-				<CardThumbnail :card="card.front" :active="modelValue?.has(card.id)" :label="idx + 1" @click="toggleId(card.id)" />
+				<CardThumbnail
+					:face="card.front"
+					:label="idx + 1"
+					:interactive="true"
+					:active="modelValue?.has(card.id)"
+					@click="toggleId(card.id)" />
 			</button>
 		</li>
 	</ul>

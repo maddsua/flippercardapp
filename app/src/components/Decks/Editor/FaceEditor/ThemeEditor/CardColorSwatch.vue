@@ -21,9 +21,11 @@ const colorOptions: string[] = [
 
 <template>
 	<div class="color-swatch">
+
 		<div class="label">
 			{{ label }}
 		</div>
+
 		<div class="options">
 
 			<button class="null" type="button" :class="{ selected: !model }" @click="model = null"></button>
@@ -41,7 +43,7 @@ const colorOptions: string[] = [
 	.color-swatch {
 		display: flex;
 		flex-direction: column;
-		gap: 0.25rem;
+		gap: 0.5rem;
 
 		.label {
 			color: var(--app-theme-mysterious-white);

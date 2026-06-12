@@ -3,33 +3,23 @@ import { computed, onMounted, onUnmounted, reactive, toRaw, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { unwrapErrorMessage, useClient } from '@/api';
 import type { CardDeck, ResourceVisibility } from '@/api_models';
-import type { CardContentFace, CardNode } from '@/content';
+import type { CardNode } from '@/content';
 import { useStorage } from '@/storage/storage';
-import FullscreenMessage from '@/components/App/Messages/FullscreenMessage.vue';
 import GenericButton from '@/components/App/Inputs/GenericButton.vue';
 import LoadingMessage from '@/components/App/Messages/LoadingMessage.vue';
-import CardFaceComponent from '@/components/Cards/CardFace.vue';
 import EditorContentExporter from './EditorModals/EditorContentExporter.vue';
 import EditorContentImporter from './EditorModals/EditorContentImporter.vue';
-import CardFaceContentEditor from './ContentNodeEditable/CardFaceContentEditor.vue';
-import CardFaceThemeEditor from './ContentNodeEditable/CardFaceThemeEditor.vue';
-import DeckCardFacePreviewSlot from './DeckCardFacePreviewSlot.vue';
 import DeckEditorStatusBar from './DeckEditorStatusBar.vue';
-import EditorCanvasColumn from './EditorCanvasColumn.vue';
 import DeckCardList from './EditorCardNavigationList.vue';
 import EditorScreenOverlay from './EditorScreenOverlay.vue';
 import EditorContentVersionControl from './EditorModals/EditorContentVersionControl.vue';
 import OverlayErrorMessage from '@/components/App/Messages/OverlayErrorMessage.vue';
+import CardFaceEditor from './FaceEditor/CardFaceEditor.vue';
 
 const route = useRoute();
 const router = useRouter();
 const store = useStorage();
 const client = useClient();
-
-interface ActiveFace {
-	id: string;
-	face: CardContentFace;
-};
 
 const defaultDeckMeta = () => ({
 	name: 'Unnamed deck',
@@ -55,16 +45,12 @@ const state = reactive({
 		ready: false,
 		error: null as string | null,
 		saved: false,
-		oldTitle: null as string | null,
+		activeCardIdx: 0,
+		oldPageTitle: null as string | null,
 		modals: {
 			versions: false,
 			importer: false,
 			exporter: false,
-		},
-		view: {
-			cardIdx: 0,
-			frontFace: true,
-			previewAnimationTurn: false,
 		},
 		changes: {
 			meta: false,
@@ -81,27 +67,14 @@ const isReady = computed(() =>
 
 const isEdited = computed(() => !!state.content.cards.length && (state.editor.changes.cards || state.editor.changes.meta));
 
-const activeCardFace = computed((): ActiveFace | null => {
-	const card = state.content.cards[state.editor.view.cardIdx];
-	if (!card) {
-		return null;
+const activeCard = computed(() => {
+
+	const entry = state.content.cards[state.editor.activeCardIdx];
+	if (!entry) {
+		return { id: null, front: null, back: null };
 	}
 
-	const makeActive = (face: CardContentFace, id: string) => {
-
-		// it is a bit of a fucking hack but it's better than putting 100500 nested proxies and/or event handlers
-		if (!face.theme) {
-			face.theme = { card: {}, interactives: { }};
-		} else if (!face.theme.interactives) {
-			face.theme.interactives = {};
-		}
-
-		return { face, id };
-	};
-
-	return state.editor.view.frontFace ?
-		makeActive(card.front, `${card.id}-front`)
-		: makeActive(card.back, `${card.id}-back`);
+	return { id: entry.id, front: entry.front, back: entry.back };
 });
 
 const cardSelectorList = computed(() => state.content.cards.map(item => item.front));
@@ -185,22 +158,9 @@ const exitEditor = () => {
 	router.push(backHref.value);
 };
 
-const flipCardFace = () => {
-
-	state.editor.view.previewAnimationTurn = true;
-
-	setTimeout(() => {
-		state.editor.view.frontFace = !state.editor.view.frontFace;
-		setTimeout(() => {
-			state.editor.view.previewAnimationTurn = false;
-		}, 10);
-	}, 150);
-};
-
 const addCard = (node: CardNode) => {
 	state.content.cards.push(node);
-	state.editor.view.cardIdx = state.content.cards.length - 1;
-	state.editor.view.frontFace = true;
+	state.editor.activeCardIdx = state.content.cards.length - 1;
 };
 
 const createCard = () => {
@@ -209,8 +169,7 @@ const createCard = () => {
 };
 
 const selectCard = (idx: number) => {
-	state.editor.view.cardIdx = idx;
-	state.editor.view.frontFace = true;
+	state.editor.activeCardIdx = idx;
 };
 
 const duplicateCard = (idx: number) => {
@@ -229,13 +188,13 @@ const removeCard = (idx: number) => {
 
 	state.content.cards.splice(idx, 1);
 
-	if (state.editor.view.cardIdx >= state.content.cards.length) {
-		state.editor.view.cardIdx = state.content.cards.length - 1;
+	if (state.editor.activeCardIdx >= state.content.cards.length) {
+		state.editor.activeCardIdx = state.content.cards.length - 1;
 	}
 };
 
 interface ResumableState extends Pick<typeof state, 'content'> {
-	editor: Pick<typeof state['editor']['view'], 'cardIdx'>;
+	editor: Pick<typeof state['editor'], 'activeCardIdx'>;
 	publisher: Pick<typeof state['publisher'], 'deckID' | 'collectionID'>;
 };
 
@@ -248,7 +207,7 @@ const storeStateSnapshot = async () => {
 	const snapshot: ResumableState = {
 		content: state.content,
 		editor: {
-			cardIdx: state.editor.view.cardIdx,
+			activeCardIdx: state.editor.activeCardIdx,
 		},
 		publisher: {
 			deckID: state.publisher?.deckID || null,
@@ -338,7 +297,7 @@ const resolveDeckState = async (deck: CardDeck) => {
 
 onMounted(async () => {
 
-	state.editor.oldTitle = document.title;
+	state.editor.oldPageTitle = document.title;
 	watch(() => state.content.meta.name, (name) => document.title = `${name || 'Unnamed'} | Deck editor`, { immediate: true });
 
 	const { deck_id } = route.params;
@@ -377,7 +336,7 @@ onMounted(async () => {
 	state.editor.error = 'Invalid editor URL';
 });
 
-onUnmounted(() => document.title = state.editor.oldTitle || '');
+onUnmounted(() => document.title = state.editor.oldPageTitle || '');
 
 const patchDeckMeta = (patch: { name: string | null; description: string | null; }) => {
 	state.content.meta.name = patch.name || defaultDeckMeta().name;
@@ -452,7 +411,6 @@ const handleVersionRollback = async () => {
 			:edited="isEdited"
 			:valid="isReady"
 			@updateMeta="meta => state.content.meta = meta"
-			@flip="flipCardFace"
 			@versions="state.editor.modals.versions = true"
 			@publish="publishChanges"
 			@import="state.editor.modals.importer = true"
@@ -487,80 +445,15 @@ const handleVersionRollback = async () => {
 
 				<DeckCardList
 					:list="cardSelectorList"
-					:pointer="state.editor.view.cardIdx"
+					:pointer="state.editor.activeCardIdx"
 					@select="selectCard"
 					@add="createCard()"
 					@duplicate="duplicateCard"
 					@remove="removeCard" />
 
-				<EditorCanvasColumn>
-					<template v-slot:title>
-
-						Preview
-
-						<template v-if="state.editor.view.frontFace">
-							(front)
-						</template>
-						<template v-else>
-							(back)
-						</template>
-
-					</template>
-
-					<template v-slot:content>
-
-						<DeckCardFacePreviewSlot v-if="activeCardFace" :turned="state.editor.view.previewAnimationTurn">
-							<template v-if="state.editor.view.frontFace">
-								<CardFaceComponent :key="activeCardFace.id" :entry="activeCardFace.face" decoration="question-mark" />
-							</template>
-							<template v-else>
-								<CardFaceComponent :key="activeCardFace.id" :entry="activeCardFace.face" />
-							</template>
-						</DeckCardFacePreviewSlot>
-
-						<template v-else>
-							<FullscreenMessage>
-								Preview not available
-							</FullscreenMessage>
-						</template>
-
-					</template>
-
-				</EditorCanvasColumn>
-
+				<CardFaceEditor v-model="activeCard.front" :isFront="true" />
 				<hr />
-
-				<EditorCanvasColumn>
-
-					<template v-slot:title>
-
-						Editor
-
-						<template v-if="state.editor.view.frontFace">
-							(front)
-						</template>
-						<template v-else>
-							(back)
-						</template>
-
-					</template>
-
-					<template v-slot:content>
-
-						<template v-if="activeCardFace">
-							<CardFaceContentEditor v-model="activeCardFace.face.content" :isFront="state.editor.view.frontFace" />
-							<CardFaceThemeEditor v-model="activeCardFace.face.theme" />
-						</template>
-
-						<template v-else>
-							<FullscreenMessage>
-								No page selected
-							</FullscreenMessage>
-						</template>
-
-					</template>
-
-				</EditorCanvasColumn>
+				<CardFaceEditor v-model="activeCard.back" />
 
 			</div>
 		</div>
@@ -588,7 +481,7 @@ const handleVersionRollback = async () => {
 			.canvas-grid {
 				display: grid;
 				grid-template-columns: auto 1fr 1px 1fr;
-				gap: 2rem;
+				gap: 1rem;
 				width: 100%;
 				max-width: 70rem;
 				height: 100%;
@@ -597,7 +490,7 @@ const handleVersionRollback = async () => {
 			hr {
 				display: block;
 				background-color: var(--app-theme-powder-trail);
-				width: 100%;
+				width: 1px;
 				height: 100%;
 				outline: none;
 				border: none;

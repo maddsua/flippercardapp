@@ -3,7 +3,7 @@ import { computed, onMounted, reactive, watch } from 'vue';
 import { useClient } from '@/api';
 import type { ImageMetadata } from '@/api_models';
 import { pickLocalFiles } from '@/files';
-import CardNodeHarness from './CardNodeHarness.vue';
+import EditableNodeHarness from './EditableNodeHarness.vue';
 import GenericButton from '@/components/App/Inputs/GenericButton.vue';
 
 const model = defineModel<string | null | undefined>();
@@ -70,7 +70,7 @@ watch(model, fetchMetadata);
 </script>
 
 <template>
-	<CardNodeHarness>
+	<EditableNodeHarness>
 		<template v-slot:title>
 			Image
 		</template>
@@ -111,7 +111,7 @@ watch(model, fetchMetadata);
 				</div>
 			</div>
 		</template>
-	</CardNodeHarness>
+	</EditableNodeHarness>
 </template>
 
 <style lang="scss" scoped>
