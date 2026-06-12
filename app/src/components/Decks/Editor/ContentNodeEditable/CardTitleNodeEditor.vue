@@ -3,14 +3,10 @@ import CardNodeHarness from './CardNodeHarness.vue';
 
 const model = defineModel<string>();
 
-const emit = defineEmits<{
-	(e: 'remove'): void;
-}>();
-
 </script>
 
 <template>
-	<CardNodeHarness @remove="emit('remove')">
+	<CardNodeHarness>
 		<template v-slot:title>
 			Title
 		</template>

@@ -8,10 +8,6 @@ import GenericButton from '@/components/App/Inputs/GenericButton.vue';
 
 const model = defineModel<string | null | undefined>();
 
-const emit = defineEmits<{
-	(e: 'remove'): void;
-}>();
-
 const state = reactive({
 	data: null as ImageMetadata | null,
 	name: null as string | null,
@@ -74,7 +70,7 @@ watch(model, fetchMetadata);
 </script>
 
 <template>
-	<CardNodeHarness @remove="emit('remove')">
+	<CardNodeHarness>
 		<template v-slot:title>
 			Image
 		</template>

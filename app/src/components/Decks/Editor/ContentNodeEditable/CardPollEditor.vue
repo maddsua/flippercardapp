@@ -7,7 +7,6 @@ const model = defineModel<CardPollNodeOption[]>();
 
 const emit = defineEmits<{
 	(e: 'setQuizFlag', flag: boolean): void;
-	(e: 'remove'): void;
 }>();
 
 const setOptionCheck = (markIdx: number) => {
@@ -38,7 +37,7 @@ const removeOption = (idx: number) => {
 </script>
 
 <template>
-	<CardNodeHarness @remove="emit('remove')">
+	<CardNodeHarness>
 		<template v-slot:title>
 			Poll / Quiz
 		</template>

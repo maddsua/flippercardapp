@@ -17,33 +17,62 @@ type NodeType = CardContentNode['type'];
 
 const nodeSortOrder: NodeType[] = ['title', 'image', 'textbox', 'poll'];
 
+const nodeOrder = new Map<NodeType, number>(nodeSortOrder.map((item, idx) => ([item, idx])));
+
+const createNode = (type: NodeType): CardContentNode | null => {
+	switch (type) {
+		case 'title':
+			return { type: 'title', content: '' };
+		case 'image':
+			return { type: 'image', state: UploadReadyState.Idle };
+		case 'textbox':
+			return { type: 'textbox', content: [] };
+		case 'poll':
+			return { type: 'poll', content: [] };
+		default:
+			return null;
+	}
+};
+
 const addNode = (type: NodeType) => {
 
 	if (!model.value) {
 		throw new Error('Editor model binding may not be omitted');
 	}
 
-	const sortIndex = new Map<NodeType, number>(nodeSortOrder.map((item, idx) => ([item, idx])));
-
-	switch (type) {
-		case 'title':
-			model.value?.push({ type: 'title', content: '' });
-			break;
-		case 'image':
-			model.value?.push({ type: 'image', state: UploadReadyState.Idle });
-			break;
-		case 'textbox':
-			model.value?.push({ type: 'textbox', content: [] });
-			break;
-		case 'poll':
-			model.value?.push({ type: 'poll', content: [] });
-			break;
+	const next = createNode(type);
+	if (!next) {
+		throw new Error(`Unknown node type: ${type}`);
 	}
 
-	model.value.sort((a, b) => (sortIndex.get(a.type) ?? sortIndex.size) - (sortIndex.get(b.type) ?? sortIndex.size));
+	const nextPosition = nodeOrder.get(type) ?? nodeOrder.size;
+
+	for (let idx = 0; idx < model.value.length; idx++) {
+		const node = model.value[idx];
+		const nodePosition = nodeOrder.get(node.type) ?? 0;
+		if (nodePosition > nextPosition) {
+			model.value.splice(idx, 0, next);
+			return;
+		}
+	}
+
+	model.value.push(next);
 };
 
 const removeNode = (idx: number) => model.value?.splice(idx, 1);
+
+const reorderNode = (idx: number, delta: number) => {
+
+	const newIdx = idx + delta;
+	if (!model.value || newIdx < 0 || newIdx >= (model.value?.length ?? 0)) {
+		return;
+	}
+
+	const node = model.value[idx];
+
+	model.value[idx] = model.value[newIdx];
+	model.value[newIdx] = node;
+};
 
 const availableNodes = computed((): Record<NodeType, boolean> => {
 	const typeSet = new Set(model.value?.map(item => item.type));
@@ -68,18 +97,26 @@ const availableNodes = computed((): Record<NodeType, boolean> => {
 
 				<CardTitleNodeEditor v-if="item.type === 'title'"
 					v-model="item.content"
+					@up="reorderNode(idx, -1)"
+					@down="reorderNode(idx, 1)"
 					@remove="removeNode(idx)" />
 
 				<CardImageNodeEditor v-else-if="item.type === 'image'"
 					v-model="item.media_id"
+					@up="reorderNode(idx, -1)"
+					@down="reorderNode(idx, 1)"
 					@remove="removeNode(idx)" />
 
 				<CardTextNodeEditor v-else-if="item.type === 'textbox'"
 					v-model="item.content"
+					@up="reorderNode(idx, -1)"
+					@down="reorderNode(idx, 1)"
 					@remove="removeNode(idx)" />
 
 				<CardPollEditor v-else-if="item.type === 'poll'"
 					v-model="item.content"
+					@up="reorderNode(idx, -1)"
+					@down="reorderNode(idx, 1)"
 					@setQuizFlag="flag => item.is_quiz = flag"
 					@remove="removeNode(idx)" />
 			</template>

@@ -18,14 +18,10 @@ onMounted(() => {
 	watch(() => state.raw, (val) => state.editing ? model.value = parseTextBoxContent(val) : void 0);
 });
 
-const emit = defineEmits<{
-	(e: 'remove'): void;
-}>();
-
 </script>
 
 <template>
-	<CardNodeHarness @remove="emit('remove')">
+	<CardNodeHarness>
 		<template v-slot:title>
 			Text
 		</template>

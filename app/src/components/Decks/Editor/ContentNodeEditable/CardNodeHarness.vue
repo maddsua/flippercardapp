@@ -1,6 +1,8 @@
 <script setup lang="ts">
 const emit = defineEmits<{
 	(e: 'remove'): void;
+	(e: 'up'): void;
+	(e: 'down'): void;
 }>();
 </script>
 
@@ -24,6 +26,8 @@ const emit = defineEmits<{
 
 		<div class="actions">
 			<button type="button" class="remove" title="Remove node" @click="emit('remove')"></button>
+			<button type="button" class="up" title="Remove node" @click="emit('up')"></button>
+			<button type="button" class="down" title="Remove node" @click="emit('down')"></button>
 		</div>
 
 	</div>
@@ -67,23 +71,38 @@ const emit = defineEmits<{
 			flex-shrink: 0;
 			width: fit-content;
 
-			button.remove {
+			button {
 				display: block;
 				width: 1.5rem;
 				height: 1.5rem;
 				border: none;
 				outline: none;
-				background-color: var(--app-theme-blood-red);
 				mask-type: alpha;
 				mask-position: center;
 				mask-repeat: no-repeat;
 				mask-size: contain;
-				mask-image: url(/src/assets/icons/delete-mask.svg);
 				opacity: 0.8;
-	
+
 				&:hover {
 					cursor: pointer;
 					opacity: 1;
+				}
+
+				&.remove {
+					background-color: var(--app-theme-blood-red);
+					mask-image: url(/src/assets/icons/delete-mask.svg);
+				}
+
+				&.up {
+					background-color: var(--app-theme-snow-white);
+					mask-image: url(/src/assets/icons/arrow-bracket-mask.svg);
+					transform: rotate(90deg);
+				}
+
+				&.down {
+					background-color: var(--app-theme-snow-white);
+					mask-image: url(/src/assets/icons/arrow-bracket-mask.svg);
+					transform: rotate(-90deg);
 				}
 			}
 		}
