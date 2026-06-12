@@ -68,6 +68,13 @@ const openDeck = (id: string) => {
 					uk: 'Збережені',
 				}) }}
 			</template>
+			<template v-slot:summary>
+				{{ intl(lang, {
+					en: 'Your saved decks',
+					de: 'Ihre gespeicherte Kartenspiele',
+					uk: 'Ваші збережені колоди',
+				}) }}
+			</template>
 		</AppUiHeader>
 
 		<ContentList v-if="state.data && state.data.length">

@@ -81,7 +81,7 @@ const lang = useLanguage();
 			<template v-slot:summary>
 				{{ intl(lang, {
 					en: `Your card collections`,
-					de: 'Ihre Kartensammlungen',
+					de: 'Ihre gespeicherte Kartensammlungen',
 					uk: 'Ваші колекції карток'
 				}) }}
 			</template>
