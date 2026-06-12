@@ -1,9 +1,7 @@
 <script setup lang="ts">
-import { ref } from 'vue';
 import GenericButton from '@/components/App/Inputs/GenericButton.vue';
-import DeckMetaEditorPopup from './DeckMetaEditorPopup.vue';
-import DeckEditorTitle from './DeckEditorTitle.vue';
 import type { ResourceVisibility } from '@/api_models';
+import DeckMetaInfo from './Toolbar/DeckMetaInfo.vue';
 
 interface DeckMeta {
 	name: string;
@@ -19,15 +17,12 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-	(e: 'updateMeta', meta: DeckMeta): void;
 	(e: 'disacard'): void;
 	(e: 'publish'): void;
 	(e: 'import'): void;
 	(e: 'export'): void;
 	(e: 'versions'): void;
 }>();
-
-const metaEditorOpen = ref(false);
 
 </script>
 
@@ -36,7 +31,7 @@ const metaEditorOpen = ref(false);
 
 		<div class="wrapper">
 
-			<DeckEditorTitle :meta="meta" @click="metaEditorOpen = true" />
+			<DeckMetaInfo :meta="props.meta" />
 
 			<div class="publish-actions">
 				<GenericButton variant="thin" theme="orange" @click="emit('disacard')">
@@ -60,10 +55,6 @@ const metaEditorOpen = ref(false);
 					Publish
 				</GenericButton>
 			</div>
-
-			<DeckMetaEditorPopup v-if="metaEditorOpen" :meta="meta"
-				@done="metaEditorOpen = false"
-				@edit="val => emit('updateMeta', val)" />
 
 		</div>
 	</div>

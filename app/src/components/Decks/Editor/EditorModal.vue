@@ -4,7 +4,7 @@ import EditorScreenOverlay from './EditorScreenOverlay.vue';
 
 const props = defineProps<{
 	title: string;
-	variant?: 'wide' | 'narrow';
+	variant?: 'wide' | 'narrow' | 'compact';
 }>();
 
 const emit = defineEmits<{
@@ -44,6 +44,7 @@ const emit = defineEmits<{
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+		justify-content: center;
 		width: 100%;
 		height: 100%;
 		padding: 2rem 4rem;
@@ -54,14 +55,17 @@ const emit = defineEmits<{
 			gap: 2rem;
 			width: 100%;
 			height: 100%;
-			overflow: hidden;
 			min-height: 0;
 			background-color: var(--app-theme-midnight);
 			padding: 1rem;
 			border-radius: 0.5rem;
 
-			&.variant-narrow {
+			&.variant-narrow, &.variant-compact {
 				max-width: 30rem;
+			}
+
+			&.variant-compact {
+				height: unset;
 			}
 
 			.modal-status-bar {

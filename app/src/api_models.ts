@@ -19,7 +19,7 @@ export interface CollectionSearchResult extends CollectionMetadata {
 	rank: number;
 };
 
-export interface CardDeckMetadata extends ContentEntryMetaBase{
+export interface CardDeckMetadata extends ContentEntryMetaBase {
 	id: string;
 	collection_id: string;
 	created: string;
@@ -72,6 +72,7 @@ export interface CollectionPatch {
 
 export interface CardDeckPatch {
 	collection_id?: string | null;
+	label?: string | null;
 	meta?: ContentEntryMetaBase | null;
 	content?: CardDeckContentPatch | null;
 };
