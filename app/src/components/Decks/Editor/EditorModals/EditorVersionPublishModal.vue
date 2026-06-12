@@ -40,7 +40,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
 	(e: 'done'): void;
-	(e: 'update', meta: CardDeckMetadata): void;
+	(e: 'publish', meta: CardDeckMetadata): void;
 }>();
 
 const client = useClient();
@@ -86,7 +86,7 @@ const publishVersion = async () => {
 	}
 
 	if (meta) {
-		emit('update', meta);
+		emit('publish', meta);
 	}
 
 	if (!state.error) {

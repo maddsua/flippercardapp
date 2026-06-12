@@ -14,6 +14,7 @@ const props = defineProps<{
 	edited?: boolean;
 	published?: boolean;
 	valid?: boolean;
+	autosaved?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -31,7 +32,7 @@ const emit = defineEmits<{
 
 		<div class="wrapper">
 
-			<DeckMetaInfo :meta="props.meta" />
+			<DeckMetaInfo :meta="meta" :changed="edited" :changesSaved="autosaved" />
 
 			<div class="publish-actions">
 				<GenericButton variant="thin" theme="orange" @click="emit('disacard')">

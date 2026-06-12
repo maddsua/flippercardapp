@@ -58,7 +58,6 @@ const state = reactive({
 			cards: false,
 		},
 		snapshots: {
-			queued: false,
 			timer: null as NodeJS.Timeout | null,
 			lock: false,
 			writtenVersion: null as DeckEditorHistoryMetaEntry | null,
@@ -67,9 +66,9 @@ const state = reactive({
 	},
 });
 
-const isReady = computed(() => state.editor.ready && !state.editor.error);
-
-const isEdited = computed(() => !!state.content.cards.length && (state.editor.changes.cards || state.editor.changes.meta));
+const editorReady = computed(() => state.editor.ready && !state.editor.error);
+const contentEdited = computed(() => !!state.content.cards.length && (state.editor.changes.cards || state.editor.changes.meta));
+const changesSaved = computed(() => !state.editor.snapshots.timer && !!(state.editor.snapshots.loadedVersion || state.editor.snapshots.writtenVersion));
 
 const activeCard = computed(() => {
 
@@ -132,11 +131,14 @@ const queueStateSnapshot = () => {
 		return;
 	}
 
-	state.editor.snapshots.queued = true;
-
 	if (state.editor.snapshots.timer) {
 		clearTimeout(state.editor.snapshots.timer);
 	}
+
+	const postSnapshot = () => {
+		state.editor.snapshots.lock = false;
+		state.editor.snapshots.timer = null;
+	};
 
 	const interval = 3_000;
 
@@ -169,13 +171,12 @@ const queueStateSnapshot = () => {
 
 		if (error) {
 			console.error('editor.snapshots.push', error);
-			state.editor.snapshots.lock = false;
+			postSnapshot();
 			return;
 		}
 
 		state.editor.snapshots.writtenVersion = { deck_id: snapshot.deck_id, timestamp: snapshot.timestamp };
-		state.editor.snapshots.queued = false;
-		state.editor.snapshots.lock = false;
+		postSnapshot();
 
 	}, interval);
 };
@@ -196,10 +197,24 @@ const restoreStateSnapshot = async (deckID?: string) => {
 	state.editor.snapshots.loadedVersion = { deck_id: snapshot.deck_id, timestamp: snapshot.timestamp };
 };
 
-const clearStateSnapshot = () =>
-	store.decks.editor.snapshots.remove(state.origin.deckID || 'new')
+const clearStateSnapshot = async () => {
+
+	const { ready } = state.editor;
+
+	state.editor.ready = false;
+
+	await store.decks.editor.snapshots.remove(state.origin.deckID || 'new')
 		.catch(error => console.error('editor.snapshots.remove', error));
 
+	if (state.editor.snapshots.timer) {
+		clearTimeout(state.editor.snapshots.timer);
+	}
+
+	state.editor.snapshots.writtenVersion = null;
+	state.editor.snapshots.loadedVersion = null;
+
+	nextTick(() => state.editor.ready = ready);
+};
 
 const fetchRemoteState = async (deckID: string) => {
 
@@ -303,12 +318,14 @@ const handleVersionRollback = async () => {
 	window.location.reload();
 };
 
-const handleVersionPublish = (meta: CardDeckMetadata) => {
+const handleVersionPublish = async (meta: CardDeckMetadata) => {
 
 	state.editor.ready = false;
 
 	state.origin = { deckID: meta.id, collectionID: meta.collection_id };
 	state.content.meta = { name: meta.name, description: meta.description || null, visibility: meta.visibility };
+
+	await clearStateSnapshot();
 
 	state.editor.changes = { meta: false, cards: false };
 
@@ -319,7 +336,7 @@ const backHref = computed(() => state.origin?.collectionID ? `/collection/${stat
 
 const discardChanges = () => {
 
-	if (isEdited.value && !confirm('Really discard your changes?')) {
+	if (contentEdited.value && !confirm('Really discard your changes?')) {
 		return;
 	}
 
@@ -365,8 +382,9 @@ const exitEditor = () => {
 
 		<DeckEditorStatusBar
 			:meta="state.content.meta"
-			:edited="isEdited"
-			:valid="isReady"
+			:edited="contentEdited"
+			:valid="editorReady"
+			:autosaved="changesSaved"
 			@versions="state.editor.modals.versions = true"
 			@publish="state.editor.modals.publish = true"
 			@import="state.editor.modals.importer = true"
@@ -400,7 +418,7 @@ const exitEditor = () => {
 				:origin="state.origin"
 				:content="state.content"
 				:changes="state.editor.changes"
-				@update="handleVersionPublish"
+				@publish="handleVersionPublish"
 				@done="state.editor.modals.publish = false" />
 		</EditorScreenOverlay>
 
