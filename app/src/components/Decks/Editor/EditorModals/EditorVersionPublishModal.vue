@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import type { CardDeckMetadata, ResourceVisibility } from '@/api_models';
-import type { CardNode } from '@/content';
-import EditorModal from '../EditorModal.vue';
-import { unwrapErrorMessage, useClient } from '@/api';
 import { computed, reactive } from 'vue';
-import GenericButton from '@/components/App/Inputs/GenericButton.vue';
-import GenericInput from '@/components/App/Inputs/GenericInput.vue';
-import InlineErrorMessage from '@/components/App/Messages/InlineErrorMessage.vue';
+import { unwrapErrorMessage, useClient } from '@/api';
+import type { CardDeckMetadata, ResourceVisibility } from '@/api_models';
 import { resourceVisibilityOptions } from '@/inputs';
+import type { CardNode } from '@/content';
+import GenericButton from '@/components/App/Inputs/GenericButton.vue';
 import GenericDropdown from '@/components/App/Inputs/GenericDropdown.vue';
+import GenericInput from '@/components/App/Inputs/GenericInput.vue';
 import InputLabel from '@/components/App/Inputs/InputLabel.vue';
+import InlineErrorMessage from '@/components/App/Messages/InlineErrorMessage.vue';
+import EditorModal from '../EditorModal.vue';
+import GenericToggle from '@/components/App/Inputs/GenericToggle.vue';
 
 interface Origin {
 	deckID: string | null,
@@ -52,6 +53,7 @@ const state = reactive({
 		description: props.content.meta.description || '',
 		visibility: props.content.meta.visibility,
 	},
+	editSummary: false,
 	versionLabel: '',
 	error: null as string | null,
 });
@@ -138,26 +140,30 @@ const publishChanges = async (deckID: string): Promise<CardDeckMetadata | null> 
 
 		<div class="publish-form">
 
-			<InputLabel variant="slick">
-				<template v-slot:label>
-					Deck name
-				</template>
-				<GenericInput placeholder="Deck name" v-model="state.meta.name" />
-			</InputLabel>
+			<template v-if="state.editSummary">
 
-			<InputLabel variant="slick">
-				<template v-slot:label>
-					Deck summary
-				</template>
-				<GenericInput placeholder="Deck summary" :multiline="true" v-model="state.meta.description" />
-			</InputLabel>
+				<InputLabel variant="slick">
+					<template v-slot:label>
+						Deck name
+					</template>
+					<GenericInput placeholder="Deck name" v-model="state.meta.name" />
+				</InputLabel>
 
-			<InputLabel variant="slick">
-				<template v-slot:label>
-					Deck visibility
-				</template>
-				<GenericDropdown :options="resourceVisibilityOptions" v-model="state.meta.visibility" />
-			</InputLabel>
+				<InputLabel variant="slick">
+					<template v-slot:label>
+						Deck summary
+					</template>
+					<GenericInput placeholder="Deck summary" :multiline="true" v-model="state.meta.description" />
+				</InputLabel>
+
+				<InputLabel variant="slick">
+					<template v-slot:label>
+						Deck visibility
+					</template>
+					<GenericDropdown :options="resourceVisibilityOptions" v-model="state.meta.visibility" />
+				</InputLabel>
+				
+			</template>
 
 			<InputLabel variant="slick">
 				<template v-slot:label>
@@ -165,6 +171,8 @@ const publishChanges = async (deckID: string): Promise<CardDeckMetadata | null> 
 				</template>
 				<GenericInput placeholder="Label, e.g. 'New version'" v-model="state.versionLabel" />
 			</InputLabel>
+
+			<GenericToggle label="Edit summary" v-model="state.editSummary" />
 	
 			<GenericButton variant="thin" :disabled="state.busy" :spinner="state.busy" @click="publishVersion">
 				Publish
@@ -187,5 +195,9 @@ const publishChanges = async (deckID: string): Promise<CardDeckMetadata | null> 
 		display: flex;
 		flex-direction: column;
 		gap: 1.5rem;
+		max-height: 100%;
+		overflow: hidden auto;
+		scrollbar-width: thin;
+		padding-right: 0.5rem;
 	}
 </style>
