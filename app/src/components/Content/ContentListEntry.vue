@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { ResourceVisibility } from '../../api_models';
+import type { ResourceVisibility } from '@/api_models';
 import GenericButton from '../App/Inputs/GenericButton.vue';
 import ContentEntryBadge from './ContentEntryBadge.vue';
 
@@ -24,6 +24,8 @@ const emit = defineEmits<{
 	(e: 'delete'): void;
 }>();
 
+const newBadgeThreshold = 7 * 24 * 60 * 60 * 1000;
+
 const showNewBadge = computed(() => {
 
 	if (!props.date) {
@@ -31,7 +33,7 @@ const showNewBadge = computed(() => {
 	}
 
 	try {
-		return new Date().getTime() - new Date(props.date).getTime() < 2 * 24 * 60 * 60 * 1000;
+		return new Date().getTime() - new Date(props.date).getTime() < newBadgeThreshold;
 	} catch (_) {
 		return false;
 	}
