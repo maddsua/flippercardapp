@@ -2,9 +2,9 @@
 import { computed, onMounted, onUnmounted, reactive, toRaw, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { unwrapErrorMessage, useClient } from '@/api';
-import type { CardDeck, ResourceVisibility } from '@/api_models';
+import type { ResourceVisibility } from '@/api_models';
 import type { CardNode } from '@/content';
-import { useStorage } from '@/storage/storage';
+import { useStorage, type DeckEditorHistoryMetaEntry } from '@/storage/storage';
 import GenericButton from '@/components/App/Inputs/GenericButton.vue';
 import LoadingMessage from '@/components/App/Messages/LoadingMessage.vue';
 import EditorContentExporter from './EditorModals/EditorContentExporter.vue';
@@ -34,6 +34,7 @@ const state = reactive({
 		cards: [] as CardNode[],
 	},
 
+	//	todo: remove and replace with a publish pop-up
 	publisher: {
 		deckID: null as string | null,
 		collectionID: null as string | null,
@@ -44,9 +45,10 @@ const state = reactive({
 	editor: {
 		ready: false,
 		error: null as string | null,
-		saved: false,
-		activeCardIdx: 0,
-		oldPageTitle: null as string | null,
+		prevAppTitle: null as string | null,
+		view: {
+			cardIdx: 0,
+		},
 		modals: {
 			versions: false,
 			importer: false,
@@ -55,6 +57,13 @@ const state = reactive({
 		changes: {
 			meta: false,
 			cards: false,
+		},
+		snapshots: {
+			queued: false,
+			timer: null as NodeJS.Timeout | null,
+			lock: false,
+			writtenVersion: null as DeckEditorHistoryMetaEntry | null,
+			loadedVersion: null as DeckEditorHistoryMetaEntry | null,
 		},
 	},
 });
@@ -69,7 +78,7 @@ const isEdited = computed(() => !!state.content.cards.length && (state.editor.ch
 
 const activeCard = computed(() => {
 
-	const entry = state.content.cards[state.editor.activeCardIdx];
+	const entry = state.content.cards[state.editor.view.cardIdx];
 	if (!entry) {
 		return { id: null, front: null, back: null };
 	}
@@ -127,9 +136,6 @@ const publishChanges = async () => {
 	}
 
 	state.editor.changes = { meta: false, cards: false };
-	state.editor.saved = false;
-
-	await clearStateSnapshot();
 
 	state.publisher.busy = false;
 };
@@ -142,25 +148,9 @@ const resetPublisher = () => {
 	state.publisher.error = null;
 };
 
-const discardChanges = () => {
-
-	if (isEdited.value && !confirm('Really discard your changes?')) {
-		return;
-	}
-
-	exitEditor();
-};
-
-const backHref = computed(() => state.publisher?.collectionID ? `/collection/${state.publisher.collectionID}` : '/collections');
-
-const exitEditor = () => {
-	clearStateSnapshot();
-	router.push(backHref.value);
-};
-
 const addCard = (node: CardNode) => {
 	state.content.cards.push(node);
-	state.editor.activeCardIdx = state.content.cards.length - 1;
+	state.editor.view.cardIdx = state.content.cards.length - 1;
 };
 
 const createCard = () => {
@@ -169,7 +159,7 @@ const createCard = () => {
 };
 
 const selectCard = (idx: number) => {
-	state.editor.activeCardIdx = idx;
+	state.editor.view.cardIdx = idx;
 };
 
 const duplicateCard = (idx: number) => {
@@ -188,131 +178,164 @@ const removeCard = (idx: number) => {
 
 	state.content.cards.splice(idx, 1);
 
-	if (state.editor.activeCardIdx >= state.content.cards.length) {
-		state.editor.activeCardIdx = state.content.cards.length - 1;
+	if (state.editor.view.cardIdx >= state.content.cards.length) {
+		state.editor.view.cardIdx = state.content.cards.length - 1;
 	}
 };
 
-interface ResumableState extends Pick<typeof state, 'content'> {
-	editor: Pick<typeof state['editor'], 'activeCardIdx'>;
+interface ResumableState extends DeckEditorHistoryMetaEntry {
+	editor: {
+		view: Pick<typeof state['editor']['view'], 'cardIdx'>;
+	};
 	publisher: Pick<typeof state['publisher'], 'deckID' | 'collectionID'>;
+	content: typeof state['content'];
 };
 
-const storeStateSnapshot = async () => {
+const queueStateSnapshot = () => {
 
-	if (isReady.value || state.editor.saved) {
+	if (!state.editor.ready || state.editor.snapshots.lock) {
 		return;
 	}
 
-	const snapshot: ResumableState = {
-		content: state.content,
-		editor: {
-			activeCardIdx: state.editor.activeCardIdx,
-		},
-		publisher: {
-			deckID: state.publisher?.deckID || null,
-			collectionID: state.publisher?.collectionID || null,
-		},
-	};
+	state.editor.snapshots.queued = true;
 
-	store.decks.editor.snapshot.store(snapshot);
+	if (state.editor.snapshots.timer) {
+		clearTimeout(state.editor.snapshots.timer);
+	}
 
-	state.editor.saved = true;
-};
+	const interval = 3_000;
 
-const loadSnapshot = async () => await store.decks.editor.snapshot.load() as ResumableState | null;
+	state.editor.snapshots.timer = setTimeout(async () => {
 
-const clearStateSnapshot = async () => store.decks.editor.snapshot.clear();
-
-const initAutosave = () => {
-
-	watch(() => state.content.meta, () => {
-		state.editor.changes.meta = true;
-		state.editor.saved = false;
-	}, { deep: true });
-
-	watch(() => state.content.cards, () => {
-		state.editor.changes.cards = true;
-		state.editor.saved = false;
-	}, { deep: true });
-
-	setInterval(async () => {
-
-		if (!isEdited.value) {
+		if (state.editor.snapshots.lock) {
 			return;
 		}
 
-		await storeStateSnapshot();
+		state.editor.snapshots.lock = true;
 
-	}, 1000);
+		const snapshot: ResumableState = {
+			deck_id: state.publisher?.deckID || 'new',
+			timestamp: new Date(),
+			content: structuredClone(toRaw(state.content)),
+			editor: {
+				view: {
+					cardIdx: state.editor.view.cardIdx,
+				},
+			},
+			publisher: {
+				deckID: state.publisher?.deckID || null,
+				collectionID: state.publisher?.collectionID || null,
+			},
+		};
+
+		const { error } = await store.decks.editor.snapshots.push(snapshot)
+			.then(() => ({ error: null }))
+			.catch(error => ({ error }));
+
+		if (error) {
+			console.error('editor.snapshots.push', error);
+			state.editor.snapshots.lock = false;
+			return;
+		}
+
+		state.editor.snapshots.writtenVersion = { deck_id: snapshot.deck_id, timestamp: snapshot.timestamp };
+		state.editor.snapshots.queued = false;
+		state.editor.snapshots.lock = false;
+
+	}, interval);
 };
 
-const applyRemoteDeckState = (deck: CardDeck) => {
+const restoreStateSnapshot = async (deckID?: string) => {
 
-	state.content = {
-		meta: {
-			name: deck.name,
-			description: deck.description || null,
-			visibility: deck.visibility,
-		},
-		cards: deck.cards,
-	};
-
-	state.publisher = { deckID: deck.id, collectionID: deck.collection_id, busy: false, error: null };
-	state.editor.changes = { meta: false, cards: false };
-};
-
-const applySnapshotState = (snapshot: ResumableState) => {
-	state.publisher = { deckID: snapshot.publisher.deckID, collectionID: snapshot.publisher.collectionID, busy: false, error: null };
-	state.content = snapshot.content;
-	state.editor.changes = { meta: false, cards: false };
-};
-
-const resolveDeckState = async (deck: CardDeck) => {
-
-	const snapshot = await loadSnapshot();
+	const snapshot = await store.decks.editor.snapshots.latest<ResumableState>(deckID || 'new').catch(() => null);
 	if (!snapshot) {
-		applyRemoteDeckState(deck);
-		return null;
-	}
-
-	const { deckID: storedID } = snapshot.publisher;
-
-	if (storedID === deck.id) {
-		applySnapshotState(snapshot);
-		return null
-	}
-
-	if (!confirm('Editor contains unsaved changed of another deck. Overwrite changes or load them?')) {
-		applySnapshotState(snapshot);
-		state.publisher = { deckID: deck.id, collectionID: deck.collection_id, busy: false, error: null };
+		state.editor.snapshots.loadedVersion = null;
 		return;
 	}
 
-	await clearStateSnapshot();
-	applyRemoteDeckState(deck);
+	state.publisher = { deckID: snapshot.publisher.deckID, collectionID: snapshot.publisher.collectionID, busy: false, error: null };
+	state.content = snapshot.content;
+	state.editor.view.cardIdx = snapshot.editor.view.cardIdx;
+	state.editor.changes = { meta: true, cards: true };
 
-	return null;
+	state.editor.snapshots.loadedVersion = { deck_id: snapshot.deck_id, timestamp: snapshot.timestamp };
+};
+
+const clearStateSnapshot = () =>
+	store.decks.editor.snapshots.remove(state.publisher.deckID || 'new')
+		.catch(error => console.error('editor.snapshots.remove', error));
+
+
+const fetchRemoteState = async (deckID: string) => {
+
+	const { data, error } = await client.decks.load(deckID);
+	if (!data || error) {
+		state.editor.error = unwrapErrorMessage(error);
+		return;
+	}
+
+	state.content = {
+		meta: {
+			name: data.name,
+			description: data.description || null,
+			visibility: data.visibility,
+		},
+		cards: data.cards,
+	};
+
+	state.publisher = { deckID: data.id, collectionID: data.collection_id, busy: false, error: null };
+	state.editor.changes = { meta: false, cards: false };
+};
+
+const watchContentEdits = () => {
+
+	watch(() => state.content.meta, () => {
+
+		if (!state.editor.ready) {
+			return;
+		}
+
+		state.editor.changes.meta = true;
+		queueStateSnapshot();
+
+	}, { deep: true });
+
+	watch(() => state.content.cards, () => {
+
+		if (!state.editor.ready) {
+			return;
+		}
+
+		state.editor.changes.cards = true;
+		queueStateSnapshot();
+
+	}, { deep: true });
+};
+
+const updateAppTitle = () => {
+	state.editor.prevAppTitle = document.title;
+	watch(() => state.content.meta.name, (name) => document.title = `${name || 'Unnamed'} | Deck editor`, { immediate: true });
+};
+
+const restoreAppTitle = () => {
+	document.title = state.editor.prevAppTitle || '';
 };
 
 onMounted(async () => {
 
-	state.editor.oldPageTitle = document.title;
-	watch(() => state.content.meta.name, (name) => document.title = `${name || 'Unnamed'} | Deck editor`, { immediate: true });
+	updateAppTitle();
+	watchContentEdits();
 
 	const { deck_id } = route.params;
 	if (typeof deck_id === 'string') {
 
-		const { data, error } = await client.decks.load(deck_id);
-		if (!data || error) {
-			state.editor.error = unwrapErrorMessage(error);
-			return;
+		await restoreStateSnapshot(deck_id)
+			.catch(error => void console.error('restoreStateSnapshot', error)) || null;
+
+		if (!state.editor.snapshots.loadedVersion) {
+			await fetchRemoteState(deck_id);
 		}
 
-		await resolveDeckState(data);
-
-		initAutosave();
-		
 		state.editor.ready = true;
 		return;
 	}
@@ -320,14 +343,9 @@ onMounted(async () => {
 	const { collection_id } = Object.fromEntries(new URLSearchParams(window.location.search).entries());
 	if (collection_id) {
 
-		const snapshot = await loadSnapshot();
-		if (snapshot) {
-			applySnapshotState(snapshot);
-		}
+		await restoreStateSnapshot().catch(error => console.error('restoreStateSnapshot', error));
 
 		state.publisher = { deckID: null, collectionID: collection_id, busy: false, error: null };
-
-		initAutosave();
 
 		state.editor.ready = true;
 		return;
@@ -336,7 +354,9 @@ onMounted(async () => {
 	state.editor.error = 'Invalid editor URL';
 });
 
-onUnmounted(() => document.title = state.editor.oldPageTitle || '');
+onUnmounted(() => {
+	restoreAppTitle();
+});
 
 const patchDeckMeta = (patch: { name: string | null; description: string | null; }) => {
 	state.content.meta.name = patch.name || defaultDeckMeta().name;
@@ -346,6 +366,22 @@ const patchDeckMeta = (patch: { name: string | null; description: string | null;
 const handleVersionRollback = async () => {
 	await clearStateSnapshot();
 	window.location.reload();
+};
+
+const backHref = computed(() => state.publisher?.collectionID ? `/collection/${state.publisher.collectionID}` : '/collections');
+
+const discardChanges = () => {
+
+	if (isEdited.value && !confirm('Really discard your changes?')) {
+		return;
+	}
+
+	exitEditor();
+};
+
+const exitEditor = () => {
+	clearStateSnapshot();
+	router.push(backHref.value);
 };
 
 </script>
@@ -445,7 +481,7 @@ const handleVersionRollback = async () => {
 
 				<DeckCardList
 					:list="cardSelectorList"
-					:pointer="state.editor.activeCardIdx"
+					:pointer="state.editor.view.cardIdx"
 					@select="selectCard"
 					@add="createCard()"
 					@duplicate="duplicateCard"

@@ -1,5 +1,6 @@
 import type { DeckPlayStats } from "@/play";
 import { GenericKVStore } from "./kv";
+import type { DeckEditorHistoryMetaEntry } from "./storage";
 
 declare let window: Window & {
 	appUserDB?: IDBDatabase;
@@ -89,10 +90,10 @@ class IDSetStore <T extends string> {
 		this.storeName = storeName;
 	}
 
-	static create = (db: IDBDatabase, name: string, initEntries?: string[]) => {
+	static create = (db: IDBDatabase, name: string, entriesInit?: string[]) => {
 		const store = db.createObjectStore(name, { keyPath: 'id' satisfies keyof IDSetStoreValue<string> });
 		store.createIndex('set_idx', 'id', { unique: true });
-		initEntries?.forEach(entry => store.put({ id: entry } satisfies IDSetStoreValue<string>));
+		entriesInit?.forEach(entry => store.put({ id: entry } satisfies IDSetStoreValue<string>));
 	};
 
 	private tx = (mode: IDBTransactionMode) =>
@@ -123,10 +124,10 @@ class UniqueCollectionStore <T extends {}> {
 		this.storeName = storeName;
 	}
 
-	static create = <T extends {}>(db: IDBDatabase, name: string, keyPath: keyof T, initEntries?: T[]) => {
-		const store = db.createObjectStore(name, { keyPath: String(keyPath) });
-		store.createIndex(`${String(keyPath)}_idx`, 'id', { unique: true });
-		initEntries?.forEach(entry => store.put(entry));
+	static create = <T extends {}>(db: IDBDatabase, name: string, keyPathInit: keyof T, entriesInit?: T[]) => {
+		const store = db.createObjectStore(name, { keyPath: String(keyPathInit) });
+		store.createIndex(`${String(keyPathInit)}_idx`, 'id', { unique: true });
+		entriesInit?.forEach(entry => store.put(entry));
 	};
 
 	private tx = (mode: IDBTransactionMode) =>
@@ -146,7 +147,7 @@ class UniqueCollectionStore <T extends {}> {
 		unwrapRequest(this.tx('readonly').get(key))
 			.then(entry => !!entry);
 
-	all = async () =>
+	entries = async () =>
 		unwrapRequest<Array<T>>(this.tx('readonly').getAll());
 
 	filter = async (predicate: (val: T) => boolean) => {
@@ -180,6 +181,68 @@ class UniqueCollectionStore <T extends {}> {
 	};
 };
 
+interface VersionedStoreEntryBase {
+	timestamp: Date;
+};
+
+class VersionedCollectionStore <E extends VersionedStoreEntryBase> {
+
+	private readonly db: IDBDatabase;
+	private readonly storeName: string;
+
+	constructor(db: IDBDatabase, storeName: string) {
+		this.db = db;
+		this.storeName = storeName;
+	}
+
+	static create = <T extends {}>(db: IDBDatabase, name: string, primaryKey: Exclude<keyof T, 'timestamp'>, entriesInit?: T[]) => {
+
+		const keyPath = [String(primaryKey), 'timestamp' satisfies keyof VersionedStoreEntryBase];
+
+		const store = db.createObjectStore(name, { keyPath: keyPath });
+		keyPath.forEach(key => store.createIndex(`${key}_idx`, key, { unique: false }))
+
+		entriesInit?.forEach(entry => store.put(entry));
+	};
+
+	private tx = (mode: IDBTransactionMode) =>
+		getStore(this.db, this.storeName, mode);
+
+	private keyRange = (key: string) => IDBKeyRange.bound([key, new Date(0)], [key, new Date()]);
+
+	push = async <V extends E>(val: V) =>
+		unwrapRequest(this.tx('readwrite').put(val));
+
+	latest = async <V extends E>(key: string) => {
+		return new Promise<V | null>((resolve, reject) => {
+
+			const cursor = this.tx('readonly').openCursor(this.keyRange(key), 'prev');
+
+			cursor.onsuccess = () => {
+
+				const { result: next } = cursor;
+				if (!next) {
+					resolve(null);
+					return;
+				}
+
+				resolve(structuredClone(next.value));
+			};
+
+			cursor.onerror = () => {
+				console.error('IDB cursor rejected:', cursor.error?.message);
+				reject(cursor.error);
+			};
+		});
+	};
+
+	versions = async (key: string) =>
+		unwrapRequest<Array<E>>(this.tx('readonly').getAll(this.keyRange(key)));
+
+	remove = async (key: string) =>
+		unwrapRequest(this.tx('readwrite').delete(this.keyRange(key)));
+};
+
 interface Migration {
 	version: number;
 	onUpgrade: (db: IDBDatabase) => void;
@@ -204,9 +267,15 @@ const migrationList: Migration[] = [
 			const statEntries = Object.values(new GenericKVStore('play_stats').load() || {})
 				.filter(item => typeof item === 'object' && !!item && 'deck_id' in item);
 
-			UniqueCollectionStore.create(db, 'deck_play_stats', 'deck_id' satisfies keyof DeckPlayStats, statEntries);
+			UniqueCollectionStore.create<DeckPlayStats>(db, 'deck_play_stats', 'deck_id', statEntries);
 		},
 	},
+	{
+		version: 2,
+		onUpgrade: (db) => {
+			VersionedCollectionStore.create<DeckEditorHistoryMetaEntry>(db, 'deck_editor_history', 'deck_id');
+		},
+	}
 ];
 
 export const useIDB = async () => {
@@ -219,5 +288,6 @@ export const useIDB = async () => {
 		starredDecks: new IDSetStore(window.appUserDB, 'starred_decks'),
 		starredCollections: new IDSetStore(window.appUserDB, 'starred_collections'),
 		deckPlayStats: new UniqueCollectionStore<DeckPlayStats>(window.appUserDB, 'deck_play_stats'),
+		deckEditorHistory: new VersionedCollectionStore<DeckEditorHistoryMetaEntry>(window.appUserDB, 'deck_editor_history'),
 	};
 };

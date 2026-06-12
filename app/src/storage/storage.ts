@@ -1,8 +1,11 @@
 import type { CollectionPlayStats, DeckPlayStats } from "@/play";
 import { useIDB } from "./idb";
-import { GenericKVStore, KVFlagStore, KVStringStore } from "./kv";
+import { KVFlagStore, KVStringStore } from "./kv";
 
-
+export interface DeckEditorHistoryMetaEntry {
+	deck_id: string;
+	timestamp: Date;
+};
 
 export const useStorage = () => {
 	return {
@@ -21,7 +24,7 @@ export const useStorage = () => {
 								const idSet = new Set(collection_ids);
 								return store.filter(item => !!item.collection_id && idSet.has(item.collection_id));
 							default:
-								return store.all();
+								return store.entries();
 						}
 					};
 
@@ -61,7 +64,7 @@ export const useStorage = () => {
 				load: (id: string) => useIDB().then(db => db.deckPlayStats.load(id)),
 				del: (key: string) => useIDB().then(db => db.deckPlayStats.del(key)),
 				has: (key: string) => useIDB().then(db => db.deckPlayStats.has(key)),
-				all: () => useIDB().then(db => db.deckPlayStats.all()),
+				all: () => useIDB().then(db => db.deckPlayStats.entries()),
 				filter: async (predicate: (val: DeckPlayStats) => boolean) => useIDB().then(db => db.deckPlayStats.filter(predicate)),
 			},
 
@@ -73,7 +76,12 @@ export const useStorage = () => {
 			},
 
 			editor: {
-				snapshot: new GenericKVStore('deck_editor_state_snapshot'),
+				snapshots: {
+					push: (entry: DeckEditorHistoryMetaEntry) => useIDB().then(db => db.deckEditorHistory.push(entry)),
+					latest: <V extends DeckEditorHistoryMetaEntry>(deckID: string) => useIDB().then(db => db.deckEditorHistory.latest<V>(deckID)),
+					versions: (deckID: string) => useIDB().then(db => db.deckEditorHistory.versions(deckID)),
+					remove: (deckID: string) => useIDB().then(db => db.deckEditorHistory.remove(deckID)),
+				},
 			},
 		},
 
