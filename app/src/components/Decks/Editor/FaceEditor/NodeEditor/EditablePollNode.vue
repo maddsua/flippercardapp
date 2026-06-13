@@ -62,7 +62,7 @@ const removeOption = (idx: number) => {
 			<div v-if="!model?.length || model.length < 4" class="list-actions">
 				<button type="button" @click="addOption">+ Add option</button>
 			</div>
-			
+
 		</template>
 	</EditableNodeHarness>
 </template>

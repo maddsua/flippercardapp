@@ -18,18 +18,18 @@ interface Origin {
 };
 
 interface Content {
-	meta: ContentMeta;
+	summary: ContentSummary;
 	cards: CardNode[]
 };
 
-interface ContentMeta {
+interface ContentSummary {
 	name: string;
 	description: string | null;
 	visibility: ResourceVisibility;
 };
 
 interface ContentChanges {
-	meta: boolean;
+	summary: boolean;
 	cards: boolean;
 };
 
@@ -49,9 +49,9 @@ const client = useClient();
 const state = reactive({
 	busy: false,
 	meta: {
-		name: props.content.meta.name,
-		description: props.content.meta.description || '',
-		visibility: props.content.meta.visibility,
+		name: props.content.summary.name,
+		description: props.content.summary.description || '',
+		visibility: props.content.summary.visibility,
 	},
 	editSummary: false,
 	versionLabel: '',
@@ -59,10 +59,10 @@ const state = reactive({
 });
 
 const metaChanged = computed(() =>
-	props.changes.meta ||
-	state.meta.name !== props.content.meta.name ||
-	state.meta.description !== props.content.meta.description ||
-	state.meta.visibility !== props.content.meta.visibility);
+	props.changes.summary ||
+	state.meta.name !== props.content.summary.name ||
+	state.meta.description !== props.content.summary.description ||
+	state.meta.visibility !== props.content.summary.visibility);
 
 const publishVersion = async () => {
 
@@ -162,7 +162,7 @@ const publishChanges = async (deckID: string): Promise<CardDeckMetadata | null> 
 					</template>
 					<GenericDropdown :options="resourceVisibilityOptions" v-model="state.meta.visibility" />
 				</InputLabel>
-				
+
 			</template>
 
 			<InputLabel variant="slick">
@@ -173,8 +173,8 @@ const publishChanges = async (deckID: string): Promise<CardDeckMetadata | null> 
 			</InputLabel>
 
 			<GenericToggle label="Edit summary" v-model="state.editSummary" />
-	
-			<GenericButton variant="thin" :disabled="state.busy" :spinner="state.busy" @click="publishVersion">
+
+			<GenericButton variant="thin-wide" :disabled="state.busy" :spinner="state.busy" @click="publishVersion">
 				Publish
 			</GenericButton>
 

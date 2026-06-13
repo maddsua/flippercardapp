@@ -39,7 +39,7 @@ const state = reactive({
 });
 
 const execSearchQuery = async (term: string) => {
-	
+
 	state.error = null;
 	state.data = [];
 
@@ -58,7 +58,7 @@ const execSearchQuery = async (term: string) => {
 	}));
 };
 
-const handleSearchInput = (value?: string) => {
+const searchInput = (value?: string) => {
 
 	if (!value || value.length < 2) {
 		emit('active', false);
@@ -79,7 +79,7 @@ const handleSearchInput = (value?: string) => {
 	if (state.timer) {
 		clearTimeout(state.timer);
 	}
-	
+
 	state.timer = setTimeout(async () => {
 		await execSearchQuery(value);
 		state.locked = false;
@@ -94,7 +94,7 @@ const handleSearchInput = (value?: string) => {
 <template>
 	<div class="search-section">
 
-		<Searchbar @update:modelValue="handleSearchInput" />
+		<Searchbar @update:modelValue="searchInput" />
 
 		<InlineErrorMessage v-if="state.error">
 			<template v-slot:title>

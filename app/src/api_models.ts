@@ -104,4 +104,6 @@ export interface CardDeckVersionMetadata {
 	label?: string | null;
 };
 
-export interface CardDeckVersion extends CardDeckVersionMetadata, CardDeckContent {};
+export interface CardDeckVersion extends CardDeckVersionMetadata {
+	content: CardDeckContent;
+};

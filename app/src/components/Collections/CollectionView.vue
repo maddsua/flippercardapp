@@ -83,10 +83,6 @@ onMounted(async () => {
 	state.auth = await client.auth.whoami({ cached: true }).then(res => res.data || null);
 });
 
-const playDeck = (id: string) => {
-	router.push(`/play/deck/${id}`);
-};
-
 const toggleStar = async () => {
 
 	if (!state.data) {
@@ -110,27 +106,14 @@ const openNewDeckEditor = () => {
 	router.push(`/decks/editor?collection_id=${state.data!.id}`);
 };
 
-const openDeckEditor = (id: string) => {
-	router.push(`/decks/editor/${id}`);
-};
+const openEntry = (id: string) => {
 
-const deleteDeck = async (deckID: string) => {
-
-	if (!state.data) {
-		throw new Error('Invalid state');
-	}
-
-	if (!confirm('Delete deck?')) {
+	if (state.auth?.actor?.permissions.content_edit) {
+		window.open(`/decks/editor/${id}`, '_blank');
 		return;
 	}
 
-	const { error } = await client.decks.remove(deckID);
-	if (error) {
-		console.error('Unable to delete collection deck:', error.message);
-		return;
-	}
-
-	state.data.decks = state.data.decks?.filter(item => item.id !== deckID) || null;
+	router.push(`/play/deck/${id}`);
 };
 
 const visibilityIcons = {
@@ -237,11 +220,7 @@ const capitalize = (text: string) => text.slice(0, 1).toUpperCase() + text.slice
 				:cardCount="item.size"
 				:starred="item.starred"
 				:score="item.score"
-				:editable="state.auth?.actor?.permissions.content_edit"
-				:playable="true"
-				@click="playDeck(item.id)"
-				@edit="openDeckEditor(item.id)"
-				@delete="deleteDeck(item.id)" />
+				@click="openEntry(item.id)"  />
 		</ContentList>
 
 		<CentralMessage v-else>
@@ -275,9 +254,9 @@ const capitalize = (text: string) => text.slice(0, 1).toUpperCase() + text.slice
 					uk: 'У цій колекції ще немає жодної картки!'
 				}) }}
 			</p>
-			
+
 		</CentralMessage>
-	
+
 	</AppUI>
 </template>
 

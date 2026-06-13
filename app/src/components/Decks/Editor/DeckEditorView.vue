@@ -2,42 +2,50 @@
 import { computed, nextTick, onMounted, onUnmounted, reactive, toRaw, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { unwrapErrorMessage, useClient } from '@/api';
-import type { CardDeckMetadata, ResourceVisibility } from '@/api_models';
+import type { CardDeckMetadata, CardDeckVersion, ResourceVisibility } from '@/api_models';
 import type { CardNode } from '@/content';
 import { useStorage, type DeckEditorHistoryMetaEntry } from '@/storage/storage';
 import GenericButton from '@/components/App/Inputs/GenericButton.vue';
 import LoadingMessage from '@/components/App/Messages/LoadingMessage.vue';
 import EditorContentExporter from './EditorModals/EditorContentExporter.vue';
 import EditorContentImporter from './EditorModals/EditorContentImporter.vue';
-import DeckEditorStatusBar from './DeckEditorStatusBar.vue';
 import DeckCardList from './EditorCardNavigationList.vue';
 import EditorScreenOverlay from './EditorScreenOverlay.vue';
-import EditorVersionControl from './EditorModals/EditorVersionControl.vue';
+import EditorVersionControlModal from './EditorModals/EditorVersionControlModal.vue';
 import OverlayErrorMessage from '@/components/App/Messages/OverlayErrorMessage.vue';
 import CardFaceEditor from './FaceEditor/CardFaceEditor.vue';
 import EditorVersionPublishModal from './EditorModals/EditorVersionPublishModal.vue';
+import DeckEditorHeader from './Toolbar/DeckEditorHeader.vue';
+import DeckEditorSummary from './Toolbar/DeckEditorSummary.vue';
+import DeckEditorAutosaveIndicator from './Toolbar/DeckEditorAutosaveIndicator.vue';
+import DeckEditorMenu from './Toolbar/DeckEditorMenu.vue';
+import DeckEditorMenuEntry from './Toolbar/DeckEditorMenuEntry.vue';
+import DeckEditorToolbarQuickAction from './Toolbar/DeckEditorToolbarQuickAction.vue';
+import EditorDeckDetailsModal from './EditorModals/EditorDeckDetailsModal.vue';
 
 const route = useRoute();
 const router = useRouter();
 const store = useStorage();
 const client = useClient();
 
-const defaultDeckMeta = () => ({
+const defaultDeckSummary = () => ({
 	name: 'Unnamed deck',
 	description: null as string | null,
 	visibility: 'HIDDEN' as ResourceVisibility,
 });
 
 const state = reactive({
-	
+
 	content: {
-		meta: defaultDeckMeta(),
+		summary: defaultDeckSummary(),
 		cards: [] as CardNode[],
 	},
 
 	origin: {
 		deckID: null as string | null,
 		collectionID: null as string | null,
+		created: null as string | null,
+		updated: null as string | null,
 	},
 
 	editor: {
@@ -52,9 +60,10 @@ const state = reactive({
 			importer: false,
 			exporter: false,
 			publish: false,
+			details: false,
 		},
 		changes: {
-			meta: false,
+			summary: false,
 			cards: false,
 		},
 		snapshots: {
@@ -67,8 +76,9 @@ const state = reactive({
 });
 
 const editorReady = computed(() => state.editor.ready && !state.editor.error);
-const contentEdited = computed(() => !!state.content.cards.length && (state.editor.changes.cards || state.editor.changes.meta));
+const contentEdited = computed(() => !!state.content.cards.length && (state.editor.changes.cards || state.editor.changes.summary));
 const changesSaved = computed(() => !state.editor.snapshots.timer && !!(state.editor.snapshots.loadedVersion || state.editor.snapshots.writtenVersion));
+const deckPublished = computed(() => !!state.origin.deckID);
 
 const activeCard = computed(() => {
 
@@ -121,7 +131,7 @@ interface ResumableState extends DeckEditorHistoryMetaEntry {
 	editor: {
 		view: Pick<typeof state['editor']['view'], 'cardIdx'>;
 	};
-	publisher: Pick<typeof state['origin'], 'deckID' | 'collectionID'>;
+	origin: typeof state.origin,
 	content: typeof state['content'];
 };
 
@@ -135,50 +145,46 @@ const queueStateSnapshot = () => {
 		clearTimeout(state.editor.snapshots.timer);
 	}
 
-	const postSnapshot = () => {
-		state.editor.snapshots.lock = false;
-		state.editor.snapshots.timer = null;
-	};
-
 	const interval = 3_000;
 
 	state.editor.snapshots.timer = setTimeout(async () => {
-
-		if (state.editor.snapshots.lock) {
-			return;
-		}
-
-		state.editor.snapshots.lock = true;
-
-		const snapshot: ResumableState = {
-			deck_id: state.origin?.deckID || 'new',
-			timestamp: new Date(),
-			content: structuredClone(toRaw(state.content)),
-			editor: {
-				view: {
-					cardIdx: state.editor.view.cardIdx,
-				},
-			},
-			publisher: {
-				deckID: state.origin?.deckID || null,
-				collectionID: state.origin?.collectionID || null,
-			},
-		};
-
-		const { error } = await store.decks.editor.snapshots.push(snapshot)
-			.then(() => ({ error: null }))
-			.catch(error => ({ error }));
-
-		if (error) {
-			console.error('editor.snapshots.push', error);
-			postSnapshot();
-			return;
-		}
-
-		state.editor.snapshots.writtenVersion = { deck_id: snapshot.deck_id, timestamp: snapshot.timestamp };
-		postSnapshot();
-
+		await writeStateSnapshot();
+		state.editor.snapshots.timer = null;
 	}, interval);
+};
+
+const writeStateSnapshot = async () => {
+
+	if (state.editor.snapshots.lock) {
+		return;
+	}
+
+	state.editor.snapshots.lock = true;
+
+	const snapshot: ResumableState = {
+		deck_id: state.origin?.deckID || 'new',
+		timestamp: new Date(),
+		content: structuredClone(toRaw(state.content)),
+		editor: {
+			view: {
+				cardIdx: state.editor.view.cardIdx,
+			},
+		},
+		origin: structuredClone(toRaw(state.origin)),
+	};
+
+	const { error } = await store.decks.editor.snapshots.push(snapshot)
+		.then(() => ({ error: null }))
+		.catch(error => ({ error }));
+
+	if (error) {
+		console.error('editor.snapshots.push', error);
+		state.editor.snapshots.lock = false;
+		return;
+	}
+
+	state.editor.snapshots.writtenVersion = { deck_id: snapshot.deck_id, timestamp: snapshot.timestamp };
+	state.editor.snapshots.lock = false;
 };
 
 const restoreStateSnapshot = async (deckID?: string) => {
@@ -189,10 +195,16 @@ const restoreStateSnapshot = async (deckID?: string) => {
 		return;
 	}
 
-	state.origin = { deckID: snapshot.publisher.deckID, collectionID: snapshot.publisher.collectionID };
+	state.origin = {
+		deckID: snapshot.origin.deckID,
+		collectionID: snapshot.origin.collectionID,
+		created: snapshot.origin.created,
+		updated: new Date().toISOString(),
+	};
+
 	state.content = snapshot.content;
 	state.editor.view.cardIdx = snapshot.editor.view.cardIdx;
-	state.editor.changes = { meta: true, cards: true };
+	state.editor.changes = { summary: true, cards: true };
 
 	state.editor.snapshots.loadedVersion = { deck_id: snapshot.deck_id, timestamp: snapshot.timestamp };
 };
@@ -225,7 +237,7 @@ const fetchRemoteState = async (deckID: string) => {
 	}
 
 	state.content = {
-		meta: {
+		summary: {
 			name: data.name,
 			description: data.description || null,
 			visibility: data.visibility,
@@ -233,19 +245,26 @@ const fetchRemoteState = async (deckID: string) => {
 		cards: data.cards,
 	};
 
-	state.origin = { deckID: data.id, collectionID: data.collection_id };
-	state.editor.changes = { meta: false, cards: false };
+	state.origin = {
+		deckID: data.id,
+		collectionID: data.collection_id,
+		created: data.created,
+		updated: data.updated,
+	};
+
+	state.editor.changes = { summary: false, cards: false };
+	state.editor.view.cardIdx = 0;
 };
 
 const watchContentEdits = () => {
 
-	watch(() => state.content.meta, () => {
+	watch(() => state.content.summary, () => {
 
 		if (!state.editor.ready) {
 			return;
 		}
 
-		state.editor.changes.meta = true;
+		state.editor.changes.summary = true;
 		queueStateSnapshot();
 
 	}, { deep: true });
@@ -264,7 +283,7 @@ const watchContentEdits = () => {
 
 const updateAppTitle = () => {
 	state.editor.prevAppTitle = document.title;
-	watch(() => state.content.meta.name, (name) => document.title = `${name || 'Unnamed'} | Deck editor`, { immediate: true });
+	watch(() => state.content.summary.name, (name) => document.title = `${name || 'Unnamed'} | Deck editor`, { immediate: true });
 };
 
 const restoreAppTitle = () => {
@@ -295,7 +314,8 @@ onMounted(async () => {
 
 		await restoreStateSnapshot().catch(error => console.error('restoreStateSnapshot', error));
 
-		state.origin = { deckID: null, collectionID: collection_id };
+		state.origin.deckID = null;
+		state.origin.collectionID = collection_id;
 
 		state.editor.ready = true;
 		return;
@@ -309,8 +329,8 @@ onUnmounted(() => {
 });
 
 const patchDeckMeta = (patch: { name: string | null; description: string | null; }) => {
-	state.content.meta.name = patch.name || defaultDeckMeta().name;
-	state.content.meta.description = patch.description;
+	state.content.summary.name = patch.name || defaultDeckSummary().name;
+	state.content.summary.description = patch.description;
 };
 
 const handleVersionRollback = async () => {
@@ -318,35 +338,109 @@ const handleVersionRollback = async () => {
 	window.location.reload();
 };
 
-const handleVersionPublish = async (meta: CardDeckMetadata) => {
+const loadVersion = (version: CardDeckVersion) => {
+
+	state.content.cards = version.content.cards;
+	state.origin.updated = version.created;
+
+	state.editor.changes = { summary: false, cards: false };
+	state.editor.view.cardIdx = 0;
+};
+
+const publishVersion = async (meta: CardDeckMetadata) => {
 
 	state.editor.ready = false;
 
-	state.origin = { deckID: meta.id, collectionID: meta.collection_id };
-	state.content.meta = { name: meta.name, description: meta.description || null, visibility: meta.visibility };
+	state.origin = {
+		deckID: meta.id,
+		collectionID: meta.collection_id,
+		created: meta.created,
+		updated: meta.updated,
+	};
+
+	state.content.summary = { name: meta.name, description: meta.description || null, visibility: meta.visibility };
 
 	await clearStateSnapshot();
 
-	state.editor.changes = { meta: false, cards: false };
+	state.editor.changes = { summary: false, cards: false };
 
 	nextTick(() => state.editor.ready = true);
 };
 
+const dropLocalChanges = async () => {
+
+	if (!confirm('Drop all local changes?')) {
+		return;
+	}
+
+	state.editor.ready = false;
+
+	state.editor.changes = { summary: false, cards: false };
+
+	await clearStateSnapshot();
+
+	if (state.origin.deckID) {
+		await fetchRemoteState(state.origin.deckID);
+	} else {
+		state.content.summary = defaultDeckSummary();
+		state.content.cards = [];
+	}
+
+	if (state.editor.error) {
+		return;
+	}
+
+	state.editor.ready = true;
+};
+
+const deleteDeckAndExit = async () => {
+
+	if (!state.origin.deckID) {
+		return;
+	}
+
+	if (!confirm('Delete deck?')) {
+		return;
+	}
+
+	const { error } = await client.decks.remove(state.origin.deckID);
+	if (error) {
+		console.error('Unable to delete collection deck:', error.message);
+		return;
+	}
+
+	await clearAndExitEditor();
+};
+
+const openPlayView = () => {
+	if (!state.origin.deckID) {
+		return;
+	}
+	window.open(`/play/deck/${state.origin.deckID}`, '_blank');
+};
+
 const backHref = computed(() => state.origin?.collectionID ? `/collection/${state.origin.collectionID}` : '/collections');
 
-const discardChanges = () => {
+const clearAndExitEditorPrompt = () => {
 
 	if (contentEdited.value && !confirm('Really discard your changes?')) {
 		return;
 	}
 
+	clearAndExitEditor();
+};
+
+const clearAndExitEditor = async () => {
+	await clearStateSnapshot();
 	exitEditor();
 };
 
-const exitEditor = () => {
-	clearStateSnapshot();
-	router.push(backHref.value);
+const saveAndExitEditor = async () => {
+	await writeStateSnapshot();
+	exitEditor();
 };
+
+const exitEditor = () => router.push(backHref.value);
 
 </script>
 
@@ -357,7 +451,7 @@ const exitEditor = () => {
 		<EditorScreenOverlay v-if="!state.editor.ready || state.editor.error">
 
 			<OverlayErrorMessage v-if="state.editor.error" :backHref="backHref">
-				
+
 				Unable to load editor
 
 				<template v-slot:details>
@@ -365,7 +459,7 @@ const exitEditor = () => {
 				</template>
 
 				<template v-slot:after>
-					<GenericButton variant="thin" @click="exitEditor">
+					<GenericButton variant="thin" @click="clearAndExitEditor">
 						Go back
 					</GenericButton>
 				</template>
@@ -380,16 +474,51 @@ const exitEditor = () => {
 
 		</EditorScreenOverlay>
 
-		<DeckEditorStatusBar
-			:meta="state.content.meta"
-			:edited="contentEdited"
-			:valid="editorReady"
-			:autosaved="changesSaved"
-			@versions="state.editor.modals.versions = true"
-			@publish="state.editor.modals.publish = true"
-			@import="state.editor.modals.importer = true"
-			@export="state.editor.modals.exporter = true"
-			@disacard="discardChanges" />
+		<DeckEditorHeader @exit="clearAndExitEditorPrompt">
+
+			<template v-slot:autosave>
+				<DeckEditorAutosaveIndicator :changed="contentEdited" :changesSaved="changesSaved" />
+			</template>
+
+			<template v-slot:ribbon>
+				<DeckEditorMenu label="Deck">
+					<DeckEditorMenuEntry label="Play deck" icon="play" :disabled="!editorReady || !deckPublished" @click="openPlayView" />
+					<DeckEditorMenuEntry label="Details" icon="info" :disabled="!editorReady" @click="state.editor.modals.details = true" />
+					<DeckEditorMenuEntry label="Versions" icon="history" :disabled="!editorReady" @click="state.editor.modals.versions = true" />
+					<DeckEditorMenuEntry label="Import deck" icon="io" :disabled="!editorReady" @click="state.editor.modals.importer = true" />
+					<DeckEditorMenuEntry label="Export deck" icon="io" :disabled="!editorReady" @click="state.editor.modals.exporter = true" />
+					<DeckEditorMenuEntry label="Publish changes" icon="publish" :disabled="!editorReady" @click="state.editor.modals.publish = true" />
+					<DeckEditorMenuEntry label="Discard local changes" icon="broom" :disabled="!editorReady || !contentEdited" @click="dropLocalChanges" />
+					<DeckEditorMenuEntry label="Discard all and exit" icon="cross" :disabled="!editorReady || !contentEdited" @click="clearAndExitEditorPrompt" />
+					<DeckEditorMenuEntry label="Delete deck" icon="delete" :disabled="!editorReady" @click="deleteDeckAndExit" />
+					<DeckEditorMenuEntry label="Exit" icon="exit" @click="saveAndExitEditor" />
+				</DeckEditorMenu>
+				<DeckEditorMenu label="Edit">
+					<DeckEditorMenuEntry label="Undo" :disabled="true" />
+					<DeckEditorMenuEntry label="Redo" :disabled="true" />
+				</DeckEditorMenu>
+				<DeckEditorMenu label="Insert">
+					<DeckEditorMenuEntry label="Insert title" :disabled="true" />
+					<DeckEditorMenuEntry label="Insert text area" :disabled="true" />
+					<DeckEditorMenuEntry label="Insert image" :disabled="true" />
+					<DeckEditorMenuEntry label="Insert poll" :disabled="true" />
+				</DeckEditorMenu>
+			</template>
+
+			<template v-slot:meta>
+				<DeckEditorSummary
+					:meta="state.content.summary"
+					:changed="contentEdited"
+					:changesSaved="changesSaved" />
+			</template>
+
+			<template v-slot:quickactions>
+				<DeckEditorToolbarQuickAction :disabled="!editorReady" label="Delete deck" icon="delete" @click="deleteDeckAndExit" />
+				<DeckEditorToolbarQuickAction :disabled="!editorReady || !deckPublished" label="Play deck" icon="play" @click="openPlayView" />
+				<DeckEditorToolbarQuickAction :disabled="!editorReady || !contentEdited" label="Publish changes" icon="publish" @click="state.editor.modals.publish = true" />
+			</template>
+
+		</DeckEditorHeader>
 
 		<EditorScreenOverlay v-if="state.editor.modals.exporter">
 			<EditorContentExporter
@@ -407,8 +536,9 @@ const exitEditor = () => {
 		</EditorScreenOverlay>
 
 		<EditorScreenOverlay v-if="state.editor.modals.versions && state.origin.deckID">
-			<EditorVersionControl
+			<EditorVersionControlModal
 				:deckID="state.origin.deckID"
+				@pull="loadVersion"
 				@rollback="handleVersionRollback"
 				@done="state.editor.modals.versions = false" />
 		</EditorScreenOverlay>
@@ -418,8 +548,12 @@ const exitEditor = () => {
 				:origin="state.origin"
 				:content="state.content"
 				:changes="state.editor.changes"
-				@publish="handleVersionPublish"
+				@publish="publishVersion"
 				@done="state.editor.modals.publish = false" />
+		</EditorScreenOverlay>
+
+		<EditorScreenOverlay v-if="state.editor.modals.details">
+			<EditorDeckDetailsModal :content="state.content" :origin="state.origin" @done="state.editor.modals.details = false" />
 		</EditorScreenOverlay>
 
 		<div class="editor-canvas">

@@ -90,7 +90,7 @@ const checkCredentials = async () => {
 	<div class="signin-screen">
 
 		<div class="signin-form" :class="{ locked: state.busy }">
-	
+
 			<div class="header">
 				<div class="message-title">
 					{{ intl(lang, {
@@ -100,7 +100,7 @@ const checkCredentials = async () => {
 					}) }}
 				</div>
 			</div>
-	
+
 			<InputGroup>
 				<GenericInput type="text" placeholder="Username" v-model="state.inputs.username" />
 				<GenericInput type="password" placeholder="Password" v-model="state.inputs.password" />
@@ -138,7 +138,7 @@ const checkCredentials = async () => {
 				</div>
 
 			</div>
-	
+
 		</div>
 
 	</div>
@@ -153,7 +153,7 @@ const checkCredentials = async () => {
 		align-items: center;
 		flex-grow: 1;
 	}
-	
+
 	.signin-form {
 		display: flex;
 		flex-direction: column;

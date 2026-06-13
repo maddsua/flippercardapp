@@ -51,7 +51,7 @@ const emit = defineEmits<{
 		.header {
 			border-bottom: 1px solid var(--app-theme-powder-trail);
 			padding: 0.125rem 0.25rem;
-			
+
 			.title {
 				font-size: 0.75rem;
 				font-weight: 600;

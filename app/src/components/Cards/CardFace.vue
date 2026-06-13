@@ -90,7 +90,7 @@ const faceStyle = computed((): CSSProperties => {
 		background-color: var(--app-theme-snow-white);
 		border-radius: 2em;
 		padding: 1em;
-		
+
 		-webkit-backface-visibility: hidden;
 		backface-visibility: hidden;
 

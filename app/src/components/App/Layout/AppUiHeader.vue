@@ -81,19 +81,19 @@ const share = () => props.share ? navigator.share(props.share) : null;
 					margin: 0;
 					color: var(--app-theme-snow-white);
 					font-weight: 400;
-	
+
 					@media (orientation: portrait) {
 						font-size: 1.5rem;
 					}
 				}
-		
+
 				p {
 					font-size: 0.9rem;
 					padding: 0;
 					margin: 0;
 					color: var(--app-theme-mysterious-white);
 					font-weight: 300;
-	
+
 					@media (orientation: portrait) {
 						font-size: 0.8rem;
 					}
@@ -139,12 +139,12 @@ const share = () => props.share ? navigator.share(props.share) : null;
 					cursor: pointer;
 					opacity: 1;
 				}
-				
+
 				&.star {
 					background-image: url(/src/assets/icons/star-mask.svg);
 					background-size: 1.75rem;
 				}
-				
+
 				&.starred {
 					background-image: url(/src/assets/icons/star-filled-mask.svg);
 					background-size: 1.75rem;

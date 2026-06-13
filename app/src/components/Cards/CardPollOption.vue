@@ -14,7 +14,7 @@ const emit = defineEmits<{
 
 const answered = ref(false);
 
-const handleSelect = () => {
+const selectOption = () => {
 
 	if (answered.value) {
 		return;
@@ -39,7 +39,7 @@ const applyStyles = computed((): CSSProperties => ({
 </script>
 
 <template>
-	<button type="button" :class="applyClasses" :style="applyStyles" @click.stop="handleSelect">
+	<button type="button" :class="applyClasses" :style="applyStyles" @click.stop="selectOption">
 		{{ entry.value }}
 	</button>
 </template>

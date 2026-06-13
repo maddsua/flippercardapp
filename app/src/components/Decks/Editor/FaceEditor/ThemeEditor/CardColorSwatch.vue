@@ -29,7 +29,7 @@ const colorOptions: string[] = [
 		<div class="options">
 
 			<button class="null" type="button" :class="{ selected: !model }" @click="model = null"></button>
-	
+
 			<button v-for="color of colorOptions" type="button" class="color"
 				:style="{ backgroundColor: color }"
 				:class="{ selected: model === color }"

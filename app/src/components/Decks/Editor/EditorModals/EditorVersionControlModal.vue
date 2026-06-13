@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, reactive } from 'vue';
 import { unwrapErrorMessage, useClient } from '@/api';
-import type { CardDeckVersionMetadata } from '@/api_models';
+import type { CardDeckVersion, CardDeckVersionMetadata } from '@/api_models';
 import { genericPageState, pageControls } from '@/dataloader';
 import GenericButton from '@/components/App/Inputs/GenericButton.vue';
 import LoadingMessage from '@/components/App/Messages/LoadingMessage.vue';
@@ -16,6 +16,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
 	(e: 'done'): void;
+	(e: 'pull', version: CardDeckVersion): void;
 	(e: 'rollback', version: CardDeckVersionMetadata): void;
 }>();
 
@@ -24,7 +25,11 @@ const state = reactive({
 	rollback: {
 		busy: false,
 		error: null as string | null,
-	}
+	},
+	pull: {
+		busy: false,
+		error: null as string | null,
+	},
 });
 
 const { reload } = pageControls(state.page, (page) => client.decks.versions.list(props.deckID, page));
@@ -50,6 +55,7 @@ const rollbackVersion = async (versionID: string) => {
 
 	const { data, error } = await client.decks.versions.rollback(props.deckID, versionID);
 	if (!data || error) {
+		state.rollback.busy = false;
 		state.rollback.error = unwrapErrorMessage(error);
 		return;
 	}
@@ -57,6 +63,27 @@ const rollbackVersion = async (versionID: string) => {
 	state.rollback.busy = false;
 
 	emit('rollback', data);
+	emit('done');
+};
+
+const loadVersion = async (versionID: string) => {
+
+	if (!confirm('Replace current content with this version?')) {
+		return;
+	}
+
+	state.pull.busy = true;
+
+	const { data, error } = await client.decks.versions.load(props.deckID, versionID);
+	if (!data || error) {
+		state.pull.busy = false;
+		state.pull.error = unwrapErrorMessage(error);
+		return;
+	}
+
+	state.pull.busy = false;
+
+	emit('pull', data);
 	emit('done');
 };
 
@@ -87,6 +114,17 @@ const rollbackVersion = async (versionID: string) => {
 				{{ state.rollback.error }}
 			</InlineErrorMessage>
 
+			<InlineErrorMessage v-else-if="state.pull.error">
+				<template v-slot:title>
+					Unable to pull a version
+				</template>
+				{{ state.pull.error }}
+			</InlineErrorMessage>
+
+			<LoadingMessage v-else-if="state.pull.busy">
+				Pulling version...
+			</LoadingMessage>
+
 			<LoadingMessage v-else-if="state.rollback.busy">
 				Rolling back...
 			</LoadingMessage>
@@ -105,17 +143,25 @@ const rollbackVersion = async (versionID: string) => {
 					</div>
 
 					<div class="actions">
+
 						<div v-if="entry.is_latest" class="flag-latest">Latest</div>
-						<GenericButton v-else theme="orange" variant="thin" @click="rollbackVersion(entry.id)">
-							Rollback
-						</GenericButton>
+
+						<template v-else>
+							<GenericButton theme="orange" variant="thin" :disabled="state.rollback.busy" @click="rollbackVersion(entry.id)">
+								Rollback
+							</GenericButton>
+							<GenericButton variant="thin" :disabled="state.pull.busy" @click="loadVersion(entry.id)">
+								Load
+							</GenericButton>
+						</template>
+
 					</div>
 
 				</div>
 			</div>
 
 		</div>
-		
+
 	</EditorModal>
 </template>
 
@@ -175,6 +221,9 @@ const rollbackVersion = async (versionID: string) => {
 				}
 
 				.actions {
+					display: flex;
+					flex-flow: row nowrap;
+					gap: 0.5rem;
 					flex-shrink: 0;
 
 					.flag-latest {

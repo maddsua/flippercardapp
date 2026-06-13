@@ -70,7 +70,7 @@ const newAnimatedState = (direction?: SlideInDirection): CardState => {
 			});
 
 			break;
-	
+
 		case 'from-bottom':
 
 			state.flags.swipe_down = true;
@@ -105,7 +105,7 @@ const cardSlotKey = (slot: CardState | null, idx: number) => `${idx}:${slot?.car
 const ejectAnimatedState = async (state: CardState, direction?: SlideOutDirection) => {
 
 	state.flags.animate = true;
-	
+
 	nextTick(() => {
 
 		state.flags.active = false;
@@ -119,7 +119,7 @@ const ejectAnimatedState = async (state: CardState, direction?: SlideOutDirectio
 			case 'to-bottom':
 				state.flags.swipe_down = true;
 				break;
-		
+
 			case 'to-top':
 				state.flags.swipe_up = true;
 				break;
@@ -155,7 +155,7 @@ const withAnimationLock = (): boolean => {
 	return true;
 };
 
-const nextCard = () => {
+const navigateForward = () => {
 
 	if (!withAnimationLock()) {
 		return;
@@ -183,6 +183,14 @@ const prevCard = () => {
 	}
 };
 
+const navigateBack = () => {
+	if (activeIdx.value > 0) {
+		prevCard();
+	} else {
+		exitView();
+	}
+};
+
 const scoreState = reactive({
 	totalAnswers: 0,
 	cardAnswerSet: new Set<string>(),
@@ -202,15 +210,7 @@ const countScore = (score: number) => {
 
 const showExitPrompt = ref(false);
 
-const handleCtrlBack = () => {
-	if (activeIdx.value > 0) {
-		prevCard();
-	} else {
-		triggerExit();
-	}
-};
-
-const triggerExit = () => {
+const exitView = () => {
 
 	if (scoreState.totalAnswers > 0) {
 		showExitPrompt.value = true;
@@ -220,7 +220,7 @@ const triggerExit = () => {
 	emit('exit');
 };
 
-const handleExitPrompt = (confirmed?: boolean) => {
+const promptExit = (confirmed?: boolean) => {
 	if (confirmed) {
 		emit('exit');
 	}
@@ -238,7 +238,7 @@ const handleExitPrompt = (confirmed?: boolean) => {
 			:index="activeIdx"
 			:isMarked="isMarked"
 			@toggleMarked="emit('toggleMarked')"
-			@exit="triggerExit" />
+			@exit="exitView" />
 
 		<div class="card-viewport" :class="{ noinput: state.animating }">
 			<div class="card-transition" v-for="(item, idx) of cardSlots" :key="cardSlotKey(item, idx)" :class="item?.flags">
@@ -247,7 +247,7 @@ const handleExitPrompt = (confirmed?: boolean) => {
 					:card="item.card"
 					:disableRotation="disableRotation"
 					@score="countScore"
-					@next="nextCard"
+					@next="navigateForward"
 					@prev="prevCard" />
 			</div>
 		</div>
@@ -255,10 +255,10 @@ const handleExitPrompt = (confirmed?: boolean) => {
 		<CardControls v-if="showNavigation"
 			:has_prev="activeIdx > 0"
 			:has_next="activeIdx < entries.length - 1"
-			@prev="handleCtrlBack"
-			@next="nextCard" />
+			@prev="navigateBack"
+			@next="navigateForward" />
 
-		<UIPrompt v-if="showExitPrompt" @done="handleExitPrompt">
+		<UIPrompt v-if="showExitPrompt" @done="promptExit">
 			Exit game?
 		</UIPrompt>
 
@@ -309,7 +309,7 @@ const handleExitPrompt = (confirmed?: boolean) => {
 			flex-direction: column;
 			justify-content: center;
 			overflow: visible;
-			
+
 			&.animate {
 				transition: all 200ms ease;
 			}

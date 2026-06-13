@@ -26,23 +26,23 @@ import EditorModal from '../EditorModal.vue';
 const client = useClient();
 
 const props = defineProps<{
+	meta: ContentOriginMeta;
 	content: Content;
-	meta: Meta;
 }>();
 
-interface Meta {
+interface ContentOriginMeta {
 	deckID: string | null;
 	collectionID: string | null;
 };
 
-interface ContentMeta {
+interface ContentSummary {
 	name: string;
 	description: string | null;
 	visibility: ResourceVisibility;
 };
 
 interface Content {
-	meta: ContentMeta;
+	summary: ContentSummary;
 	cards: CardNode[];
 };
 
@@ -139,7 +139,7 @@ const handleKeys = (event: KeyboardEvent) => {
 
 onMounted(() => {
 	selectAllCards();
-	state.options.filename = `${escapeFileName(props.content.meta.name)}-export-${new Date().getTime()}`;
+	state.options.filename = `${escapeFileName(props.content.summary.name)}-export-${new Date().getTime()}`;
 	document.addEventListener('keydown', handleKeys);
 });
 
@@ -173,7 +173,7 @@ const exportDeck = async () => {
 
 const exportDeckJSON = async (opts?: { compress?: boolean }) => {
 
-	const { name, description } = props.content.meta;
+	const { name, description } = props.content.summary;
 
 	const contentNodes = selectedCards.value.map(item => [item.front, item.back])
 		.flat().map(item => item.content).flat();
@@ -230,7 +230,7 @@ const exportDeckJSON = async (opts?: { compress?: boolean }) => {
 		downloadBlob(compressedBlob, `${state.options.filename}.carddeck`);
 		return;
 	}
-	
+
 	downloadBlob(rawBlob, `${state.options.filename}.json`);
 };
 

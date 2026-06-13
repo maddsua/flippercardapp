@@ -93,25 +93,25 @@ const availableNodes = computed((): Record<NodeType, boolean> => {
 
 		<div class="content-tree">
 			<template v-for="(item, idx) of model">
-	
+
 				<EditableTitleNode v-if="item.type === 'title'"
 					v-model="item.content"
 					@up="reorderNode(idx, -1)"
 					@down="reorderNode(idx, 1)"
 					@remove="removeNode(idx)" />
-	
+
 				<EditableImageNode v-else-if="item.type === 'image'"
 					v-model="item.media_id"
 					@up="reorderNode(idx, -1)"
 					@down="reorderNode(idx, 1)"
 					@remove="removeNode(idx)" />
-	
+
 				<EditableTextNode v-else-if="item.type === 'textbox'"
 					v-model="item.content"
 					@up="reorderNode(idx, -1)"
 					@down="reorderNode(idx, 1)"
 					@remove="removeNode(idx)" />
-	
+
 				<EditablePollNode v-else-if="item.type === 'poll'"
 					v-model="item.content"
 					@up="reorderNode(idx, -1)"

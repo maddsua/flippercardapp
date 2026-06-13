@@ -57,9 +57,9 @@ const openCollection = (id: string) => {
 				Create new collection
 			</template>
 		</AppUiHeader>
-	
+
 		<CollectionFormWrapper>
-	
+
 			<CollectionFormHeader>
 				<template v-slot:overscript>
 					New Collection
@@ -68,47 +68,47 @@ const openCollection = (id: string) => {
 					What is this thing about?
 				</template>
 			</CollectionFormHeader>
-	
+
 			<InputLabel>
-	
+
 				<template v-slot:label>
 					Collection name
 				</template>
-	
+
 				<GenericInput type="text" variant="borderless" placeholder="Pick a passing collection name" v-model="state.inputs.name" />
-	
+
 			</InputLabel>
-	
+
 			<InputLabel>
-	
+
 				<template v-slot:label>
 					Description
 				</template>
-	
+
 				<GenericInput type="text" variant="borderless" placeholder="Describe the purpose of this collection" v-model="state.inputs.description" />
-	
+
 			</InputLabel>
-	
+
 			<InputLabel>
-	
+
 				<template v-slot:label>
 					Visibility
 				</template>
-	
+
 				<GenericDropdown :options="resourceVisibilityOptions" v-model="state.inputs.visibility" />
-	
+
 			</InputLabel>
-	
+
 			<InlineErrorMessage v-if="state.error">
 				{{ state.error }}
 			</InlineErrorMessage>
-	
+
 			<InputRow>
 				<GenericButton :disabled="!formValid" @click="createCollection">
 					Create collection →
 				</GenericButton>
 			</InputRow>
-	
+
 		</CollectionFormWrapper>
 
 	</AppUI>

@@ -100,7 +100,7 @@ const openDeck = (id: string) => {
 						uk: 'Не вдається відобразити картки'
 					}) }}
 				</template>
-				
+
 				{{ state.error }}
 
 			</InlineErrorMessage>

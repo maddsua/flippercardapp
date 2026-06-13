@@ -103,7 +103,7 @@ const signout = async () => {
 			</div>
 
 			<div v-else class="signin-prompt">
-				
+
 				<div class="status-message">
 					{{ intl(lang, {
 						en: 'Not signed in',
@@ -122,7 +122,7 @@ const signout = async () => {
 			</div>
 
 		</div>
-	
+
 	</div>
 
 </template>

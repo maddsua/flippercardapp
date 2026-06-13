@@ -111,7 +111,7 @@ const lang = useLanguage();
 						uk: 'Не вдалося відобразити колекції'
 					}) }}
 				</template>
-				
+
 				{{ state.error }}
 
 			</InlineErrorMessage>
@@ -153,7 +153,7 @@ const lang = useLanguage();
 			</GenericButton>
 
 		</CollectionEndlistAction>
-	
+
 	</AppUI>
 
 </template>

@@ -16,28 +16,48 @@ const emit = defineEmits<{
 }>();
 
 const listRef = ref<Array<Element | null>>([]);
+const scrollRef = ref<HTMLElement | null>(null);
+
+const scrollIntoView = () => {
+
+	const parent = scrollRef.value;
+	const element = listRef.value[props.pointer];
+
+	if (!parent || !element) {
+		return;
+	}
+
+	const parentRect = parent.getBoundingClientRect();
+	const rect = element.getBoundingClientRect();
+
+	const top = parent.scrollTop + rect.top - (rect.height / 2) - (parentRect.height / 2);
+
+	parent.scrollTo({ behavior: 'smooth', top });
+};
 
 let scrollTimeout: NodeJS.Timeout | null = null;
 
-watch(() => props.list.length, () => {
+const queueScroll = () => {
 
 	if (scrollTimeout) {
 		clearTimeout(scrollTimeout);
 	}
 
 	scrollTimeout = setTimeout(() => {
-		listRef.value[props.pointer]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		scrollIntoView();
 		scrollTimeout = null;
 	}, 100);
+};
 
-});
+watch(() => props.list.length, (val, old) => val > old ? queueScroll() : void 0);
+watch(() => props.pointer, queueScroll);
 
 </script>
 
 <template>
 	<div class="editor-deck-navigation">
 		<div class="scroll-wrapper" :class="{ shaded: !!list.length }">
-			<ul v-if="list.length" class="card-list">
+			<ul v-if="list.length" class="card-list" ref="scrollRef">
 				<li v-for="(card, idx) of list" :ref="elem => listRef[idx] = elem as Element | null">
 					<button type="button" class="card" @click="emit('select', idx)">
 						<CardThumbnail

@@ -59,7 +59,7 @@ const openCollection = async (id: string) => {
 			<template v-slot:summary>
 				Full content list
 			</template>
-	
+
 			<template v-if="state.auth?.actor?.permissions.team_member" v-slot:actions>
 				<GenericButton variant="thin" theme="green" @click="openNewCollectionEditor">
 					+ Add collection

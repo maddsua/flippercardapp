@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const props = defineProps<{
 	theme?: 'blue' | 'orange' | 'green' | 'red';
-	variant?: 'thin' | 'thick' | 'wide';
+	variant?: 'thin' | 'thick' | 'wide' | 'thin-wide';
 	spinner?: boolean;
 	disabled?: boolean;
 }>();
@@ -56,13 +56,13 @@ const props = defineProps<{
 			font-size: 0.85rem;
 		}
 
-		&.variant-thin {
+		&.variant-thin, &.variant-thin-wide {
 			padding: 0.5rem 0.75rem;
 			font-size: 0.65rem;
 			border-radius: 0.5rem;
 		}
 
-		&.variant-wide {
+		&.variant-wide, &.variant-thin-wide {
 			width: 100%;
 		}
 

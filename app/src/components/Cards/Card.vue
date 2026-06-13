@@ -177,7 +177,7 @@ const handleDragStart = (event: PointerEvent) => {
 		x: clientX,
 		y: clientY,
 		interactiveTarget,
-	
+
 		// allegedly, this prevents chrome from breaking the drag logic
 		pointerID: capturePointer(event),
 	};
@@ -326,5 +326,5 @@ const handlePollScore = (score: number, final?: boolean) => {
 		66% { transform: rotateY(-10deg) }
 		100% { transform: rotateY(0deg) }
 	}
-	
+
 </style>

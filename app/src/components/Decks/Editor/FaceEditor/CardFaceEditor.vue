@@ -91,7 +91,7 @@ const state = reactive({
 				display: flex;
 				flex-direction: column;
 				gap: 1rem;
-	
+
 				.editor-title {
 					font-size: 1.125rem;
 					font-weight: 300;
@@ -114,7 +114,7 @@ const state = reactive({
 			height: 100%;
 			min-height: 0;
 			padding: 1rem;
-			
+
 			.editor-scroll-area {
 				display: flex;
 				flex-direction: column;

@@ -53,7 +53,7 @@ const initDB = (name: string, migrations: Migration[]): Promise<IDBDatabase> => 
 				console.debug(`IDB version upgraded: version ${event.oldVersion}->${event.newVersion}`);
 			}
 		});
-		
+
 	} catch (error) {
 		console.error('IDB INIT:', name, error instanceof Error ? error.message : `${error}`);
 		throw error;

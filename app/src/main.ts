@@ -77,7 +77,7 @@ const routes = [
 		component: EditCollectionView,
 		meta: {
 			app_view: 'menu',
-			
+
 		},
 	},
 	{

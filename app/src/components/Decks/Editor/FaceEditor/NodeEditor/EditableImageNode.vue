@@ -107,7 +107,7 @@ watch(model, fetchMetadata);
 					<template v-else>
 						No files selected
 					</template>
-					
+
 				</div>
 			</div>
 		</template>

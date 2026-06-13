@@ -27,11 +27,11 @@ const emit = defineEmits<{
 						<button type="button" class="close" @click="emit('close')" title="Close modal"></button>
 					</div>
 				</div>
-	
+
 				<div class="modal-content">
 					<slot>[Content]</slot>
 				</div>
-	
+
 			</div>
 
 		</div>

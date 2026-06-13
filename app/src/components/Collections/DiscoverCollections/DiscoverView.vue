@@ -83,7 +83,7 @@ const openFullList = () => {
 			@open="openCollection" />
 
 		<CollectionBreak />
-		
+
 		<KeepAlive>
 			<RecommendedSection v-if="!state.searching"
 				:starred="state.starred"

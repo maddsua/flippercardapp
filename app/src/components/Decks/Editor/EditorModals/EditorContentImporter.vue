@@ -405,7 +405,7 @@ const importData = async () => {
 			console.error('Importer: Unable to upload image', node.media_id, error?.message);
 			continue;
 		}
-		
+
 		node.media_id = data.id;
 		node.media_url = null;
 
@@ -578,7 +578,7 @@ const importData = async () => {
 			align-items: center;
 			justify-content: center;
 			flex-grow: 1;
-			
+
 			.drop-target {
 				display: flex;
 				flex-direction: column;
@@ -646,7 +646,7 @@ const importData = async () => {
 					overflow: hidden;
 					text-overflow: ellipsis;
 					white-space: nowrap;
-					
+
 					&.masked {
 						background-color: var(--app-theme-mysterious-white);
 						color: var(--app-theme-carbon);

@@ -34,7 +34,7 @@ const state = reactive({
 });
 
 onMounted(async () => {
-	
+
 	const { data, error } = await client.collections.list({ limit: 5 });
 	if (!data || error) {
 		state.error = error?.message || 'Unabale to load recommendations';

@@ -50,7 +50,7 @@ const formValid = computed(() => state.inputs.name.trim().length > 0);
 onMounted(async () => {
 
 	const { collection_id } = route.params;
- 
+
 	const { data, error } = await client.collections.list({ ids: Array.isArray(collection_id) ? collection_id : [collection_id] })
 	if ( error) {
 		state.error = error.message;
@@ -165,9 +165,9 @@ const deleteCollection = async () => {
 				Loading metadata...
 			</LoadingMessage>
 		</FullscreenMessage>
-	
+
 		<CollectionFormWrapper v-else>
-	
+
 			<CollectionFormHeader>
 				<template v-slot:overscript>
 					Edit Collection
@@ -176,55 +176,55 @@ const deleteCollection = async () => {
 					Changing some things huh?
 				</template>
 			</CollectionFormHeader>
-	
+
 			<InputLabel>
-	
+
 				<template v-slot:label>
 					Collection name
 				</template>
-	
+
 				<GenericInput type="text" variant="borderless" placeholder="Pick a passing collection name" v-model="state.inputs.name" />
-	
+
 			</InputLabel>
-	
+
 			<InputLabel>
-	
+
 				<template v-slot:label>
 					Description
 				</template>
-	
+
 				<GenericInput type="text" variant="borderless" placeholder="Describe the purpose of this collection" v-model="state.inputs.description" />
-	
+
 			</InputLabel>
-	
+
 			<InputLabel>
-	
+
 				<template v-slot:label>
 					Visibility
 				</template>
-	
+
 				<GenericDropdown :options="resourceVisibilityOptions" v-model="state.inputs.visibility" />
-	
+
 			</InputLabel>
-	
+
 			<InlineErrorMessage v-if="state.error">
 				{{ state.error }}
 			</InlineErrorMessage>
-	
+
 			<InputRow>
 				<GenericButton :disabled="!formValid" @click="updateCollection">
 					Update collection →
 				</GenericButton>
 			</InputRow>
-	
+
 			<InputRow>
 				<GenericButton variant="thin" theme="red" @click="deleteCollection">
 					✗ Delete collection
 				</GenericButton>
 			</InputRow>
-	
+
 		</CollectionFormWrapper>
 
 	</AppUI>
-	
+
 </template>

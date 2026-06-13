@@ -47,15 +47,15 @@ const resetInput = () => {
 			border: 1px solid transparent;
 			background-color: var(--app-theme-ghostly-glow);
 			color: var(--app-theme-snow-white);
-	
+
 			&:focus {
 				border-color: var(--app-theme-sky-blue);
 			}
-	
+
 			&:active {
 				border-color: var(--app-theme-deep-lavender);
 			}
-	
+
 			&::placeholder {
 				color: var(--app-theme-mysterious-white);
 			}
