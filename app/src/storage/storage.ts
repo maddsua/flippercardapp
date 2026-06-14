@@ -76,11 +76,20 @@ export const useStorage = () => {
 			},
 
 			editor: {
-				snapshots: {
-					push: (entry: DeckEditorHistoryMetaEntry) => useIDB().then(db => db.deckEditorHistory.push(entry)),
-					latest: <V extends DeckEditorHistoryMetaEntry>(deckID: string) => useIDB().then(db => db.deckEditorHistory.latest<V>(deckID)),
-					versions: (deckID: string) => useIDB().then(db => db.deckEditorHistory.versions(deckID)),
-					remove: (deckID: string) => useIDB().then(db => db.deckEditorHistory.remove(deckID)),
+
+				history: {
+
+					push: (entry: DeckEditorHistoryMetaEntry) =>
+						useIDB().then(db => db.deckEditorHistory.push(entry)),
+
+					latest: <V extends DeckEditorHistoryMetaEntry> (deckID: string) =>
+						useIDB().then(db => db.deckEditorHistory.latest<V>(deckID)),
+
+					versions: <V extends DeckEditorHistoryMetaEntry> (deckID: string, count?: number) =>
+						useIDB().then(db => db.deckEditorHistory.versions<V>(deckID, count)),
+
+					remove: (deckID: string) =>
+						useIDB().then(db => db.deckEditorHistory.remove(deckID)),
 				},
 			},
 		},

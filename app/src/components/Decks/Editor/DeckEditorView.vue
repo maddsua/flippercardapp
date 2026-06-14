@@ -62,6 +62,11 @@ const state = reactive({
 			publish: false,
 			details: false,
 		},
+		history: {
+			entries: [] as ResumableState[],
+			point: null as DeckEditorHistoryMetaEntry | null,
+			sizeLimit: 20,
+		},
 		changes: {
 			summary: false,
 			cards: false,
@@ -173,7 +178,7 @@ const writeStateSnapshot = async () => {
 		origin: structuredClone(toRaw(state.origin)),
 	};
 
-	const { error } = await store.decks.editor.snapshots.push(snapshot)
+	const { error } = await store.decks.editor.history.push(snapshot)
 		.then(() => ({ error: null }))
 		.catch(error => ({ error }));
 
@@ -189,24 +194,27 @@ const writeStateSnapshot = async () => {
 
 const restoreStateSnapshot = async (deckID?: string) => {
 
-	const snapshot = await store.decks.editor.snapshots.latest<ResumableState>(deckID || 'new').catch(() => null);
-	if (!snapshot) {
+	const entries = await store.decks.editor.history.versions<ResumableState>(deckID || 'new', state.editor.history.sizeLimit).catch(() => null);
+	if (!entries?.length) {
 		state.editor.snapshots.loadedVersion = null;
 		return;
 	}
 
+	const [ latest ] = entries;
+
 	state.origin = {
-		deckID: snapshot.origin.deckID,
-		collectionID: snapshot.origin.collectionID,
-		created: snapshot.origin.created,
+		deckID: latest.origin.deckID,
+		collectionID: latest.origin.collectionID,
+		created: latest.origin.created,
 		updated: new Date().toISOString(),
 	};
 
-	state.content = snapshot.content;
-	state.editor.view.cardIdx = snapshot.editor.view.cardIdx;
-	state.editor.changes = { summary: true, cards: true };
+	state.content = latest.content;
+	state.editor.view.cardIdx = latest.editor.view.cardIdx;
 
-	state.editor.snapshots.loadedVersion = { deck_id: snapshot.deck_id, timestamp: snapshot.timestamp };
+	state.editor.history.entries = entries;
+	state.editor.changes = { summary: true, cards: true };
+	state.editor.snapshots.loadedVersion = { deck_id: latest.deck_id, timestamp: latest.timestamp };
 };
 
 const clearStateSnapshot = async () => {
@@ -215,7 +223,7 @@ const clearStateSnapshot = async () => {
 
 	state.editor.ready = false;
 
-	await store.decks.editor.snapshots.remove(state.origin.deckID || 'new')
+	await store.decks.editor.history.remove(state.origin.deckID || 'new')
 		.catch(error => console.error('editor.snapshots.remove', error));
 
 	if (state.editor.snapshots.timer) {
@@ -328,7 +336,7 @@ onUnmounted(() => {
 	restoreAppTitle();
 });
 
-const patchDeckMeta = (patch: { name: string | null; description: string | null; }) => {
+const patchDeckSummary = (patch: { name: string | null; description: string | null; }) => {
 	state.content.summary.name = patch.name || defaultDeckSummary().name;
 	state.content.summary.description = patch.description;
 };
@@ -338,7 +346,7 @@ const handleVersionRollback = async () => {
 	window.location.reload();
 };
 
-const loadVersion = (version: CardDeckVersion) => {
+const applyPulledVersion = (version: CardDeckVersion) => {
 
 	state.content.cards = version.content.cards;
 	state.origin.updated = version.created;
@@ -347,7 +355,7 @@ const loadVersion = (version: CardDeckVersion) => {
 	state.editor.view.cardIdx = 0;
 };
 
-const publishVersion = async (meta: CardDeckMetadata) => {
+const applyPublishedMeta = async (meta: CardDeckMetadata) => {
 
 	state.editor.ready = false;
 
@@ -358,7 +366,11 @@ const publishVersion = async (meta: CardDeckMetadata) => {
 		updated: meta.updated,
 	};
 
-	state.content.summary = { name: meta.name, description: meta.description || null, visibility: meta.visibility };
+	state.content.summary = {
+		name: meta.name,
+		description: meta.description || null,
+		visibility: meta.visibility,
+	};
 
 	await clearStateSnapshot();
 
@@ -531,14 +543,14 @@ const exitEditor = () => router.push(backHref.value);
 			<EditorContentImporter 
 				@addCards="cards => state.content.cards.push(...cards)"
 				@replaceCards="cards => state.content.cards = cards"
-				@updateMeta="patchDeckMeta"
+				@updateMeta="patchDeckSummary"
 				@done="state.editor.modals.importer = false" />
 		</EditorScreenOverlay>
 
 		<EditorScreenOverlay v-if="state.editor.modals.versions && state.origin.deckID">
 			<EditorVersionControlModal
 				:deckID="state.origin.deckID"
-				@pull="loadVersion"
+				@pull="applyPulledVersion"
 				@rollback="handleVersionRollback"
 				@done="state.editor.modals.versions = false" />
 		</EditorScreenOverlay>
@@ -548,7 +560,7 @@ const exitEditor = () => router.push(backHref.value);
 				:origin="state.origin"
 				:content="state.content"
 				:changes="state.editor.changes"
-				@publish="publishVersion"
+				@publish="applyPublishedMeta"
 				@done="state.editor.modals.publish = false" />
 		</EditorScreenOverlay>
 

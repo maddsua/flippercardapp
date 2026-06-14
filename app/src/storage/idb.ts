@@ -74,6 +74,31 @@ const getStore = (db: IDBDatabase, storeName: string, mode: IDBTransactionMode):
 	return db.transaction(storeName, mode).objectStore(storeName)
 };
 
+const scanCursor = async <T>(cursor: IDBRequest<IDBCursorWithValue | null>, predicate?: ((val: T) => boolean) | null, count?: number) => {
+	return new Promise<T[]>((resolve, reject) => {
+
+		const entries: T[] = [];
+
+		cursor.onsuccess = () => {
+
+			const { result: next } = cursor;
+			if (!next || (count && entries.length >= count)) {
+				resolve(entries);
+				return;
+			} else if (next.value && (!predicate || predicate(next.value))) {
+				entries.push(structuredClone(next.value));
+			}
+
+			next.continue();
+		};
+
+		cursor.onerror = () => {
+			console.error('IDB scanCursor: Rejected:', cursor.error?.message);
+			reject(cursor.error);
+		};
+	});
+};
+
 interface IDSetStoreValue <T> {
 	id: T;
 };
@@ -147,38 +172,11 @@ class UniqueCollectionStore <T extends {}> {
 		unwrapRequest(this.tx('readonly').get(key))
 			.then(entry => !!entry);
 
-	entries = async () =>
-		unwrapRequest<Array<T>>(this.tx('readonly').getAll());
+	entries = async (count?: number) =>
+		unwrapRequest<Array<T>>(this.tx('readonly').getAll(null, count));
 
-	filter = async (predicate: (val: T) => boolean) => {
-		return new Promise<T[]>((resolve, reject) => {
-
-			const cursor = this.tx('readonly').openCursor();
-
-			const entries: T[] = [];
-
-			cursor.onsuccess = () => {
-
-				const { result: next } = cursor;
-				if (!next) {
-					resolve(entries);
-					return;
-				}
-
-				const { value } = next;
-				if (typeof value === 'object' && value && predicate(value)) {
-					entries.push(structuredClone(value));
-				}
-
-				next.continue();
-			};
-
-			cursor.onerror = () => {
-				console.error('IDB cursor rejected:', cursor.error?.message);
-				reject(cursor.error);
-			};
-		});
-	};
+	filter = async (predicate: (val: T) => boolean) =>
+		scanCursor(this.tx('readonly').openCursor(), predicate);
 };
 
 interface VersionedStoreEntryBase {
@@ -213,31 +211,11 @@ class VersionedCollectionStore <E extends VersionedStoreEntryBase> {
 	push = async <V extends E>(val: V) =>
 		unwrapRequest(this.tx('readwrite').put(val));
 
-	latest = async <V extends E>(key: string) => {
-		return new Promise<V | null>((resolve, reject) => {
+	latest = async <V extends E>(key: string) =>
+		this.versions<V>(key, 1).then(entries => entries[0] || null);
 
-			const cursor = this.tx('readonly').openCursor(this.keyRange(key), 'prev');
-
-			cursor.onsuccess = () => {
-
-				const { result: next } = cursor;
-				if (!next) {
-					resolve(null);
-					return;
-				}
-
-				resolve(structuredClone(next.value));
-			};
-
-			cursor.onerror = () => {
-				console.error('IDB cursor rejected:', cursor.error?.message);
-				reject(cursor.error);
-			};
-		});
-	};
-
-	versions = async (key: string) =>
-		unwrapRequest<Array<E>>(this.tx('readonly').getAll(this.keyRange(key)));
+	versions = async <V extends E>(key: string, count?: number) =>
+		scanCursor<V>(this.tx('readonly').openCursor(this.keyRange(key), 'prev'), null, count);
 
 	remove = async (key: string) =>
 		unwrapRequest(this.tx('readwrite').delete(this.keyRange(key)));
