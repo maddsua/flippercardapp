@@ -2,7 +2,7 @@
 
 const props = defineProps<{
 	label: string;
-	icon?: 'play' | 'publish' | 'delete' | 'exit' | 'history' | 'cross' | 'broom' | 'info' | 'io';
+	icon?: 'play' | 'publish' | 'delete' | 'exit' | 'history' | 'cross' | 'broom' | 'info' | 'io' | 'undo' | 'redo';
 	disabled?: boolean;
 }>();
 
@@ -93,6 +93,15 @@ const props = defineProps<{
 
 			&.io {
 				mask-image: url(/src/assets/icons/import-export-mask.svg);
+			}
+
+			&.undo {
+				mask-image: url(/src/assets/icons/undo-mask.svg);
+			}
+
+			&.redo {
+				mask-image: url(/src/assets/icons/undo-mask.svg);
+				transform: rotate(180deg);
 			}
 		}
 	}

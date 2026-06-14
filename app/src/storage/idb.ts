@@ -206,9 +206,10 @@ class VersionedCollectionStore <E extends VersionedStoreEntryBase> {
 	private tx = (mode: IDBTransactionMode) =>
 		getStore(this.db, this.storeName, mode);
 
-	private keyRange = (key: string) => IDBKeyRange.bound([key, new Date(0)], [key, new Date()]);
+	private keyRange = (key: string, after?: Date, before?: Date) =>
+		IDBKeyRange.bound([key, after || new Date(0)], [key, before || new Date()]);
 
-	push = async <V extends E>(val: V) =>
+	add = async <V extends E>(val: V) =>
 		unwrapRequest(this.tx('readwrite').put(val));
 
 	latest = async <V extends E>(key: string) =>
@@ -217,8 +218,8 @@ class VersionedCollectionStore <E extends VersionedStoreEntryBase> {
 	versions = async <V extends E>(key: string, count?: number) =>
 		scanCursor<V>(this.tx('readonly').openCursor(this.keyRange(key), 'prev'), null, count);
 
-	remove = async (key: string) =>
-		unwrapRequest(this.tx('readwrite').delete(this.keyRange(key)));
+	clear = async (key: string, after?: Date, before?: Date) =>
+		unwrapRequest(this.tx('readwrite').delete(this.keyRange(key, after, before)));
 };
 
 interface Migration {

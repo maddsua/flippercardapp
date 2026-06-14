@@ -34,6 +34,8 @@ const defaultDeckSummary = () => ({
 	visibility: 'HIDDEN' as ResourceVisibility,
 });
 
+const maxEditHistorySize = 20;
+
 const state = reactive({
 
 	content: {
@@ -65,7 +67,6 @@ const state = reactive({
 		history: {
 			entries: [] as ResumableState[],
 			point: null as DeckEditorHistoryMetaEntry | null,
-			sizeLimit: 20,
 		},
 		changes: {
 			summary: false,
@@ -84,8 +85,28 @@ const editorReady = computed(() => state.editor.ready && !state.editor.error);
 const contentEdited = computed(() => !!state.content.cards.length && (state.editor.changes.cards || state.editor.changes.summary));
 const changesSaved = computed(() => !state.editor.snapshots.timer && !!(state.editor.snapshots.loadedVersion || state.editor.snapshots.writtenVersion));
 const deckPublished = computed(() => !!state.origin.deckID);
+const localDeckID = computed(() => state.origin.deckID || 'new');
 
-const activeCard = computed(() => {
+const historyEditIdx = computed((): number => {
+
+	if (!state.editor.history.point) {
+		return 0;
+	}
+
+	const idx = state.editor.history.entries.findIndex(item => item.timestamp === state.editor.history.point!.timestamp);
+	return idx > 0 ? idx : 0;
+})
+
+const historyCanUndo = computed((): boolean =>
+	state.editor.history.entries.length > 0 &&
+	historyEditIdx.value < state.editor.history.entries.length - 1);
+
+const historyCanRedo = computed((): boolean =>
+	state.editor.history.entries.length > 0 &&
+	!!state.editor.history.point &&
+	historyEditIdx.value > 0);
+
+const canvasActiveCard = computed(() => {
 
 	const entry = state.content.cards[state.editor.view.cardIdx];
 	if (!entry) {
@@ -140,7 +161,85 @@ interface ResumableState extends DeckEditorHistoryMetaEntry {
 	content: typeof state['content'];
 };
 
-const queueStateSnapshot = () => {
+const cloneEditorState = (): ResumableState => {
+	return {
+		deck_id: localDeckID.value,
+		timestamp: new Date(),
+		content: structuredClone(toRaw(state.content)),
+		editor: {
+			view: {
+				cardIdx: state.editor.view.cardIdx,
+			},
+		},
+		origin: structuredClone(toRaw(state.origin)),
+	};
+};
+
+const addHistoryVersion = (version: ResumableState) => {
+
+	const limit = Math.min(state.editor.history.entries.length - historyEditIdx.value, maxEditHistorySize);
+
+	state.editor.history.entries = state.editor.history.entries.slice(historyEditIdx.value, historyEditIdx.value + limit);
+	state.editor.history.entries.unshift(version);
+
+	if (state.editor.history.point) {
+		const after = new Date(state.editor.history.point.timestamp.getTime() + 1);
+		store.decks.editor.history.clear(localDeckID.value, after)
+			.catch(error => console.debug('Trim persistent editor history:', error));
+	}
+
+	state.editor.history.point = null;
+};
+
+const editorHistoryBack = () => {
+
+	const version = state.editor.history.entries[historyEditIdx.value + 1];
+	if (!version) {
+		console.warn('Cant execute editor undo');
+		return;
+	}
+
+	applyEditorHistoryVersion(version);
+};
+
+const editorHistoryForward = () => {
+
+	if (!state.editor.history.point) {
+		editorHistorySkipToHead();
+		return;
+	}
+
+	if (historyEditIdx.value <= 1) {
+		editorHistorySkipToHead();
+		return;
+	}
+
+	applyEditorHistoryVersion(state.editor.history.entries[historyEditIdx.value - 1]);
+};
+
+const editorHistorySkipToHead = () => {
+
+	const head = state.editor.history.entries[0];
+	if (head) {
+		applyEditorHistoryVersion(head);
+	}
+
+	state.editor.history.point = null;
+};
+
+const applyEditorHistoryVersion = (version: ResumableState) => {
+
+	const { ready } = state.editor;
+
+	state.editor.ready = false;
+
+	state.editor.history.point = { deck_id: version.deck_id, timestamp: version.timestamp };
+	state.content = structuredClone(toRaw(version.content));
+
+	nextTick(() => state.editor.ready = ready);
+};
+
+const autosaveStateSnapshot = () => {
 
 	if (!state.editor.ready || state.editor.snapshots.lock) {
 		return;
@@ -153,12 +252,14 @@ const queueStateSnapshot = () => {
 	const interval = 3_000;
 
 	state.editor.snapshots.timer = setTimeout(async () => {
-		await writeStateSnapshot();
+		const snapshot = cloneEditorState();
+		addHistoryVersion(snapshot);
+		await writeStateSnapshot(snapshot);
 		state.editor.snapshots.timer = null;
 	}, interval);
 };
 
-const writeStateSnapshot = async () => {
+const writeStateSnapshot = async (snapshot: ResumableState) => {
 
 	if (state.editor.snapshots.lock) {
 		return;
@@ -166,19 +267,7 @@ const writeStateSnapshot = async () => {
 
 	state.editor.snapshots.lock = true;
 
-	const snapshot: ResumableState = {
-		deck_id: state.origin?.deckID || 'new',
-		timestamp: new Date(),
-		content: structuredClone(toRaw(state.content)),
-		editor: {
-			view: {
-				cardIdx: state.editor.view.cardIdx,
-			},
-		},
-		origin: structuredClone(toRaw(state.origin)),
-	};
-
-	const { error } = await store.decks.editor.history.push(snapshot)
+	const { error } = await store.decks.editor.history.add(snapshot)
 		.then(() => ({ error: null }))
 		.catch(error => ({ error }));
 
@@ -192,15 +281,15 @@ const writeStateSnapshot = async () => {
 	state.editor.snapshots.lock = false;
 };
 
-const restoreStateSnapshot = async (deckID?: string) => {
+const restoreStateSnapshot = async () => {
 
-	const entries = await store.decks.editor.history.versions<ResumableState>(deckID || 'new', state.editor.history.sizeLimit).catch(() => null);
+	const entries = await store.decks.editor.history.versions<ResumableState>(localDeckID.value, maxEditHistorySize).catch(() => null);
 	if (!entries?.length) {
 		state.editor.snapshots.loadedVersion = null;
 		return;
 	}
 
-	const [ latest ] = entries;
+	const latest = structuredClone(entries[0]);
 
 	state.origin = {
 		deckID: latest.origin.deckID,
@@ -223,8 +312,8 @@ const clearStateSnapshot = async () => {
 
 	state.editor.ready = false;
 
-	await store.decks.editor.history.remove(state.origin.deckID || 'new')
-		.catch(error => console.error('editor.snapshots.remove', error));
+	await store.decks.editor.history.clear(localDeckID.value)
+		.catch(error => console.error('clearStateSnapshot', error));
 
 	if (state.editor.snapshots.timer) {
 		clearTimeout(state.editor.snapshots.timer);
@@ -273,7 +362,7 @@ const watchContentEdits = () => {
 		}
 
 		state.editor.changes.summary = true;
-		queueStateSnapshot();
+		autosaveStateSnapshot();
 
 	}, { deep: true });
 
@@ -284,7 +373,7 @@ const watchContentEdits = () => {
 		}
 
 		state.editor.changes.cards = true;
-		queueStateSnapshot();
+		autosaveStateSnapshot();
 
 	}, { deep: true });
 };
@@ -306,14 +395,15 @@ onMounted(async () => {
 	const { deck_id } = route.params;
 	if (typeof deck_id === 'string') {
 
-		await restoreStateSnapshot(deck_id)
-			.catch(error => void console.error('restoreStateSnapshot', error)) || null;
+		state.origin.deckID = deck_id;
+
+		await restoreStateSnapshot().catch(error => console.error('restoreStateSnapshot', error));
 
 		if (!state.editor.snapshots.loadedVersion) {
 			await fetchRemoteState(deck_id);
 		}
 
-		state.editor.ready = true;
+		state.editor.ready = !state.editor.error;
 		return;
 	}
 
@@ -388,6 +478,7 @@ const dropLocalChanges = async () => {
 	state.editor.ready = false;
 
 	state.editor.changes = { summary: false, cards: false };
+	state.editor.history = { entries: [], point: null };
 
 	await clearStateSnapshot();
 
@@ -448,7 +539,7 @@ const clearAndExitEditor = async () => {
 };
 
 const saveAndExitEditor = async () => {
-	await writeStateSnapshot();
+	await writeStateSnapshot(cloneEditorState());
 	exitEditor();
 };
 
@@ -505,9 +596,9 @@ const exitEditor = () => router.push(backHref.value);
 					<DeckEditorMenuEntry label="Delete deck" icon="delete" :disabled="!editorReady" @click="deleteDeckAndExit" />
 					<DeckEditorMenuEntry label="Exit" icon="exit" @click="saveAndExitEditor" />
 				</DeckEditorMenu>
-				<DeckEditorMenu label="Edit">
-					<DeckEditorMenuEntry label="Undo" :disabled="true" />
-					<DeckEditorMenuEntry label="Redo" :disabled="true" />
+				<DeckEditorMenu label="Changes">
+					<DeckEditorMenuEntry label="Undo" icon="undo" :disabled="!editorReady || !historyCanUndo" @click="editorHistoryBack" />
+					<DeckEditorMenuEntry label="Redo" icon="redo" :disabled="!editorReady || !historyCanRedo" @click="editorHistoryForward" />
 				</DeckEditorMenu>
 				<DeckEditorMenu label="Insert">
 					<DeckEditorMenuEntry label="Insert title" :disabled="true" />
@@ -580,9 +671,9 @@ const exitEditor = () => router.push(backHref.value);
 					@duplicate="duplicateCard"
 					@remove="removeCard" />
 
-				<CardFaceEditor v-model="activeCard.front" :isFront="true" />
+				<CardFaceEditor v-model="canvasActiveCard.front" :isFront="true" />
 				<hr />
-				<CardFaceEditor v-model="activeCard.back" />
+				<CardFaceEditor v-model="canvasActiveCard.back" />
 
 			</div>
 		</div>
