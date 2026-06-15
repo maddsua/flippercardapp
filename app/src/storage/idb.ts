@@ -41,16 +41,15 @@ const initDB = (name: string, migrations: Migration[]): Promise<IDBDatabase> => 
 		return openDB(name, latest.version, {
 			onUpgrade: (db, event) => {
 
-				const currentMigration = migrations.findIndex(item => item.version === event.oldVersion);
-				const steps = migrations.slice(currentMigration + 1);
+				const steps = migrations.filter(item => item.version > event.oldVersion);
 
-				console.debug('IDB executing migrations:', steps.map(item => item.version));
+				console.debug(`IDB executing migrations: ${event.oldVersion} ->`, steps.map(item => item.version));
 
 				for (const step of steps) {
 					step.onUpgrade(db);
 				}
 
-				console.debug(`IDB version upgraded: version ${event.oldVersion}->${event.newVersion}`);
+				console.debug('IDB version upgraded');
 			}
 		});
 
@@ -254,7 +253,7 @@ const migrationList: Migration[] = [
 		onUpgrade: (db) => {
 			VersionedCollectionStore.create<DeckEditorHistoryMetaEntry>(db, 'deck_editor_history', 'deck_id');
 		},
-	}
+	},
 ];
 
 export const useIDB = async () => {
