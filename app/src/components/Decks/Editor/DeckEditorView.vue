@@ -310,12 +310,12 @@ const clearStateSnapshot = async () => {
 
 	state.editor.ready = false;
 
-	await store.decks.editor.history.clear(localDeckID.value)
-		.catch(error => console.error('clearStateSnapshot', error));
-
 	if (state.editor.snapshots.timer) {
 		clearTimeout(state.editor.snapshots.timer);
 	}
+
+	await store.decks.editor.history.clear(localDeckID.value)
+		.catch(error => console.error('clearStateSnapshot', error));
 
 	state.editor.snapshots.writtenVersion = null;
 	state.editor.snapshots.loadedVersion = null;
@@ -474,6 +474,7 @@ const dropLocalChanges = async () => {
 	}
 
 	state.editor.ready = false;
+	state.editor.error = null;
 
 	state.editor.changes = { summary: false, cards: false };
 	state.editor.history = { entries: [], point: null };
@@ -487,11 +488,7 @@ const dropLocalChanges = async () => {
 		state.content.cards = [];
 	}
 
-	if (state.editor.error) {
-		return;
-	}
-
-	state.editor.ready = true;
+	nextTick(() => state.editor.ready = !state.editor.error);
 };
 
 const deleteDeckAndExit = async () => {
