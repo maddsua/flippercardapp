@@ -35,6 +35,7 @@ const defaultDeckSummary = () => ({
 });
 
 const maxEditHistorySize = 20;
+const autosaveIntervalMs = 1_000;
 
 const state = reactive({
 
@@ -249,14 +250,12 @@ const autosaveStateSnapshot = () => {
 		clearTimeout(state.editor.snapshots.timer);
 	}
 
-	const interval = 3_000;
-
 	state.editor.snapshots.timer = setTimeout(async () => {
 		const snapshot = cloneEditorState();
 		addHistoryVersion(snapshot);
 		await writeStateSnapshot(snapshot);
 		state.editor.snapshots.timer = null;
-	}, interval);
+	}, autosaveIntervalMs);
 };
 
 const writeStateSnapshot = async (snapshot: ResumableState) => {
