@@ -289,12 +289,8 @@ const restoreStateSnapshot = async () => {
 
 	const latest = structuredClone(entries[0]);
 
-	state.origin = {
-		deckID: latest.origin.deckID,
-		collectionID: latest.origin.collectionID,
-		created: latest.origin.created,
-		updated: new Date().toISOString(),
-	};
+	state.origin.created = latest.origin.created;
+	state.origin.updated = new Date().toISOString();
 
 	state.content = latest.content;
 	state.editor.view.cardIdx = latest.editor.view.cardIdx;
@@ -447,6 +443,8 @@ const applyPublishedMeta = async (meta: CardDeckMetadata) => {
 
 	state.editor.ready = false;
 
+	await clearStateSnapshot();
+
 	state.origin = {
 		deckID: meta.id,
 		collectionID: meta.collection_id,
@@ -459,8 +457,6 @@ const applyPublishedMeta = async (meta: CardDeckMetadata) => {
 		description: meta.description || null,
 		visibility: meta.visibility,
 	};
-
-	await clearStateSnapshot();
 
 	state.editor.changes = { summary: false, cards: false };
 
