@@ -659,7 +659,7 @@ const exitEditor = () => router.push(backHref.value);
 			<EditorDeckDetailsModal :content="state.content" :origin="state.origin" @done="state.editor.modals.details = false" />
 		</EditorScreenOverlay>
 
-		<div class="editor-canvas">
+		<div class="deck-editor-canvas">
 
 			<div class="canvas-grid">
 
@@ -691,7 +691,7 @@ const exitEditor = () => router.push(backHref.value);
 		height: 100%;
 		position: relative;
 
-		.editor-canvas {
+		.deck-editor-canvas {
 			display: flex;
 			justify-content: center;
 			width: 100%;

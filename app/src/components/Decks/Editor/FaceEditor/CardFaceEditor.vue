@@ -30,11 +30,11 @@ const state = reactive({
 <template>
 	<div class="face-editor">
 
-		<div class="editor-header">
+		<div class="face-editor-header">
 
-			<div class="editor-summary">
+			<div class="face-editor-summary">
 
-				<div class="editor-title">
+				<div class="face-editor-title">
 					<template v-if="props.isFront">
 						Front
 					</template>
@@ -53,11 +53,11 @@ const state = reactive({
 
 		<hr />
 
-		<div v-if="model" class="editor-canvas">
+		<div v-if="model" class="face-editor-canvas">
 
 			<CardFaceEditorPreviewOverlay v-if="model && state.preview" :face="model" />
 
-			<div class="editor-scroll-area">
+			<div class="face-editor-scroll-area">
 				<CardFaceContentEditor v-model="model.content" :isFront="props.isFront" />
 				<CardFaceThemeEditor v-model="model.theme" />
 			</div>
@@ -79,7 +79,7 @@ const state = reactive({
 		min-height: 0;
 		height: 100%;
 
-		.editor-header {
+		.face-editor-header {
 			display: flex;
 			flex-flow: row nowrap;
 			align-items: start;
@@ -87,12 +87,12 @@ const state = reactive({
 			gap: 2rem;
 			padding: 0 1rem;
 
-			.editor-summary {
+			.face-editor-summary {
 				display: flex;
 				flex-direction: column;
 				gap: 1rem;
 
-				.editor-title {
+				.face-editor-title {
 					font-size: 1.125rem;
 					font-weight: 300;
 				}
@@ -108,14 +108,14 @@ const state = reactive({
 			border: none;
 		}
 
-		.editor-canvas {
+		.face-editor-canvas {
 			position: relative;
 			width: 100%;
 			height: 100%;
 			min-height: 0;
-			padding: 1rem;
+			padding: 1rem 0;
 
-			.editor-scroll-area {
+			.face-editor-scroll-area {
 				display: flex;
 				flex-direction: column;
 				gap: 2rem;
