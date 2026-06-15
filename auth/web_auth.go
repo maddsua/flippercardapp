@@ -20,8 +20,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const SessionBaseTTL = 18 * time.Hour
-const SessionMaxTTL = 14 * 24 * time.Hour
+const SessionBaseTTL = 7 * 24 * time.Hour
+const SessionMaxTTL = 28 * 24 * time.Hour
 const SessionTTLExtenderThreshold = min(SessionBaseTTL, 2*time.Hour)
 const SessionCookieKey = "st"
 const SessionCookieExpOverlap = time.Minute
@@ -210,7 +210,7 @@ func authorizeRequest(db *db_pkg.Wrapper, wrt http.ResponseWriter, req *http.Req
 		return invalidateRequest(wrt, "Invalid session secret")
 	}
 
-	if totalDuration := time.Now().Sub(session.CreatedAt.Time) + SessionBaseTTL; totalDuration < SessionMaxTTL {
+	if totalDuration := time.Since(session.CreatedAt.Time) + SessionBaseTTL; totalDuration < SessionMaxTTL {
 
 		if expiresIn := time.Until(session.ExpiresAt.Time) - SessionCookieExpOverlap; expiresIn < SessionTTLExtenderThreshold {
 
