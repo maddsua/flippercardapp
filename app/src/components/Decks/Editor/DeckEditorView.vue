@@ -568,7 +568,7 @@ const exitEditor = () => router.push(backHref.value);
 
 		</EditorScreenOverlay>
 
-		<DeckEditorHeader @exit="clearAndExitEditorPrompt">
+		<DeckEditorHeader @exit="saveAndExitEditor">
 
 			<template v-slot:autosave>
 				<DeckEditorAutosaveIndicator :changed="contentEdited" :changesSaved="changesSaved" />
