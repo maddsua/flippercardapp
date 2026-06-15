@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, onUnmounted, reactive, toRaw, watch } from 'vue';
+import { computed, nextTick, onMounted, onUnmounted, reactive, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { unwrapErrorMessage, useClient } from '@/api';
 import type { CardDeckMetadata, CardDeckVersion, ResourceVisibility } from '@/api_models';
@@ -22,6 +22,7 @@ import DeckEditorMenu from './Toolbar/DeckEditorMenu.vue';
 import DeckEditorMenuEntry from './Toolbar/DeckEditorMenuEntry.vue';
 import DeckEditorToolbarQuickAction from './Toolbar/DeckEditorToolbarQuickAction.vue';
 import EditorDeckDetailsModal from './EditorModals/EditorDeckDetailsModal.vue';
+import { reactiveSnapshot } from '@/proxies';
 
 const route = useRoute();
 const router = useRouter();
@@ -138,7 +139,7 @@ const duplicateCard = (idx: number) => {
 	if (!clonedNode) {
 		return;
 	}
-	addCard(structuredClone(toRaw(clonedNode)));
+	addCard(reactiveSnapshot(clonedNode));
 };
 
 const removeCard = (idx: number) => {
@@ -162,19 +163,17 @@ interface ResumableState extends DeckEditorHistoryMetaEntry {
 	content: typeof state['content'];
 };
 
-const cloneEditorState = (): ResumableState => {
-	return {
-		deck_id: localDeckID.value,
-		timestamp: new Date(),
-		content: structuredClone(toRaw(state.content)),
-		editor: {
-			view: {
-				cardIdx: state.editor.view.cardIdx,
-			},
+const cloneEditorState = (): ResumableState => reactiveSnapshot({
+	deck_id: localDeckID.value,
+	timestamp: new Date(),
+	content: state.content,
+	editor: {
+		view: {
+			cardIdx: state.editor.view.cardIdx,
 		},
-		origin: structuredClone(toRaw(state.origin)),
-	};
-};
+	},
+	origin: state.origin,
+});;
 
 const addHistoryVersion = (version: ResumableState) => {
 
@@ -235,7 +234,7 @@ const applyEditorHistoryVersion = (version: ResumableState) => {
 	state.editor.ready = false;
 
 	state.editor.history.point = { deck_id: version.deck_id, timestamp: version.timestamp };
-	state.content = structuredClone(toRaw(version.content));
+	state.content = reactiveSnapshot(version.content);
 
 	nextTick(() => state.editor.ready = ready);
 };
