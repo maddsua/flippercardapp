@@ -25,6 +25,7 @@ import EditorDeckDetailsModal from './EditorModals/EditorDeckDetailsModal.vue';
 import { reactiveSnapshot } from '@/proxies';
 import DeckEditorElementColorDropdown from './Toolbar/DeckEditorElementColorDropdown.vue';
 import DeckEditorElementButton from './Toolbar/DeckEditorElementButton.vue';
+import { Shortcuts } from '@/shortcuts';
 
 const route = useRoute();
 const router = useRouter();
@@ -88,6 +89,7 @@ const state = reactive({
 			writtenVersion: null as DeckEditorHistoryMetaEntry | null,
 			loadedVersion: null as DeckEditorHistoryMetaEntry | null,
 		},
+		shortcuts: null as Shortcuts | null,
 	},
 });
 
@@ -96,6 +98,7 @@ const contentEdited = computed(() => !!state.content.cards.length && (state.edit
 const changesSaved = computed(() => !state.editor.snapshots.timer && !!(state.editor.snapshots.loadedVersion || state.editor.snapshots.writtenVersion));
 const deckPublished = computed(() => !!state.origin.deckID);
 const localDeckID = computed(() => state.origin.deckID || 'new');
+const modalsOpen = computed(() => Array.from(Object.values(state.editor.modals)).filter(val => val).length);
 
 const historyEditIdx = computed((): number => {
 
@@ -425,49 +428,6 @@ const updateAppTitle = () => {
 	watch(() => state.content.summary.name, (name) => document.title = `${name || 'Unnamed'} | Deck editor`, { immediate: true });
 };
 
-const restoreAppTitle = () => {
-	document.title = state.editor.prevAppTitle || '';
-};
-
-onMounted(async () => {
-
-	updateAppTitle();
-	watchContentEdits();
-
-	const { deck_id } = route.params;
-	if (typeof deck_id === 'string') {
-
-		state.origin.deckID = deck_id;
-
-		await restoreStateSnapshot().catch(error => console.error('restoreStateSnapshot', error));
-
-		if (!state.editor.snapshots.loadedVersion) {
-			await fetchRemoteState(deck_id);
-		}
-
-		state.editor.ready = !state.editor.error;
-		return;
-	}
-
-	const { collection_id } = Object.fromEntries(new URLSearchParams(window.location.search).entries());
-	if (collection_id) {
-
-		await restoreStateSnapshot().catch(error => console.error('restoreStateSnapshot', error));
-
-		state.origin.deckID = null;
-		state.origin.collectionID = collection_id;
-
-		state.editor.ready = true;
-		return;
-	}
-
-	state.editor.error = 'Invalid editor URL';
-});
-
-onUnmounted(() => {
-	restoreAppTitle();
-});
-
 const patchDeckSummary = (patch: { name: string | null; description: string | null; }) => {
 	state.content.summary.name = patch.name || defaultDeckSummary().name;
 	state.content.summary.description = patch.description;
@@ -613,6 +573,81 @@ const saveAndExitEditor = async () => {
 };
 
 const exitEditor = () => router.push(backHref.value);
+
+const registerShortcuts = () => {
+	state.editor.shortcuts = new Shortcuts([
+		{
+			ctrl: true, key: 'u',
+			action: () => !modalsOpen.value ? state.editor.modals.publish = true : void 0,
+		},
+		{
+			ctrl: true, key: 'i',
+			action: () => !modalsOpen.value ? state.editor.modals.importer = true : void 0,
+		},
+		{
+			ctrl: true, key: 'e',
+			action: () => !modalsOpen.value ? state.editor.modals.exporter = true : void 0,
+		},
+		{
+			ctrl: true, key: 'h',
+			action: () => !modalsOpen.value ? state.editor.modals.versions = true : void 0,
+		},
+		{
+			ctrl: true, key: 'p',
+			action: () => deckPublished.value ? openPlayView() : void 0,
+		},
+		{
+			ctrl: true, key: '[',
+			action: () => state.editor.view.side = EditedSide.Front,
+		},
+		{
+			ctrl: true, key: ']',
+			action: () => state.editor.view.side = EditedSide.Back,
+		},
+	]);
+	state.editor.shortcuts.register();
+};
+
+onMounted(async () => {
+
+	updateAppTitle();
+	watchContentEdits();
+	registerShortcuts();
+
+	const { deck_id } = route.params;
+	if (typeof deck_id === 'string') {
+
+		state.origin.deckID = deck_id;
+
+		await restoreStateSnapshot().catch(error => console.error('restoreStateSnapshot', error));
+
+		if (!state.editor.snapshots.loadedVersion) {
+			await fetchRemoteState(deck_id);
+		}
+
+		state.editor.ready = !state.editor.error;
+		return;
+	}
+
+	const { collection_id } = Object.fromEntries(new URLSearchParams(window.location.search).entries());
+	if (collection_id) {
+
+		await restoreStateSnapshot().catch(error => console.error('restoreStateSnapshot', error));
+
+		state.origin.deckID = null;
+		state.origin.collectionID = collection_id;
+
+		state.editor.ready = true;
+		return;
+	}
+
+	state.editor.error = 'Invalid editor URL';
+});
+
+onUnmounted(() => {
+	document.title = state.editor.prevAppTitle || '';
+	state.editor.shortcuts?.unregister();
+});
 
 </script>
 

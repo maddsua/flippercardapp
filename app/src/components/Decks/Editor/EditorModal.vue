@@ -1,5 +1,6 @@
 <script setup lang="ts">
 
+import { onMounted, onUnmounted } from 'vue';
 import EditorScreenOverlay from './EditorScreenOverlay.vue';
 
 const props = defineProps<{
@@ -10,6 +11,22 @@ const props = defineProps<{
 const emit = defineEmits<{
 	(e: 'close'): void;
 }>();
+
+const handleEsc = (event: KeyboardEvent) => {
+	const key = event.key.toLowerCase();
+	if (key === 'escape' || key === 'esc') {
+		event.stopImmediatePropagation();
+		event.stopPropagation();
+		emit('close');
+	}
+};
+
+onMounted(() => {
+	document.addEventListener('keydown', handleEsc);
+});
+
+onUnmounted(() => document.removeEventListener('keydown', handleEsc));
+
 </script>
 
 <template>

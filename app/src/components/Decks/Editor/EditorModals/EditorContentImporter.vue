@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { parse } from 'papaparse';
-import { computed, onMounted, onUnmounted, reactive } from 'vue';
+import { computed, reactive } from 'vue';
 import { useClient } from '@/api';
 import {
 	parseQuizOptions,
@@ -108,27 +108,12 @@ const revokeBlobUrls = () => {
 	}
 };
 
-const handleKeys = (event: KeyboardEvent) => {
-	const key = event.key.toLowerCase();
-	if (key === 'escape' || key === 'esc') {
-		event.stopImmediatePropagation();
-		event.stopPropagation();
-		exitTool();
-	}
-};
-
 const filterImageNodes = (cards: CardNode[]): CardImageNode[] =>
 	cards.map(item => [item.front, item.back])
 		.flat()
 		.map(item => item.content)
 		.flat()
 		.filter(item => item.type === 'image');
-
-onMounted(() => {
-	document.addEventListener('keydown', handleKeys);
-});
-
-onUnmounted(() => document.removeEventListener('keydown', handleKeys));
 
 const pickFileUpload = async () => {
 

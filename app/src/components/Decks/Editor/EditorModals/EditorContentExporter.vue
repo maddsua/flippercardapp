@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { unparse } from 'papaparse';
-import { computed, onMounted, onUnmounted, reactive } from 'vue';
+import { computed, onMounted, reactive } from 'vue';
 import { useClient, type Result } from '@/api';
 import type { ResourceVisibility } from '@/api_models';
 import {
@@ -128,22 +128,10 @@ const exitTool = () => {
 	emit('done');
 };
 
-const handleKeys = (event: KeyboardEvent) => {
-	const key = event.key.toLowerCase();
-	if (key === 'escape' || key === 'esc') {
-		event.stopImmediatePropagation();
-		event.stopPropagation();
-		exitTool();
-	}
-};
-
 onMounted(() => {
 	selectAllCards();
 	state.options.filename = `${escapeFileName(props.content.summary.name)}-export-${new Date().getTime()}`;
-	document.addEventListener('keydown', handleKeys);
 });
-
-onUnmounted(() => document.removeEventListener('keydown', handleKeys));
 
 const exportDeck = async () => {
 
