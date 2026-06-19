@@ -91,7 +91,7 @@ const openCollection = async (id: string) => {
 					<ContentListEntry v-for="item of state.page.entries"
 						:title="item.name"
 						:summary="item.description"
-						:date="item.created"
+						:date="item.updated"
 						:visibility="item.visibility"
 						:deckCount="item.size"
 						@click="openCollection(item.id)" />
