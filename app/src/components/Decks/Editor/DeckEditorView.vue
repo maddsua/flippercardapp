@@ -3,7 +3,8 @@ import { computed, nextTick, onMounted, onUnmounted, reactive, watch } from 'vue
 import { useRoute, useRouter } from 'vue-router';
 import { unwrapErrorMessage, useClient } from '@/api';
 import type { CardDeckMetadata, CardDeckVersion, ResourceVisibility } from '@/api_models';
-import type { CardNode } from '@/content';
+import type { CardCanvasTheme, CardContentElementTheme, CardNode } from '@/content';
+import { addModelNode } from '@/content';
 import { useStorage, type DeckEditorHistoryMetaEntry } from '@/storage/storage';
 import GenericButton from '@/components/App/Inputs/GenericButton.vue';
 import LoadingMessage from '@/components/App/Messages/LoadingMessage.vue';
@@ -20,9 +21,10 @@ import DeckEditorSummary from './Toolbar/DeckEditorSummary.vue';
 import DeckEditorAutosaveIndicator from './Toolbar/DeckEditorAutosaveIndicator.vue';
 import DeckEditorMenu from './Toolbar/DeckEditorMenu.vue';
 import DeckEditorMenuEntry from './Toolbar/DeckEditorMenuEntry.vue';
-import DeckEditorToolbarQuickAction from './Toolbar/DeckEditorToolbarQuickAction.vue';
 import EditorDeckDetailsModal from './EditorModals/EditorDeckDetailsModal.vue';
 import { reactiveSnapshot } from '@/proxies';
+import DeckEditorElementColorDropdown from './Toolbar/DeckEditorElementColorDropdown.vue';
+import DeckEditorElementButton from './Toolbar/DeckEditorElementButton.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -37,6 +39,11 @@ const defaultDeckSummary = () => ({
 
 const maxEditHistorySize = 20;
 const autosaveIntervalMs = 1_000;
+
+enum EditedSide {
+	Front = 1,
+	Back = 2,
+};
 
 const state = reactive({
 
@@ -58,6 +65,7 @@ const state = reactive({
 		prevAppTitle: null as string | null,
 		view: {
 			cardIdx: 0,
+			side: null as EditedSide | null,
 		},
 		modals: {
 			versions: false,
@@ -108,7 +116,7 @@ const historyCanRedo = computed((): boolean =>
 	!!state.editor.history.point &&
 	historyEditIdx.value > 0);
 
-const canvasActiveCard = computed(() => {
+const editedCardNode = computed(() => {
 
 	const entry = state.content.cards[state.editor.view.cardIdx];
 	if (!entry) {
@@ -118,11 +126,33 @@ const canvasActiveCard = computed(() => {
 	return { id: entry.id, front: entry.front, back: entry.back };
 });
 
+const editedCardFace = computed(() => {
+	switch (state.editor.view.side) {
+		case EditedSide.Front:
+			return editedCardNode.value.front || null;
+		case EditedSide.Back:
+			return editedCardNode.value.back || null;
+		default:
+			return null;
+	}
+});
+
+const insertableContentNodes = computed(() => {
+	const typeSet = new Set(editedCardFace.value?.content?.map(item => item.type));
+	return {
+		title: !!editedCardFace.value && !typeSet.has('title'),
+		image: !!editedCardFace.value && !typeSet.has('image'),
+		textbox: !!editedCardFace.value && !typeSet.has('textbox'),
+		poll: !!editedCardFace.value && state.editor.view.side === EditedSide.Front && !typeSet.has('poll'),
+	};
+});
+
 const cardSelectorList = computed(() => state.content.cards.map(item => item.front));
 
 const addCard = (node: CardNode) => {
 	state.content.cards.push(node);
 	state.editor.view.cardIdx = state.content.cards.length - 1;
+	state.editor.view.side = null;
 };
 
 const createCard = () => {
@@ -132,6 +162,7 @@ const createCard = () => {
 
 const selectCard = (idx: number) => {
 	state.editor.view.cardIdx = idx;
+	state.editor.view.side = null;
 };
 
 const duplicateCard = (idx: number) => {
@@ -153,6 +184,8 @@ const removeCard = (idx: number) => {
 	if (state.editor.view.cardIdx >= state.content.cards.length) {
 		state.editor.view.cardIdx = state.content.cards.length - 1;
 	}
+
+	state.editor.view.side = null;
 };
 
 interface ResumableState extends DeckEditorHistoryMetaEntry {
@@ -425,6 +458,36 @@ const patchDeckSummary = (patch: { name: string | null; description: string | nu
 	state.content.summary.description = patch.description;
 };
 
+const handleCardCanvasThemeUpdate = (opts: Partial<CardCanvasTheme>) => {
+
+	if (!editedCardFace.value) {
+		return;
+	}
+
+	editedCardFace.value.theme = {
+		... editedCardFace.value?.theme || {},
+		card: {
+			... editedCardFace.value?.theme?.card || {},
+			... opts,
+		},
+	};
+};
+
+const handleCardContentElementThemeUpdate = (opts: Partial<CardContentElementTheme>) => {
+
+	if (!editedCardFace.value) {
+		return;
+	}
+
+	editedCardFace.value.theme = {
+		... editedCardFace.value?.theme || {},
+		interactives: {
+			... editedCardFace.value?.theme?.interactives || {},
+			... opts,
+		},
+	};
+};
+
 const handleVersionRollback = async () => {
 	await clearStateSnapshot();
 	window.location.reload();
@@ -574,29 +637,126 @@ const exitEditor = () => router.push(backHref.value);
 				<DeckEditorAutosaveIndicator :changed="contentEdited" :changesSaved="changesSaved" />
 			</template>
 
+			<template v-slot:colors>
+
+				<DeckEditorElementColorDropdown label="Card fill color" icon="fill"
+					:disabled="!editedCardFace"
+					v-bind:modelValue="editedCardFace?.theme?.card?.fill_color"
+					@update:modelValue="fill_color => handleCardCanvasThemeUpdate({ fill_color })" />
+
+				<DeckEditorElementColorDropdown label="Text color" icon="text"
+					:disabled="!editedCardFace"
+					v-bind:modelValue="editedCardFace?.theme?.card?.mask_color"
+					@update:modelValue="mask_color => handleCardCanvasThemeUpdate({ mask_color })" />
+
+				<DeckEditorElementColorDropdown label="Outline color" icon="outline"
+					:disabled="!editedCardFace"
+					v-bind:modelValue="editedCardFace?.theme?.card?.outline_color"
+					@update:modelValue="outline_color => handleCardCanvasThemeUpdate({ outline_color })" />
+
+				<DeckEditorElementColorDropdown label="Interactive color" icon="fill-interactive"
+					:disabled="!editedCardFace"
+					v-bind:modelValue="editedCardFace?.theme?.interactives?.fill_color"
+					@update:modelValue="fill_color => handleCardContentElementThemeUpdate({ fill_color })" />
+
+				<DeckEditorElementColorDropdown label="Interactive mask color" icon="text-interactive"
+					:disabled="!editedCardFace"
+					v-bind:modelValue="editedCardFace?.theme?.interactives?.mask_color"
+					@update:modelValue="mask_color => handleCardContentElementThemeUpdate({ mask_color })" />
+
+			</template>
+
+			<template v-slot:insert>
+
+				<DeckEditorElementButton label="Add title" icon="add-title"
+					:disabled="!insertableContentNodes.title"
+					@click="addModelNode(editedCardFace?.content, 'title')" />
+
+				<DeckEditorElementButton label="Add text box" icon="add-text"
+					:disabled="!insertableContentNodes.textbox"
+					@click="addModelNode(editedCardFace?.content, 'textbox')" />
+
+				<DeckEditorElementButton label="Add image" icon="add-image"
+					:disabled="!insertableContentNodes.image"
+					@click="addModelNode(editedCardFace?.content, 'image')" />
+
+				<DeckEditorElementButton label="Add poll" icon="add-poll"
+					:disabled="!insertableContentNodes.poll"
+					@click="addModelNode(editedCardFace?.content, 'poll')" />
+
+			</template>
+
 			<template v-slot:ribbon>
+
 				<DeckEditorMenu label="Deck">
-					<DeckEditorMenuEntry label="Play deck" icon="play" :disabled="!editorReady || !deckPublished" @click="openPlayView" />
-					<DeckEditorMenuEntry label="Details" icon="info" :disabled="!editorReady" @click="state.editor.modals.details = true" />
-					<DeckEditorMenuEntry label="Versions" icon="history" :disabled="!editorReady" @click="state.editor.modals.versions = true" />
-					<DeckEditorMenuEntry label="Import deck" icon="io" :disabled="!editorReady" @click="state.editor.modals.importer = true" />
-					<DeckEditorMenuEntry label="Export deck" icon="io" :disabled="!editorReady" @click="state.editor.modals.exporter = true" />
-					<DeckEditorMenuEntry label="Publish changes" icon="publish" :disabled="!editorReady" @click="state.editor.modals.publish = true" />
-					<DeckEditorMenuEntry label="Discard local changes" icon="broom" :disabled="!editorReady || !contentEdited" @click="dropLocalChanges" />
-					<DeckEditorMenuEntry label="Discard all and exit" icon="cross" :disabled="!editorReady || !contentEdited" @click="clearAndExitEditorPrompt" />
-					<DeckEditorMenuEntry label="Delete deck" icon="delete" :disabled="!editorReady" @click="deleteDeckAndExit" />
-					<DeckEditorMenuEntry label="Exit" icon="exit" @click="saveAndExitEditor" />
+
+					<DeckEditorMenuEntry label="Play deck" icon="play"
+						:disabled="!editorReady || !deckPublished" @click="openPlayView" />
+
+					<DeckEditorMenuEntry label="Details" icon="info"
+						:disabled="!editorReady" @click="state.editor.modals.details = true" />
+
+					<DeckEditorMenuEntry label="Versions" icon="history"
+						:disabled="!editorReady" @click="state.editor.modals.versions = true" />
+
+					<DeckEditorMenuEntry label="Import deck" icon="io"
+						:disabled="!editorReady" @click="state.editor.modals.importer = true" />
+
+					<DeckEditorMenuEntry label="Export deck" icon="io"
+						:disabled="!editorReady" @click="state.editor.modals.exporter = true" />
+
+					<DeckEditorMenuEntry label="Publish changes" icon="publish"
+						:disabled="!editorReady || !contentEdited" @click="state.editor.modals.publish = true" />
+
+					<DeckEditorMenuEntry label="Discard local changes" icon="broom"
+						:disabled="!editorReady || !contentEdited" @click="dropLocalChanges" />
+
+					<DeckEditorMenuEntry label="Discard all and exit" icon="cross"
+						:disabled="!editorReady || !contentEdited" @click="clearAndExitEditorPrompt" />
+
+					<DeckEditorMenuEntry label="Delete deck" icon="delete"
+						:disabled="!editorReady" @click="deleteDeckAndExit" />
+
+					<DeckEditorMenuEntry label="Exit" icon="exit"
+						@click="saveAndExitEditor" />
+
 				</DeckEditorMenu>
+
 				<DeckEditorMenu label="Changes">
-					<DeckEditorMenuEntry label="Undo" icon="undo" :disabled="!editorReady || !historyCanUndo" @click="editorHistoryBack" />
-					<DeckEditorMenuEntry label="Redo" icon="redo" :disabled="!editorReady || !historyCanRedo" @click="editorHistoryForward" />
+
+					<DeckEditorMenuEntry label="Undo" icon="undo"
+						:disabled="!editorReady || !historyCanUndo"
+						@click="editorHistoryBack" />
+
+					<DeckEditorMenuEntry label="Redo" icon="redo"
+						:disabled="!editorReady || !historyCanRedo"
+						@click="editorHistoryForward" />
+
 				</DeckEditorMenu>
+
+				<DeckEditorMenu label="Select">
+
+					<DeckEditorMenuEntry label="Select front side"
+						:disabled="!editedCardNode || state.editor.view.side === EditedSide.Front"
+						@click="state.editor.view.side = EditedSide.Front" />
+
+					<DeckEditorMenuEntry label="Select back side"
+						:disabled="!editedCardNode || state.editor.view.side === EditedSide.Back"
+						@click="state.editor.view.side = EditedSide.Back" />
+
+					<DeckEditorMenuEntry label="Deselect all"
+						:disabled="!editedCardNode || !state.editor.view.side"
+						@click="state.editor.view.side = null" />
+
+				</DeckEditorMenu>
+
 				<DeckEditorMenu label="Insert">
 					<DeckEditorMenuEntry label="Insert title" :disabled="true" />
 					<DeckEditorMenuEntry label="Insert text area" :disabled="true" />
 					<DeckEditorMenuEntry label="Insert image" :disabled="true" />
 					<DeckEditorMenuEntry label="Insert poll" :disabled="true" />
 				</DeckEditorMenu>
+
 			</template>
 
 			<template v-slot:meta>
@@ -604,12 +764,6 @@ const exitEditor = () => router.push(backHref.value);
 					:meta="state.content.summary"
 					:changed="contentEdited"
 					:changesSaved="changesSaved" />
-			</template>
-
-			<template v-slot:quickactions>
-				<DeckEditorToolbarQuickAction :disabled="!editorReady" label="Delete deck" icon="delete" @click="deleteDeckAndExit" />
-				<DeckEditorToolbarQuickAction :disabled="!editorReady || !deckPublished" label="Play deck" icon="play" @click="openPlayView" />
-				<DeckEditorToolbarQuickAction :disabled="!editorReady || !contentEdited" label="Publish changes" icon="publish" @click="state.editor.modals.publish = true" />
 			</template>
 
 		</DeckEditorHeader>
@@ -658,13 +812,22 @@ const exitEditor = () => router.push(backHref.value);
 					:list="cardSelectorList"
 					:pointer="state.editor.view.cardIdx"
 					@select="selectCard"
-					@add="createCard()"
+					@add="createCard"
 					@duplicate="duplicateCard"
 					@remove="removeCard" />
 
-				<CardFaceEditor v-model="canvasActiveCard.front" :isFront="true" />
+				<CardFaceEditor
+					v-model="editedCardNode.front"
+					:isFront="true"
+					:active="state.editor.view.side === EditedSide.Front"
+					@click="state.editor.view.side = EditedSide.Front" />
+
 				<hr />
-				<CardFaceEditor v-model="canvasActiveCard.back" />
+
+				<CardFaceEditor
+					v-model="editedCardNode.back"
+					:active="state.editor.view.side === EditedSide.Back"
+					@click="state.editor.view.side = EditedSide.Back" />
 
 			</div>
 		</div>

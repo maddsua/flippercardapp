@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Transformed by: SVG Repo Mixer Tools -->
+
+<svg
+   width="192"
+   height="192"
+   viewBox="0 0 122.88 122.88"
+   fill="#000000"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="border-mask.svg"
+   inkscape:version="1.4 (e7c3feb100, 2024-10-09)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050"
+     inkscape:zoom="2.4811249"
+     inkscape:cx="120.71138"
+     inkscape:cy="152.55177"
+     inkscape:window-width="1920"
+     inkscape:window-height="1010"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg1" />
+  <g
+     id="path1"
+     class="ci-primary">
+    <path
+       style="fill:#ffffff"
+       d="m 20.481949,107.50946 h 83.680301 a 3.3472116,3.3472116 0 0 0 3.34721,-3.34721 V 20.481949 a 3.3472116,3.3472116 0 0 0 -3.34721,-3.347212 H 20.481949 a 3.3472116,3.3472116 0 0 0 -3.347212,3.347212 v 83.680301 a 3.3472116,3.3472116 0 0 0 3.347212,3.34721 z M 65.669309,23.829162 H 100.81504 V 58.974885 H 65.669309 Z m 0,41.840147 H 100.81504 V 100.81504 H 65.669309 Z M 23.829162,23.829162 H 58.974885 V 58.974885 H 23.829162 Z m 0,41.840147 H 58.974885 V 100.81504 H 23.829162 Z"
+       id="path2" />
+    <path
+       style="fill:#ffffff"
+       d="m 20.482422,15.757813 c -2.59226,-1e-6 -4.72461,2.132349 -4.724609,4.724609 v 83.679688 c 10e-7,2.59226 2.13235,4.72266 4.724609,4.72266 h 83.679688 c 2.59226,-1e-5 4.72265,-2.1304 4.72266,-4.72266 V 20.482422 c 0,-2.592259 -2.1304,-4.724608 -4.72266,-4.724609 z m 0,2.751953 h 83.679688 c 1.10497,0 1.9707,0.867688 1.9707,1.972656 v 83.679688 c 0,1.10497 -0.86573,1.9707 -1.9707,1.9707 H 20.482422 c -1.104968,0 -1.972656,-0.86573 -1.972656,-1.9707 V 20.482422 c -10e-7,-1.104969 0.867687,-1.972657 1.972656,-1.972656 z m 1.970703,3.943359 V 60.351562 H 60.351562 V 22.453125 Z m 41.839844,0 V 60.351562 H 102.19141 V 22.453125 Z M 25.205078,25.205078 H 57.599609 V 57.599609 H 25.205078 Z m 41.839844,0 H 99.439453 V 57.599609 H 67.044922 Z M 22.453125,64.292969 V 102.19141 H 60.351562 V 64.292969 Z m 41.839844,0 V 102.19141 H 102.19141 V 64.292969 Z M 25.205078,67.044922 H 57.599609 V 99.439453 H 25.205078 Z m 41.839844,0 H 99.439453 V 99.439453 H 67.044922 Z"
+       id="path3" />
+  </g>
+</svg>

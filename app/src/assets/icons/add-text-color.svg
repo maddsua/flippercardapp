@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="181.36197"
+   height="184.55756"
+   viewBox="0 0 47.985353 48.830853"
+   version="1.1"
+   id="svg1"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <g
+     id="layer1"
+     transform="translate(-0.85179063,-0.48476374)">
+    <text
+       xml:space="preserve"
+       style="font-weight:bold;font-size:35.8371px;font-family:Sans;-inkscape-font-specification:'Sans Bold';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#ffffff;stroke-width:18.6651"
+       x="16.702045"
+       y="33.487064"
+       id="text1"><tspan
+         id="tspan1"
+         style="stroke-width:18.6651"
+         x="16.702045"
+         y="33.487064">A</tspan></text>
+    <rect
+       style="fill:none;fill-opacity:1;stroke:#ffffff;stroke-width:2.06322;stroke-dasharray:none;stroke-opacity:0.8"
+       id="rect7"
+       width="37.694374"
+       height="38.439739"
+       x="10.11116"
+       y="1.5163738"
+       ry="5.4305453" />
+    <text
+       xml:space="preserve"
+       style="font-weight:bold;font-size:39.2792px;font-family:Sans;-inkscape-font-specification:'Sans Bold';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#00ffa5;fill-opacity:1;stroke:none;stroke-width:1.75938"
+       x="-0.83721507"
+       y="53.675606"
+       id="text7"><tspan
+         id="tspan7"
+         style="fill:#00ffa5;fill-opacity:1;stroke-width:1.75938"
+         x="-0.83721507"
+         y="53.675606">+</tspan></text>
+  </g>
+</svg>

@@ -60,7 +60,7 @@ watch(() => props.entry.media_id, () => state.ready = ReadyState.Idle);
 	.card-image {
 		position: relative;
 		background-color: var(--app-theme-snow-white);
-		border-radius: 0.5rem;
+		border-radius: 0.5em;
 		overflow: hidden;
 		border: 0.25em solid var(--app-theme-snow-white);
 		box-shadow: 0 0 1.5em rgba(0, 0, 0, 0.25);

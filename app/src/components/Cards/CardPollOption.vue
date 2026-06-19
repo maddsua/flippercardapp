@@ -5,7 +5,7 @@ import type { CardContentElementTheme, CardPollNodeOption } from '../../content'
 const props = defineProps<{
 	entry: CardPollNodeOption;
 	is_quiz?: boolean;
-	theme?: CardContentElementTheme;
+	theme?: CardContentElementTheme | null;
 }>();
 
 const emit = defineEmits<{
@@ -32,8 +32,8 @@ const applyClasses = computed((): Record<string, boolean> => ({
 }));
 
 const applyStyles = computed((): CSSProperties => ({
-	backgroundColor: props.theme?.fill_color,
-	color: props.theme?.mask_color,
+	backgroundColor: props.theme?.fill_color || undefined,
+	color: props.theme?.mask_color || undefined,
 }));
 
 </script>

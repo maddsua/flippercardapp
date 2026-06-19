@@ -1,11 +1,12 @@
 <script setup lang="ts">
 const props = defineProps<{
 	title: string;
+	scrollable?: boolean;
 }>();
 </script>
 
 <template>
-	<div class="editor-group">
+	<div class="editor-group" :class="{ scrollable }">
 		<div class="title">
 			{{ title }}
 		</div>
@@ -30,6 +31,17 @@ const props = defineProps<{
 			display: flex;
 			flex-direction: column;
 			gap: 1.5rem;
+		}
+
+		&.scrollable {
+			max-height: 100%;
+
+			.content {
+				min-height: 0;
+				max-height: 100%;
+				overflow: hidden auto;
+				scrollbar-width: thin;
+			}
 		}
 	}
 </style>

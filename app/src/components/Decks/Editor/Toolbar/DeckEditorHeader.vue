@@ -7,53 +7,62 @@ const emit = defineEmits<{
 <template>
 	<div class="editor-header">
 
-		<div class="row">
+		<button class="home" type="button" title="Go home" @click="emit('exit')"></button>
 
-			<button class="home" type="button" title="Go home" @click="emit('exit')"></button>
+		<div class="primary-group">
 
-			<div class="row space">
+			<div class="summary-group">
 
-				<div class="col">
+				<div class="slot summary">
 
-					<div class="row center">
+					<slot name="meta">
+						<span class="placeholder">
+							[Meta]
+						</span>
+					</slot>
 
-						<slot name="meta">
-							<span class="placeholder">
-								[Meta]
-							</span>
-						</slot>
-
-						<slot name="autosave">
-							<span class="placeholder">
-								[Autosave]
-							</span>
-						</slot>
-
-					</div>
-
-					<div class="row center tight">
-
-						<slot name="ribbon">
-							<span class="placeholder">
-								[Ribbon]
-							</span>
-						</slot>
-					</div>
 				</div>
 
-				<div class="col">
-					<div class="row padded">
-						<slot name="quickactions">
-							<span class="placeholder">
-								[Quick actions]
-							</span>
-						</slot>
-					</div>
+				<div class="slot menu">
+
+					<slot name="ribbon">
+						<span class="placeholder">
+							[Ribbon]
+						</span>
+					</slot>
+				</div>
+			</div>
+
+			<div class="edit-group">
+
+				<div class="slot color">
+					<slot name="colors">
+						<span class="placeholder">
+							[Colors]
+						</span>
+					</slot>
+				</div>
+
+				<div class="slot insert">
+					<slot name="insert">
+						<span class="placeholder">
+							[Insert]
+						</span>
+					</slot>
 				</div>
 
 			</div>
 
+			<div class="slot autosave">
+				<slot name="autosave">
+					<span class="placeholder">
+						[Autosave]
+					</span>
+				</slot>
+			</div>
+
 		</div>
+
 	</div>
 </template>
 
@@ -62,37 +71,61 @@ const emit = defineEmits<{
 	.editor-header {
 		position: relative;
 		z-index: 100;
-
+		display: flex;
+		flex-flow: row nowrap;
+		gap: 0.5rem;
 		padding: 0.5rem 1rem;
 		background-color: var(--app-theme-ghostly-glow);
 	}
 
-	.editor-header, .col {
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-	}
-
-	.row {
+	.primary-group {
 		display: flex;
 		flex-flow: row nowrap;
-		gap: 1rem;
+		gap: 0.5rem;
 		flex-grow: 1;
+		align-items: start;
+		justify-content: space-between;
+	}
 
-		&.center {
-			align-items: center;
-		}
+	.summary-group {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
 
-		&.tight {
+	.edit-group {
+		display: flex;
+		flex-flow: row nowrap;
+		gap: 2rem;
+		align-items: end;
+		height: 100%;
+		padding: 0.25rem;
+	}
+
+	.slot {
+		display: flex;
+
+		&.summary {
+			flex-direction: column;
 			gap: 0.25rem;
 		}
 
-		&.space {
-			justify-content: space-between;
+		&.menu {
+			flex-flow: row nowrap;
+			align-items: center;
+			gap: 0.25rem;
 		}
 
-		&.padded {
+		&.insert, &.color {
+			flex-flow: row wrap;
+			gap: 0.25rem;
+		}
+
+		&.autosave {
+			height: fit-content;
 			padding: 0.25rem;
+			width: 8rem;
+			overflow: hidden;
 		}
 	}
 

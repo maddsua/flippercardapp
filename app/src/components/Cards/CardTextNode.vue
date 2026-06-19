@@ -1,17 +1,30 @@
 <script setup lang="ts">
+import { computed, type CSSProperties } from 'vue';
 import type { CardTextboxElementTheme } from '../../content';
 
 const props = defineProps<{
 	theme?: CardTextboxElementTheme;
 }>();
+
+const elementClass = computed((): Record<string, boolean> => ({
+	italic: !!props.theme?.italic,
+	bold: !!props.theme?.bold,
+	[`${props.theme?.decoration}`]: !!props.theme?.decoration,
+}));
+
+const elementStyle = computed((): CSSProperties => ({
+	backgroundColor: props.theme?.highlight?.fill_color || undefined,
+	color: props.theme?.highlight?.text_color || undefined,
+}));
+
 </script>
 
 <template>
-	<span class="card-text-node" :class="{ italic: theme?.italic, bold: theme?.bold, [`${theme?.decoration}`]: !!theme?.decoration }" :style="{ backgroundColor: theme?.highlight?.fill_color, color: theme?.highlight?.text_color }">
+	<div class="card-text-node" :class="elementClass" :style="elementStyle">
 		<slot>
 			[Text]
 		</slot>
-	</span>
+	</div>
 </template>
 
 <style lang="scss" scoped>

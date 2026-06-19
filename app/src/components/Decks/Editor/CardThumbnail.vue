@@ -9,6 +9,7 @@ const props = defineProps<{
 	interactive?: boolean;
 	controls?: boolean;
 	label?: string | number;
+	hidden?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -19,7 +20,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-	<div class="card-thumbnail" :class="{ outline: active, interactive, [`size-${size}`]: !!size }">
+	<div class="card-thumbnail" :class="{ outline: active, interactive, [`size-${size}`]: !!size, hidden }">
 
 		<div v-if="interactive" class="controls-layer" :class="{ active: active }">
 
@@ -58,10 +59,15 @@ const emit = defineEmits<{
 		border: 2px solid transparent;
 		flex-shrink: 0;
 		overflow: hidden;
+		transition: all 150ms ease;
 
 		&.size-small {
 			height: 5rem;
 			width: 3.125rem;
+		}
+
+		&.hidden {
+			opacity: 0;
 		}
 
 		.preview-canvas {

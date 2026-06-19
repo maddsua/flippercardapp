@@ -47,7 +47,7 @@ const removeOption = (idx: number) => {
 			<div class="option-list">
 				<template v-if="model?.length">
 					<EditablePollNodeOption v-for="(option, idx) of model"
-						:checked="option.is_answer"
+						:checked="!!option.is_answer"
 						v-model="option.value"
 						@check="setOptionCheck(idx)"
 						@remove="removeOption(idx)" />

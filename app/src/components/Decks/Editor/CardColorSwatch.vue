@@ -2,6 +2,7 @@
 
 const props = defineProps<{
 	label: string;
+	size?: 'normal' | 'small';
 }>();
 
 const model = defineModel<string | null>();
@@ -20,21 +21,20 @@ const colorOptions: string[] = [
 </script>
 
 <template>
-	<div class="color-swatch">
+	<div class="color-swatch" :class="{ [`size-${size}`]:!! size }">
 
-		<div class="label">
-			{{ label }}
+		<div class="header">
+			<div class="label">
+				{{ label }}
+			</div>
+			<button type="reset" @click="model = null">Reset</button>
 		</div>
 
 		<div class="options">
-
-			<button class="null" type="button" :class="{ selected: !model }" @click="model = null"></button>
-
 			<button v-for="color of colorOptions" type="button" class="color"
 				:style="{ backgroundColor: color }"
 				:class="{ selected: model === color }"
 				@click="model = color"></button>
-
 		</div>
 	</div>
 </template>
@@ -45,9 +45,32 @@ const colorOptions: string[] = [
 		flex-direction: column;
 		gap: 0.5rem;
 
-		.label {
-			color: var(--app-theme-mysterious-white);
-			font-size: 0.75rem;
+		.header {
+			display: flex;
+			flex-flow: row nowrap;
+			gap: 1rem;
+			align-items: center;
+			justify-content: space-between;
+
+			.label {
+				color: var(--app-theme-mysterious-white);
+				font-size: 0.75rem;
+				font-weight: 300;
+			}
+
+			button[type=reset] {
+				display: block;
+				outline: none;
+				border: 1px solid var(--app-theme-powder-trail);
+				border-radius: 0.25rem;
+				padding: 0.125rem 0.25rem;
+				background: none;
+
+				&:hover {
+					cursor: pointer;
+					background-color: var(--app-theme-powder-trail);
+				}
+			}
 		}
 
 		.options {
@@ -97,6 +120,15 @@ const colorOptions: string[] = [
 				&.selected {
 					cursor: pointer;
 					border-color: var(--app-theme-snow-white);
+				}
+			}
+		}
+
+		&.size-small {
+			.options {
+				button {
+					width: 1.75rem;
+					height: 1.75rem;
 				}
 			}
 		}

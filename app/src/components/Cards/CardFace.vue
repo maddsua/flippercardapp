@@ -18,7 +18,7 @@ const emit = defineEmits<{
 }>();
 
 const canvasStyle = computed((): CSSProperties => ({
-	color: props.entry.theme?.card?.mask_color
+	color: props.entry.theme?.card?.mask_color || undefined,
 }));
 
 const faceClasses = computed(() => ({
@@ -31,9 +31,9 @@ const faceStyle = computed((): CSSProperties => {
 	const { card } = props.entry.theme || {};
 
 	return {
-		backgroundColor: card?.fill_color,
-		borderColor: card?.outline_color || card?.fill_color,
-		color: card?.mask_color,
+		backgroundColor: card?.fill_color || undefined,
+		borderColor: card?.outline_color || card?.fill_color || undefined,
+		color: card?.mask_color || undefined,
 	};
 });
 
@@ -55,7 +55,7 @@ const faceStyle = computed((): CSSProperties => {
 				<CardTextBox v-else-if="node.type === 'textbox'">
 					<template v-for="txtnode of node.content">
 						<CardTextNode v-if="txtnode.type === 'text' && txtnode.content.length" :theme="txtnode.theme">
-							{{ txtnode.content }}
+							{{ txtnode.content.trim() }}
 						</CardTextNode>
 						<br v-else-if="txtnode.type === 'newline'" />
 					</template>

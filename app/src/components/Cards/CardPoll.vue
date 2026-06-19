@@ -6,7 +6,7 @@ import { shuffleArray } from '../../arrays';
 
 const props = defineProps<{
 	entry: CardPollNode;
-	theme?: CardContentElementTheme;
+	theme?: CardContentElementTheme | null;
 }>();
 
 const emit = defineEmits<{
@@ -56,7 +56,7 @@ const options = computed(() => {
 
 		<CardPollOption v-if="options.length" v-for="option of options"
 			:entry="option"
-			:is_quiz="props.entry.is_quiz"
+			:is_quiz="!!props.entry.is_quiz"
 			:theme="theme"
 			:disabled="state.answered"
 			@select="selectAnswer(option)" />

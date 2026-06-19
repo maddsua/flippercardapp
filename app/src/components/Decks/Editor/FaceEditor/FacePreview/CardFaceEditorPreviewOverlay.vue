@@ -5,6 +5,7 @@ import CardFace from '@/components/Cards/CardFace.vue';
 const props = defineProps<{
 	face: CardContentFace;
 }>();
+
 </script>
 
 <template>
@@ -24,17 +25,21 @@ const props = defineProps<{
 		height: 100%;
 		border-radius: 1rem;
 		padding: 1rem;
-		backdrop-filter: blur(4px);
 		z-index: 20;
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		background-color: var(--app-theme-carbon);
 
 		.preview-slot {
 			position: relative;
 			width: 70%;
 			container-type: inline-size;
 			aspect-ratio: 0.6667;
+		}
+
+		&:hover {
+			cursor: pointer;
 		}
 	}
 </style>

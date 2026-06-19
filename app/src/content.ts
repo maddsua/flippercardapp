@@ -11,17 +11,17 @@ export interface CardContentFace {
 };
 
 export interface CardFaceTheme {
-	card?: CardCanvasTheme;
-	interactives?: CardContentElementTheme;
+	card?: CardCanvasTheme | null;
+	interactives?: CardContentElementTheme | null;
 };
 
 export interface CardCanvasTheme extends CardContentElementTheme {
-	outline_color?: string;
+	outline_color?: string | null;
 };
 
 export interface CardContentElementTheme {
-	fill_color?: string;
-	mask_color?: string;
+	fill_color?: string | null;
+	mask_color?: string | null;
 }
 
 export type CardContentNode = CardTitleNode | CardTextBoxNode | CardPollNode | CardImageNode;
@@ -50,14 +50,14 @@ export interface CardTextboxTextNode extends CardContentNodeBase {
 
 export interface CardTextboxElementTheme {
 	highlight?: CardTextboxElementTextHighlight;
-	bold?: boolean;
-	italic?: boolean;
-	decoration?: 'underline' | 'strikethrough';
+	bold?: boolean | null;
+	italic?: boolean | null;
+	decoration?: 'underline' | 'strikethrough' | null;
 }
 
 export interface CardTextboxElementTextHighlight {
-	text_color?: string;
-	fill_color?: string;
+	text_color?: string | null;
+	fill_color?: string | null;
 }
 
 export interface CardTextboxNewlineNode extends CardContentNodeBase {
@@ -66,13 +66,13 @@ export interface CardTextboxNewlineNode extends CardContentNodeBase {
 
 export interface CardPollNode extends CardContentNodeBase {
 	readonly type: 'poll';
-	is_quiz?: boolean;
+	is_quiz?: boolean | null;
 	content: CardPollNodeOption[];
 };
 
 export interface CardPollNodeOption {
 	value: string;
-	is_answer?: boolean;
+	is_answer?: boolean | null;
 };
 
 export interface CardImageNode {
@@ -132,7 +132,7 @@ export const stringifyTextBoxContent = (nodes: CardTextBoxElementNode[]): string
 		}
 	}
 
-	return result;
+	return result.trim();
 };
 
 const escapeTextBoxNodeContent = (content: string): string => {
@@ -221,10 +221,14 @@ const parseTextBoxNode = (content: string, modifiers?: string | null): CardTextb
 
 export const parseTextBoxContent = (value: string): CardTextBoxElementNode[] => {
 
-	const markExpr = /\{{2}\s*(([^\{\}\|\`]+)|(\`[^\`]+\`))((\s*\|\s*[\(\)a-z-0-9\_\-]*)*)\s*\}{2}/gi;
+	value = value.trim();
+	if (!value.length) {
+		return [];
+	}
 
 	const nodes: CardTextBoxElementNode[] = [];
 
+	const markExpr = /\{{2}\s*(([^\{\}\|\`]+)|(\`[^\`]+\`))((\s*\|\s*[\(\)a-z-0-9\_\-]*)*)\s*\}{2}/gi;
 	const lines = value.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n');
 
 	for (const line of lines) {
@@ -270,4 +274,44 @@ export const parseTextBoxContent = (value: string): CardTextBoxElementNode[] => 
 export const parseQuizOptions = (value: string): CardPollNodeOption[] => {
 	const tokens = value.split(value.includes('|') ? '|' : ',').map(item => item.trim()).filter(item => item.length);
 	return tokens.map((item, idx) => ({ is_answer: idx === 0, value: item }))
+};
+
+type NodeType = CardContentNode['type'];
+const nodeSortOrder: NodeType[] = ['title', 'image', 'textbox', 'poll'];
+const nodeSortOrderMap = new Map<NodeType, number>(nodeSortOrder.map((item, idx) => ([item, idx])));
+
+const createNode = (type: NodeType): CardContentNode => {
+	switch (type) {
+		case 'title':
+			return { type: 'title', content: '' };
+		case 'image':
+			return { type: 'image', state: UploadReadyState.Idle };
+		case 'textbox':
+			return { type: 'textbox', content: [] };
+		case 'poll':
+			return { type: 'poll', content: [] };
+		default:
+			throw new Error(`Unknown node type: ${type}`);
+	}
+};
+
+export const addModelNode = (target: CardContentNode[] | null | undefined, type: NodeType) => {
+
+	if (!target) {
+		throw new Error('Unable to insert node into a non-existent target');
+	}
+
+	const next = createNode(type);
+	const nextPosition = nodeSortOrderMap.get(type) ?? nodeSortOrderMap.size;
+
+	for (let idx = 0; idx < target.length; idx++) {
+		const node = target[idx];
+		const nodePosition = nodeSortOrderMap.get(node.type) ?? 0;
+		if (nodePosition > nextPosition) {
+			target.splice(idx, 0, next);
+			return;
+		}
+	}
+
+	target.push(next);
 };
