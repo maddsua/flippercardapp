@@ -41,7 +41,7 @@ onMounted(async () => {
 		return;
 	}
 
-	const collectionStats = new Map(await store.collections.stats.aggregated(data.entries.map(item => item.id)).catch(() => []))
+	const collectionStats = new Map(await store.collections.stats.aggregated(data.entries.map(item => item.id)).catch(() => []));
 
 	state.data = data.entries.map(item => ({
 		... item,
@@ -91,7 +91,7 @@ onMounted(async () => {
 				:starrable="true"
 				:starred="item.starred"
 				:deckCount="item.size"
-				:score="item.score"
+				:completion="item.score"
 				@click="emit('open', item)" />
 		</ContentList>
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const props = defineProps<{
-	icon?: 'cards' | 'decks' | 'score' | 'star' | 'star-filled' | 'world' | 'link' | 'lock' | 'clock';
+	icon?: 'cards' | 'decks' | 'score' | 'star' | 'star-filled' | 'world' | 'link' | 'lock' | 'clock' | 'completion';
 }>();
 </script>
 
@@ -62,6 +62,9 @@ const props = defineProps<{
 		}
 		&.icon-clock::before {
 			background-image: url(/src/assets/icons/clock-mask.svg);
+		}
+		&.icon-completion::before {
+			background-image: url(/src/assets/icons/check-mask.svg);
 		}
 	}
 </style>

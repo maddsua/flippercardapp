@@ -124,7 +124,7 @@ const searchInput = (value?: string) => {
 				:starrable="true"
 				:starred="item.starred"
 				:deckCount="item.size"
-				:score="item.score"
+				:completion="item.score"
 				@click="emit('open', item)" />
 		</ContentList>
 

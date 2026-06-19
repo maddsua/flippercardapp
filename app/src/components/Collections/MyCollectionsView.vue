@@ -96,7 +96,7 @@ const lang = useLanguage();
 				:date="item.created"
 				:starred="true"
 				:deckCount="item.size"
-				:score="item.score"
+				:completion="item.score"
 				@click="openCollection(item.id)" />
 		</ContentList>
 

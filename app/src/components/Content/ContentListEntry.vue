@@ -13,6 +13,7 @@ const props = defineProps<{
 	cardCount?: number | null;
 	deckCount?: number | null;
 	score?: number | null;
+	completion?: number | null;
 }>();
 
 const newBadgeThreshold = 7 * 24 * 60 * 60 * 1000;
@@ -42,7 +43,11 @@ const showNewBadge = computed(() => {
 				{{ title }}
 			</div>
 
-			<div v-if="starred || starrable || visibility || score || cardCount || deckCount" class="entry-badges">
+			<div v-if="starred || starrable || visibility || score || completion || cardCount || deckCount" class="entry-badges">
+
+				<ContentEntryBadge v-if="completion" icon="completion">
+					{{ completion.toFixed(0) }}%
+				</ContentEntryBadge>
 
 				<ContentEntryBadge v-if="score" icon="score">
 					{{ score.toFixed(0) }}%
