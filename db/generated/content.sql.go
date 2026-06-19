@@ -14,20 +14,6 @@ import (
 	"github.com/maddsua/flippercardapp/db/types"
 )
 
-const collectionIDExists = `-- name: CollectionIDExists :one
-select exists (
-	select 1 from collections
-	where id = ?1
-)
-`
-
-func (q *Queries) CollectionIDExists(ctx context.Context, id uuid.UUID) (bool, error) {
-	row := q.db.QueryRowContext(ctx, collectionIDExists, id)
-	var exists bool
-	err := row.Scan(&exists)
-	return exists, err
-}
-
 const collectionNameExists = `-- name: CollectionNameExists :one
 select exists (
 	select 1 from collections
@@ -764,6 +750,26 @@ type UpdateCollectionChildrenVisibilityParams struct {
 
 func (q *Queries) UpdateCollectionChildrenVisibility(ctx context.Context, arg UpdateCollectionChildrenVisibilityParams) (int64, error) {
 	result, err := q.db.ExecContext(ctx, updateCollectionChildrenVisibility, arg.NewVisibility, arg.OldVisibility, arg.CollectionID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const updateCollectionMtime = `-- name: UpdateCollectionMtime :execrows
+update collections
+set
+	updated_at = ?1
+where id = ?2
+`
+
+type UpdateCollectionMtimeParams struct {
+	UpdatedAt types.Time
+	ID        uuid.UUID
+}
+
+func (q *Queries) UpdateCollectionMtime(ctx context.Context, arg UpdateCollectionMtimeParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, updateCollectionMtime, arg.UpdatedAt, arg.ID)
 	if err != nil {
 		return 0, err
 	}

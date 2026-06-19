@@ -505,9 +505,12 @@ func (rslv *resolver) CreateCardDeck(ctx context.Context, params model.CardDeckP
 	}
 	defer tx.Rollback()
 
-	if exists, err := tx.CollectionIDExists(ctx, params.CollectionID.UUID); err != nil {
-		return nil, InternalError("sqlc.CollectionIDExists", err)
-	} else if !exists {
+	if affected, err := tx.UpdateCollectionMtime(ctx, db_gen.UpdateCollectionMtimeParams{
+		UpdatedAt: types.NewTime(time.Now()),
+		ID:        params.CollectionID.UUID,
+	}); err != nil {
+		return nil, InternalError("sqlc.UpdateCollectionMtime", err)
+	} else if affected != 1 {
 		return nil, &model.Error{Message: "Collection ID not found", Code: http.StatusNotFound}
 	}
 
@@ -592,9 +595,12 @@ func (rslv *resolver) UpdateCardDeck(ctx context.Context, deckID uuid.UUID, para
 	}
 
 	if params.CollectionID.Valid {
-		if exists, err := tx.CollectionIDExists(ctx, params.CollectionID.UUID); err != nil {
-			return nil, InternalError("sqlc.CollectionIDExists", err)
-		} else if !exists {
+		if affected, err := tx.UpdateCollectionMtime(ctx, db_gen.UpdateCollectionMtimeParams{
+			UpdatedAt: types.NewTime(time.Now()),
+			ID:        params.CollectionID.UUID,
+		}); err != nil {
+			return nil, InternalError("sqlc.UpdateCollectionMtime", err)
+		} else if affected != 1 {
 			return nil, &model.Error{Message: "Collection ID not found", Code: http.StatusNotFound}
 		}
 	}

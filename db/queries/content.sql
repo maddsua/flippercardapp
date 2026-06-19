@@ -71,12 +71,6 @@ where (sqlc.narg(visibility_set) is null or collections.visibility in (
 ))
 limit sqlc.arg(limit) offset sqlc.arg(offset);
 
--- name: CollectionIDExists :one
-select exists (
-	select 1 from collections
-	where id = sqlc.arg(id)
-);
-
 -- name: CollectionNameExists :one
 select exists (
 	select 1 from collections
@@ -109,6 +103,12 @@ set
 	visibility = sqlc.arg(visibility)
 where id = sqlc.arg(id)
 returning *;
+
+-- name: UpdateCollectionMtime :execrows
+update collections
+set
+	updated_at = sqlc.arg(updated_at)
+where id = sqlc.arg(id);
 
 -- name: UpdateCollectionChildrenVisibility :execrows
 update decks
