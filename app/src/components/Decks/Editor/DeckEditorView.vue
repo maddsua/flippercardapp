@@ -173,6 +173,21 @@ const duplicateCard = (idx: number) => {
 	addCard(reactiveSnapshot(clonedNode));
 };
 
+const reorderCard = (idx: number, delta: number) => {
+
+	const newIdx = idx + delta;
+	if (newIdx < 0 || newIdx >= (state.content.cards?.length ?? 0)) {
+		return;
+	}
+
+	const node = state.content.cards[idx];
+
+	state.content.cards[idx] = state.content.cards[newIdx];
+	state.content.cards[newIdx] = node;
+
+	selectCard(newIdx);
+};
+
 const removeCard = (idx: number) => {
 
 	if (!confirm('Remove card?')) {
@@ -814,6 +829,8 @@ const exitEditor = () => router.push(backHref.value);
 					@select="selectCard"
 					@add="createCard"
 					@duplicate="duplicateCard"
+					@moveUp="idx => reorderCard(idx, -1)"
+					@moveDown="idx => reorderCard(idx, 1)"
 					@remove="removeCard" />
 
 				<CardFaceEditor

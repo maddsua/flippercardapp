@@ -15,6 +15,8 @@ const props = defineProps<{
 const emit = defineEmits<{
 	(e: 'remove'): void;
 	(e: 'duplicate'): void;
+	(e: 'moveUp'): void;
+	(e: 'moveDown'): void;
 }>();
 
 </script>
@@ -24,13 +26,18 @@ const emit = defineEmits<{
 
 		<div v-if="interactive" class="controls-layer" :class="{ active: active }">
 
+			<div v-if="controls" class="col controls">
+				<button type="button" class="move-up" title="Move card up" @click.self.stop="emit('moveUp')"></button>
+				<button type="button" class="move-down" title="Move card down" @click.self.stop="emit('moveDown')"></button>
+			</div>
+
 			<template v-if="label">
 
-				<div class="label-small">
+				<div class="label-large">
 					{{ label }}
 				</div>
 
-				<div class="col label-large">
+				<div class="col label-small">
 					{{ label }}
 				</div>
 
@@ -100,22 +107,28 @@ const emit = defineEmits<{
 				transition: opacity 150ms ease;
 
 				&.controls {
+					position: relative;
 					opacity: 0;
+					z-index: 2;
 				}
 			}
 
-			.label-large {
+			.label-small {
+				position: absolute;
+				top: 0.25rem;
+				left: 0.25rem;
 				display: flex;
 				width: 1.125rem;
 				height: 1.125rem;
 				align-items: center;
 				justify-content: center;
 				overflow: visible;
-				background-color: var(--app-theme-snow-white);
+				background-color: var(--app-theme-kinda-white);
 				color: var(--app-theme-carbon);
 				font-weight: 600;
-				font-size: 0.75rem;
+				font-size: 0.65rem;
 				border-radius: 100%;
+				z-index: 1;
 			}
 
 			button {
@@ -151,9 +164,29 @@ const emit = defineEmits<{
 						background-color: var(--app-theme-blood-red);
 					}
 				}
+
+				&.move-up {
+					mask-image: url(/src/assets/icons/arrow-bracket-mask.svg);
+					transform: rotate(90deg);
+					mask-size: 1.5rem;
+
+					&:hover {
+						background-color: var(--app-theme-sky-blue);
+					}
+				}
+
+				&.move-down {
+					mask-image: url(/src/assets/icons/arrow-bracket-mask.svg);
+					transform: rotate(-90deg);
+					mask-size: 1.5rem;
+
+					&:hover {
+						background-color: var(--app-theme-sky-blue);
+					}
+				}
 			}
 
-			.label-small {
+			.label-large {
 				position: absolute;
 				width: 100%;
 				height: 100%;
@@ -173,19 +206,19 @@ const emit = defineEmits<{
 				background-color: rgba(0, 0, 0, 0.4);
 				backdrop-filter: blur(2px);
 
-				.label-small {
+				.label-large {
 					opacity: 1;
 					color: var(--app-theme-snow-white) !important;
 				}
 
-				.col.label-large {
+				.col.label-small {
 					opacity: 0;
 				}
 			}
 
 			&:hover {
 
-				.label-small {
+				.label-large {
 					color: var(--app-theme-sporty-yellow);
 				}
 

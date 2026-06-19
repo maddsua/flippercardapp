@@ -13,6 +13,8 @@ const emit = defineEmits<{
 	(e: 'remove', idx: number): void;
 	(e: 'duplicate', idx: number): void;
 	(e: 'add'): void;
+	(e: 'moveUp', idx: number): void;
+	(e: 'moveDown', idx: number): void;
 }>();
 
 const listRef = ref<Array<Element | null>>([]);
@@ -67,6 +69,8 @@ watch(() => props.pointer, queueScroll);
 							:controls="true"
 							:interactive="true"
 							@duplicate="emit('duplicate', idx)"
+							@moveUp="emit('moveUp', idx)"
+							@moveDown="emit('moveDown', idx)"
 							@remove="emit('remove', idx)"/>
 					</button>
 				</li>
