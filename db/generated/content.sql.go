@@ -82,6 +82,24 @@ func (q *Queries) DeleteDeck(ctx context.Context, id uuid.UUID) (int64, error) {
 	return result.RowsAffected()
 }
 
+const deleteDeckVersion = `-- name: DeleteDeckVersion :execrows
+delete from deck_versions
+where id = ?1 and deck_id = ?2
+`
+
+type DeleteDeckVersionParams struct {
+	VersionID uuid.UUID
+	DeckID    uuid.UUID
+}
+
+func (q *Queries) DeleteDeckVersion(ctx context.Context, arg DeleteDeckVersionParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, deleteDeckVersion, arg.VersionID, arg.DeckID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const getCollectionBatch = `-- name: GetCollectionBatch :many
 select
 	collections.id, collections.created_at, collections.updated_at, collections.name, collections.description, collections.visibility,

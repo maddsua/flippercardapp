@@ -133,17 +133,17 @@ func (rslv *resolver) ListCardDeckVersions(ctx context.Context, deckID uuid.UUID
 
 	return result, nil
 }
-func (rslv *resolver) RollbackCardDeckVersion(ctx context.Context, deckID uuid.UUID, versionID uuid.UUID) (*model.CardDeckMetadata, error) {
+func (rslv *resolver) DeleteCardDeckVersion(ctx context.Context, deckID uuid.UUID, versionID uuid.UUID) error {
 
 	if perms, err := auth.For(ctx).Permissions(); err != nil {
-		return nil, err
+		return err
 	} else if err := perms.AsContentEditor(); err != nil {
-		return nil, err
+		return err
 	}
 
 	tx, err := rslv.db.BeginTx(ctx)
 	if err != nil {
-		return nil, InternalError("sqlc.BeginTx", err)
+		return InternalError("sqlc.BeginTx", err)
 	}
 	defer tx.Rollback()
 
@@ -153,27 +153,29 @@ func (rslv *resolver) RollbackCardDeckVersion(ctx context.Context, deckID uuid.U
 	})
 
 	if db_pkg.IsNull(err) {
-		return nil, &model.Error{Message: "Version not found", Code: http.StatusNotFound}
+		return &model.Error{Message: "Version not found", Code: http.StatusNotFound}
 	} else if err != nil {
-		return nil, InternalError("sqlc.GetDeckVersion", err)
+		return InternalError("sqlc.GetDeckVersion", err)
 	}
 
-	deck, err := tx.SetDeckLatestVersion(ctx, db_gen.SetDeckLatestVersionParams{
-		DeckID:          deckID,
-		UpdatedAt:       types.NewNullTime(time.Now()),
-		LatestVersionID: types.NewNullUUID(version.ID),
-	})
+	if deck, err := tx.GetDeckById(ctx, version.DeckID); err != nil {
+		return InternalError("sqlc.GetDeckById", err)
+	} else if deck.LatestVersionID.UUID == version.ID {
+		return &model.Error{Message: "Unable to delete the latest deck version", Code: http.StatusBadRequest}
+	}
 
-	if err != nil {
-		return nil, InternalError("sqlc.SetDeckLatestVersion", err)
+	if _, err := tx.DeleteDeckVersion(ctx, db_gen.DeleteDeckVersionParams{
+		VersionID: version.ID,
+		DeckID:    version.DeckID,
+	}); err != nil {
+		return InternalError("sqlc.DeleteDeckVersion", err)
 	}
 
 	if err := tx.Commit(); err != nil {
-		return nil, InternalError("sqlc.Commit", err)
+		return InternalError("sqlc.Commit", err)
 	}
 
-	result := db_pkg.TransformRow[model.CardDeckMetadata](deck)
-	return &result, nil
+	return nil
 }
 
 func (rslv *resolver) LoadCardDeckVersion(ctx context.Context, deckID uuid.UUID, versionID uuid.UUID) (*model.CardDeckVersion, error) {

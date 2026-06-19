@@ -320,8 +320,8 @@ export class ApiClient {
 			load: async (deckID: string, versionID: string) =>
 				this.execJSON<CardDeckVersion>('GET', `/decks/${deckID}/version/${versionID}`),
 
-			rollback: async (deckID: string, versionID: string) =>
-				this.execJSON<CardDeckVersionMetadata>('POST', `/decks/${deckID}/version/${versionID}/rollback`),
+			remove: async (deckID: string, versionID: string) =>
+				this.execJSON<null>('DELETE', `/decks/${deckID}/version/${versionID}`),
 		},
 	};
 

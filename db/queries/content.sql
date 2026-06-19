@@ -41,6 +41,10 @@ where deck_id = sqlc.arg(deck_id)
 order by created_at desc
 limit 1;
 
+-- name: DeleteDeckVersion :execrows
+delete from deck_versions
+where id = sqlc.arg(version_id) and deck_id = sqlc.arg(deck_id);
+
 -- name: GetCollectionById :one
 select * from collections
 where id = sqlc.arg(id);

@@ -17,16 +17,11 @@ const props = defineProps<{
 const emit = defineEmits<{
 	(e: 'done'): void;
 	(e: 'pull', version: CardDeckVersion): void;
-	(e: 'rollback', version: CardDeckVersionMetadata): void;
 }>();
 
 const state = reactive({
 	page: genericPageState<CardDeckVersionMetadata>(),
-	rollback: {
-		busy: false,
-		error: null as string | null,
-	},
-	pull: {
+	actions: {
 		busy: false,
 		error: null as string | null,
 	},
@@ -45,25 +40,23 @@ const fmtDate = (date: string) => new Date(date).toLocaleDateString('en-UK', {
 	second: 'numeric',
 });
 
-const rollbackVersion = async (versionID: string) => {
+const deleteVersion = async (versionID: string) => {
 
-	if (!confirm('Roll back to this version?')) {
+	if (!confirm('Delete this version?')) {
 		return;
 	}
 
-	state.rollback.busy = true;
+	state.actions.busy = true;
 
-	const { data, error } = await client.decks.versions.rollback(props.deckID, versionID);
-	if (!data || error) {
-		state.rollback.busy = false;
-		state.rollback.error = unwrapErrorMessage(error);
+	const { error } = await client.decks.versions.remove(props.deckID, versionID);
+	if ( error) {
+		state.actions.busy = false;
+		state.actions.error = unwrapErrorMessage(error);
 		return;
 	}
 
-	state.rollback.busy = false;
-
-	emit('rollback', data);
-	emit('done');
+	state.page.entries = state.page.entries.filter(item => item.id != versionID);
+	state.actions.busy = false;
 };
 
 const loadVersion = async (versionID: string) => {
@@ -72,16 +65,16 @@ const loadVersion = async (versionID: string) => {
 		return;
 	}
 
-	state.pull.busy = true;
+	state.actions.busy = true;
 
 	const { data, error } = await client.decks.versions.load(props.deckID, versionID);
 	if (!data || error) {
-		state.pull.busy = false;
-		state.pull.error = unwrapErrorMessage(error);
+		state.actions.busy = false;
+		state.actions.error = unwrapErrorMessage(error);
 		return;
 	}
 
-	state.pull.busy = false;
+	state.actions.busy = false;
 
 	emit('pull', data);
 	emit('done');
@@ -107,26 +100,12 @@ const loadVersion = async (versionID: string) => {
 				No versions available
 			</div>
 
-			<InlineErrorMessage v-else-if="state.rollback.error">
-				<template v-slot:title>
-					Unable to roll back a version
-				</template>
-				{{ state.rollback.error }}
+			<InlineErrorMessage v-else-if="state.actions.error">
+				{{ state.actions.error }}
 			</InlineErrorMessage>
 
-			<InlineErrorMessage v-else-if="state.pull.error">
-				<template v-slot:title>
-					Unable to pull a version
-				</template>
-				{{ state.pull.error }}
-			</InlineErrorMessage>
-
-			<LoadingMessage v-else-if="state.pull.busy">
-				Pulling version...
-			</LoadingMessage>
-
-			<LoadingMessage v-else-if="state.rollback.busy">
-				Rolling back...
+			<LoadingMessage v-else-if="state.actions.busy">
+				Updating versions...
 			</LoadingMessage>
 
 			<div v-else class="version-list">
@@ -147,11 +126,11 @@ const loadVersion = async (versionID: string) => {
 						<div v-if="entry.is_latest" class="flag-latest">Latest</div>
 
 						<template v-else>
-							<GenericButton theme="orange" variant="thin" :disabled="state.rollback.busy" @click="rollbackVersion(entry.id)">
-								Rollback
-							</GenericButton>
-							<GenericButton variant="thin" :disabled="state.pull.busy" @click="loadVersion(entry.id)">
+							<GenericButton variant="thin" :disabled="state.actions.busy" @click="loadVersion(entry.id)">
 								Load
+							</GenericButton>
+							<GenericButton theme="red" variant="thin" :disabled="state.actions.busy" @click="deleteVersion(entry.id)">
+								Delete
 							</GenericButton>
 						</template>
 

@@ -126,7 +126,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return rslv.LoadCardDeckVersion(req.Context(), deckID, versionID)
 	}))
 
-	mux.Handle("POST /decks/{id}/version/{vid}/rollback", MethodHandleFunc(func(req *http.Request) (*model.CardDeckMetadata, error) {
+	mux.Handle("DELETE /decks/{id}/version/{vid}", MethodHandleFunc(func(req *http.Request) (*model.CardDeckMetadata, error) {
 		deckID, err := ParseUUID(req.PathValue("id"))
 		if err != nil {
 			return nil, err
@@ -135,7 +135,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		if err != nil {
 			return nil, err
 		}
-		return rslv.RollbackCardDeckVersion(req.Context(), deckID, versionID)
+		return nil, rslv.DeleteCardDeckVersion(req.Context(), deckID, versionID)
 	}))
 
 	mux.Handle("PUT /decks/new", MethodHandleFunc(func(req *http.Request) (*model.CardDeckMetadata, error) {

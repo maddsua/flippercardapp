@@ -463,11 +463,6 @@ const handleCardContentElementThemeUpdate = (opts: Partial<CardContentElementThe
 	};
 };
 
-const handleVersionRollback = async () => {
-	await clearStateSnapshot();
-	window.location.reload();
-};
-
 const applyPulledVersion = (version: CardDeckVersion) => {
 
 	state.content.cards = version.content.cards;
@@ -837,7 +832,6 @@ onUnmounted(() => {
 			<EditorVersionControlModal
 				:deckID="state.origin.deckID"
 				@pull="applyPulledVersion"
-				@rollback="handleVersionRollback"
 				@done="state.editor.modals.versions = false" />
 		</EditorScreenOverlay>
 
