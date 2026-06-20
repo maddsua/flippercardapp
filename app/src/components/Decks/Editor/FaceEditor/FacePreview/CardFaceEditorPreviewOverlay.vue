@@ -36,6 +36,7 @@ const props = defineProps<{
 			width: 70%;
 			container-type: inline-size;
 			aspect-ratio: 0.6667;
+			pointer-events: none;
 		}
 
 		&:hover {
