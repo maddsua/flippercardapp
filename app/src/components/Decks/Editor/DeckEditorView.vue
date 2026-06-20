@@ -599,6 +599,10 @@ const registerShortcuts = () => {
 			ctrl: true, key: ']',
 			action: () => state.editor.view.side = EditedSide.Back,
 		},
+		{
+			ctrl: true, key: ';',
+			action: () => state.editor.view.side = null,
+		},
 	]);
 	state.editor.shortcuts.register();
 };
