@@ -603,6 +603,14 @@ const registerShortcuts = () => {
 			ctrl: true, key: ';',
 			action: () => state.editor.view.side = null,
 		},
+		{
+			ctrl: true, key: 'arrowup',
+			action: () => state.editor.view.cardIdx = Math.max(0, state.editor.view.cardIdx - 1),
+		},
+		{
+			ctrl: true, key: 'arrowdown',
+			action: () => state.editor.view.cardIdx = Math.min(state.editor.view.cardIdx + 1, state.content.cards.length - 1),
+		},
 	]);
 	state.editor.shortcuts.register();
 };

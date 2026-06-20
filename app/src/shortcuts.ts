@@ -19,7 +19,9 @@ export class Shortcuts {
 
 	private onKeyDown = (event: KeyboardEvent) => {
 
-		switch (event.key.toLowerCase()) {
+		const key = event.key.toLowerCase();
+
+		switch (key) {
 			case 'shift':
 				this.withShift = true;
 				return;
@@ -28,12 +30,10 @@ export class Shortcuts {
 				return;
 		}
 
-		const shortcut = this.entries.find(item => !!item.ctrl === this.withCtrl && !!item.shift === this.withShift && item.key === event.key);
+		const shortcut = this.entries.find(item => !!item.ctrl === this.withCtrl && !!item.shift === this.withShift && item.key === key);
 		if (!shortcut) {
 			return;
 		}
-
-		console.debug('Exec shortcut:', shortcut);
 
 		event.preventDefault();
 		event.stopImmediatePropagation();
