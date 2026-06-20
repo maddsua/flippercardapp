@@ -592,24 +592,30 @@ const registerShortcuts = () => {
 			action: () => deckPublished.value ? openPlayView() : void 0,
 		},
 		{
-			ctrl: true, key: '[',
+			ctrl: true, key: 'arrowleft',
 			action: () => state.editor.view.side = EditedSide.Front,
 		},
 		{
-			ctrl: true, key: ']',
+			ctrl: true, key: 'arrowright',
 			action: () => state.editor.view.side = EditedSide.Back,
 		},
 		{
-			ctrl: true, key: ';',
+			ctrl: true, key: ' ',
 			action: () => state.editor.view.side = null,
 		},
 		{
 			ctrl: true, key: 'arrowup',
-			action: () => state.editor.view.cardIdx = Math.max(0, state.editor.view.cardIdx - 1),
+			action: () => {
+				state.editor.view.side = null;
+				state.editor.view.cardIdx = Math.max(0, state.editor.view.cardIdx - 1);
+			},
 		},
 		{
 			ctrl: true, key: 'arrowdown',
-			action: () => state.editor.view.cardIdx = Math.min(state.editor.view.cardIdx + 1, state.content.cards.length - 1),
+			action: () => {
+				state.editor.view.side = null;
+				state.editor.view.cardIdx = Math.min(state.editor.view.cardIdx + 1, state.content.cards.length - 1);
+			},
 		},
 	]);
 	state.editor.shortcuts.register();
