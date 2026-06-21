@@ -25,7 +25,7 @@ const resetInput = () => {
 
 <template>
 	<div class="searchbar">
-		<input type="text" :placeholder="placehoder" :value="model" @input="captureInput" />
+		<input type="search" :placeholder="placehoder" :value="model" @input="captureInput" />
 		<button v-if="model?.length" type="reset" @click="resetInput"></button>
 	</div>
 </template>
