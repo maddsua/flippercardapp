@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getAppInfo } from '@/app';
+import { getAppInfo, type AppSource } from '@/app';
 import { computed } from 'vue';
 
 const info = computed(() => {
@@ -11,8 +11,23 @@ const info = computed(() => {
 		buildTime: info.buildTime?.toISOString() || 'unknown time',
 		distribution: info.mode,
 		platform: info.platform || 'unknown platform',
+		sourceURL: formatRepoUrl(info.source),
 	};
 });
+
+const formatRepoUrl = (src: AppSource) => {
+
+	if (!src.vcs || !src.repo) {
+		return null;
+	}
+
+	switch (src.vcs.toLowerCase().trim()) {
+		case 'github':
+			return { href: `https://github.com/${src.repo.trim()}`, title: 'GitHub' };
+		default:
+			return null;
+	}
+};
 
 </script>
 
@@ -23,6 +38,9 @@ const info = computed(() => {
 		</p>
 		<p>
 			Designed by maddsua. Provided by MWS via Railway Corp.
+		</p>
+		<p v-if="info.sourceURL">
+			Source code at <a :href="info.sourceURL.href" target="_blank">{{ info.sourceURL.title }}</a>
 		</p>
 	</div>
 </template>
@@ -37,6 +55,10 @@ const info = computed(() => {
 		p {
 			margin: 0;
 			padding: 0;
+		}
+
+		a {
+			color: var(--app-theme-deep-lavender);
 		}
 	}
 </style>

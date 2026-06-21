@@ -4,6 +4,12 @@ export interface AppInfo {
 	buildTime: Date | null;
 	mode: 'PWA' | 'web' | 'web-limited' | null;
 	platform: string | null;
+	source: AppSource;
+};
+
+export interface AppSource {
+	vcs?: string;
+	repo?: string;
 };
 
 const parseDateString = (value?: string | null) => {
@@ -42,4 +48,8 @@ export const getAppInfo = (): AppInfo => ({
 	buildTime: parseDateString(import.meta.env.VITE_APP_BUILD_TS),
 	mode: detectAppMode(),
 	platform: import.meta.env.VITE_APP_PLATFORM || null,
+	source: {
+		vcs: import.meta.env.VITE_APP_SOURCE_VCS,
+		repo: import.meta.env.VITE_APP_SOURCE_REPO
+	},
 });

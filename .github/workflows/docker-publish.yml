@@ -40,4 +40,6 @@ jobs:
           build-args: |
             APP_VERSION=${{ env.IMAGE_TAG }}
             APP_BUILD_TS=${{ steps.date.outputs.APP_BUILD_TS }}
+            APP_SOURCE_VCS=github
+            APP_SOURCE_REPO=${{ github.repository }}
           tags: ${{ env.IMAGE_BASE_TAG }}:${{ env.IMAGE_TAG }}, ${{ env.IMAGE_BASE_TAG }}:latest
