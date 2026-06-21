@@ -3,6 +3,7 @@ interface ShortcutAction {
 	ctrl?: boolean;
 	shift?: boolean;
 	key: string;
+	prepreq?: () => boolean;
 	action: () => void;
 };
 
@@ -30,7 +31,12 @@ export class Shortcuts {
 				return;
 		}
 
-		const shortcut = this.entries.find(item => !!item.ctrl === this.withCtrl && !!item.shift === this.withShift && item.key === key);
+		const shortcut = this.entries.find(entry =>
+			entry.key === key &&
+			!!entry.ctrl === this.withCtrl &&
+			!!entry.shift === this.withShift &&
+			(!entry.prepreq || entry.prepreq()));
+
 		if (!shortcut) {
 			return;
 		}

@@ -26,6 +26,7 @@ import { reactiveSnapshot } from '@/proxies';
 import DeckEditorElementColorDropdown from './Toolbar/DeckEditorElementColorDropdown.vue';
 import DeckEditorElementButton from './Toolbar/DeckEditorElementButton.vue';
 import { Shortcuts } from '@/shortcuts';
+import { isInteractive } from '@/dom';
 
 const route = useRoute();
 const router = useRouter();
@@ -593,10 +594,12 @@ const registerShortcuts = () => {
 		},
 		{
 			ctrl: true, key: 'arrowleft',
+			prepreq: () => !isInteractive(document.activeElement),
 			action: () => state.editor.view.side = EditedSide.Front,
 		},
 		{
 			ctrl: true, key: 'arrowright',
+			prepreq: () => !isInteractive(document.activeElement),
 			action: () => state.editor.view.side = EditedSide.Back,
 		},
 		{
@@ -604,14 +607,20 @@ const registerShortcuts = () => {
 			action: () => {
 
 				if (document.activeElement instanceof HTMLElement) {
-					document.activeElement?.blur();
+					document.activeElement.blur();
 				}
 
 				state.editor.view.side = null;
 			},
 		},
 		{
+			key: 'escape',
+			prepreq: () => isInteractive(document.activeElement),
+			action: () => document.activeElement instanceof HTMLElement ? document.activeElement.blur() : void 0,
+		},
+		{
 			ctrl: true, key: 'arrowup',
+			prepreq: () => !isInteractive(document.activeElement),
 			action: () => {
 				state.editor.view.side = null;
 				state.editor.view.cardIdx = Math.max(0, state.editor.view.cardIdx - 1);
@@ -619,6 +628,7 @@ const registerShortcuts = () => {
 		},
 		{
 			ctrl: true, key: 'arrowdown',
+			prepreq: () => !isInteractive(document.activeElement),
 			action: () => {
 				state.editor.view.side = null;
 				state.editor.view.cardIdx = Math.min(state.editor.view.cardIdx + 1, state.content.cards.length - 1);

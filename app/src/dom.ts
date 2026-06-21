@@ -18,3 +18,7 @@ export const isContainerOutsideClick = (container: HTMLElement | null, target: E
 
 	return !container.contains(target);
 };
+
+export const isInteractive = (element: Element | null) => {
+	return !!element && (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement);
+};
