@@ -601,7 +601,14 @@ const registerShortcuts = () => {
 		},
 		{
 			ctrl: true, key: ' ',
-			action: () => state.editor.view.side = null,
+			action: () => {
+
+				if (document.activeElement instanceof HTMLElement) {
+					document.activeElement?.blur();
+				}
+
+				state.editor.view.side = null;
+			},
 		},
 		{
 			ctrl: true, key: 'arrowup',
