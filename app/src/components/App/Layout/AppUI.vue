@@ -2,9 +2,12 @@
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 import AppViewButton from './AppViewButton.vue';
+import { detectVirtualKeyboard } from '@/keyboard';
 
 const route = useRoute();
 const appView = computed((): string | null => typeof route.meta.app_view === 'string' ? route.meta.app_view : null);
+
+const vkbdState = window.navigator.maxTouchPoints > 0 ? detectVirtualKeyboard() : null;;
 
 </script>
 
@@ -19,7 +22,7 @@ const appView = computed((): string | null => typeof route.meta.app_view === 'st
 			</div>
 		</div>
 
-		<div class="app-toolbar">
+		<div class="app-toolbar" :class="{ hidden: vkbdState?.isOpen }">
 			<div class="app-navigation">
 				<AppViewButton href="/" :active="appView === 'home'" icon="home" />
 				<AppViewButton href="/starred" :active="appView === 'starred'" icon="star" />
@@ -84,6 +87,11 @@ const appView = computed((): string | null => typeof route.meta.app_view === 'st
 			justify-content: center;
 			width: 100%;
 			background-color: var(--app-theme-carbon);
+			transition: all 200ms ease;
+
+			&.hidden {
+				transform: translateY(25vh);
+			}
 
 			.app-navigation {
 				display: flex;
