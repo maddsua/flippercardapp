@@ -603,13 +603,12 @@ const registerShortcuts = () => {
 			action: () => state.editor.view.side = EditedSide.Back,
 		},
 		{
-			ctrl: true, key: ' ',
+			key: 'escape',
+			prepreq: () => !isInteractive(document.activeElement) && !!state.editor.view.side,
 			action: () => {
-
 				if (document.activeElement instanceof HTMLElement) {
 					document.activeElement.blur();
 				}
-
 				state.editor.view.side = null;
 			},
 		},
