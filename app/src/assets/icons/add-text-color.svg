@@ -13,17 +13,12 @@
      id="defs1" />
   <g
      id="layer1"
-     transform="translate(-0.85179063,-0.48476374)">
-    <text
-       xml:space="preserve"
-       style="font-weight:bold;font-size:35.8371px;font-family:Sans;-inkscape-font-specification:'Sans Bold';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#ffffff;stroke-width:18.6651"
-       x="16.702045"
-       y="33.487064"
-       id="text1"><tspan
-         id="tspan1"
-         style="stroke-width:18.6651"
-         x="16.702045"
-         y="33.487064">A</tspan></text>
+     transform="translate(-0.8517906,-0.48476374)">
+    <path
+       d="m 35.588198,33.487064 -1.86353,-6.092307 h -9.317646 l -1.863529,6.092307 h -5.841448 l 9.03095,-25.695201 h 6.629864 l 9.066786,25.695201 z M 30.571004,16.894487 q -0.179186,-0.609231 -0.465883,-1.540996 -0.286697,-0.931764 -0.573393,-1.899366 -0.286697,-0.967602 -0.465883,-1.684344 -0.179185,0.716742 -0.501719,1.791855 -0.286697,1.039276 -0.573394,2.006878 -0.250859,0.931764 -0.394208,1.325973 l -1.827692,5.948958 h 6.665701 z"
+       id="text1"
+       style="font-weight:bold;font-size:35.8371px;font-family:Sans;-inkscape-font-specification:'Sans Bold';fill:#ffffff;stroke-width:18.6651"
+       aria-label="A" />
     <rect
        style="fill:none;fill-opacity:1;stroke:#ffffff;stroke-width:2.06322;stroke-dasharray:none;stroke-opacity:0.8"
        id="rect7"

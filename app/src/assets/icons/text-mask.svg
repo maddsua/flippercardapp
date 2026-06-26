@@ -2,49 +2,22 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="131.26839"
-   height="136.40497"
-   viewBox="0 0 34.731427 36.090481"
+   width="106.74614"
+   height="110.92316"
+   viewBox="0 0 28.243249 29.348422"
    version="1.1"
    id="svg1"
-   sodipodi:docname="text-mask.svg"
-   inkscape:version="1.4 (e7c3feb100, 2024-10-09)"
-   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
    xmlns:svg="http://www.w3.org/2000/svg">
-  <sodipodi:namedview
-     id="namedview1"
-     pagecolor="#505050"
-     bordercolor="#eeeeee"
-     borderopacity="1"
-     inkscape:showpageshadow="0"
-     inkscape:pageopacity="0"
-     inkscape:pagecheckerboard="0"
-     inkscape:deskcolor="#505050"
-     inkscape:zoom="5.8722201"
-     inkscape:cx="65.648084"
-     inkscape:cy="58.83635"
-     inkscape:window-width="1920"
-     inkscape:window-height="1010"
-     inkscape:window-x="0"
-     inkscape:window-y="0"
-     inkscape:window-maximized="1"
-     inkscape:current-layer="svg1" />
   <defs
      id="defs1" />
   <g
      id="layer1"
-     transform="matrix(0.81319004,0,0,0.81319004,-2.6844139,-2.0581715)">
-    <text
-       xml:space="preserve"
-       style="font-weight:bold;font-size:50.3354px;font-family:Sans;-inkscape-font-specification:'Sans Bold';text-align:start;writing-mode:lr-tb;direction:ltr;text-anchor:start;fill:#ffffff;stroke-width:26.2164"
-       x="7.2904263"
-       y="42.766907"
-       id="text1"><tspan
-         id="tspan1"
-         style="stroke-width:26.2164"
-         x="7.2904263"
-         y="42.766907">A</tspan></text>
+     transform="matrix(0.81319004,0,0,0.81319004,-5.9285021,-5.4292023)">
+    <path
+       d="M 33.817182,42.766907 31.199741,34.209889 H 18.112537 l -2.617441,8.557018 H 7.2904263 L 19.974947,6.6764252 h 9.312049 L 42.021852,42.766907 Z m -7.046956,-23.30529 q -0.251677,-0.855702 -0.65436,-2.164422 -0.402683,-1.308721 -0.805367,-2.667777 -0.402683,-1.359055 -0.65436,-2.365763 -0.251677,1.006708 -0.704695,2.51677 -0.402684,1.459726 -0.805367,2.818782 -0.352348,1.30872 -0.553689,1.86241 l -2.567106,8.355676 h 9.362385 z"
+       id="text1"
+       style="font-weight:bold;font-size:50.3354px;font-family:Sans;-inkscape-font-specification:'Sans Bold';fill:#ffffff;stroke-width:26.2164"
+       aria-label="A" />
   </g>
 </svg>
