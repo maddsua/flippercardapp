@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { isContainerOutsideClick } from '@/dom';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 
 type Value = string | null;
 
@@ -17,42 +18,54 @@ const props = defineProps<{
 const model = defineModel<Value>();
 
 const activeOption = computed(() => props.options.find((item) => item.value === model.value));
+
 const isOpen = ref(false);
+const containerRef = ref<HTMLInputElement | null>(null);
 
-const toggle = () => {
-	if (isOpen.value) {
-		isOpen.value = false;
-		return;
-	}
-
-	if (!props.options.length) {
-		return;
-	}
-	isOpen.value = true;
-};
+const toggle = () => isOpen.value ? isOpen.value = false : isOpen.value = props.options.length > 0;
 
 const select = (val: Value) => {
 	isOpen.value = false;
 	model.value = val;
 };
 
-watch(model, () => (isOpen.value = false));
+watch(model, () => isOpen.value = false);
+
+const handleKeyboard = (event: KeyboardEvent) =>
+	event.key.toLowerCase() === 'escape' ? isOpen.value = false : void 0;
+
+const handleMouse = (event: MouseEvent) =>
+	isContainerOutsideClick(containerRef.value, event.target) ? isOpen.value = false : void 0;
+
+onMounted(() => {
+	window.addEventListener('keydown', handleKeyboard);
+	window.addEventListener('click', handleMouse);
+});
+
+onUnmounted(() => {
+	window.removeEventListener('keydown', handleKeyboard);
+	window.removeEventListener('click', handleMouse);
+});
+
 </script>
 
 <template>
-	<div class="dropdown" :disabled="disabled">
-		<div class="header" :class="{ disabled: !$props.options.length, open: isOpen }" @click="toggle">
+	<div class="dropdown" :disabled="disabled" ref="containerRef">
+
+		<div class="dropdown-header" :class="{ disabled: !$props.options.length, open: isOpen }" @click="toggle">
 			<span>
 				{{ activeOption?.label || activeOption?.value || $props.placeholder || '-' }}
 			</span>
 		</div>
-		<div v-if="isOpen" class="options">
-			<div class="list">
+
+		<div v-if="isOpen" class="options-attach">
+			<div class="option-list">
 				<button type="button" v-for="opt of $props.options" @click="select(opt.value)">
 					{{ opt.label || opt.value }}
 				</button>
 			</div>
 		</div>
+
 	</div>
 </template>
 
@@ -62,7 +75,7 @@ watch(model, () => (isOpen.value = false));
 	z-index: 1;
 	width: 100%;
 
-	.header {
+	.dropdown-header {
 		display: flex;
 		flex-flow: row nowrap;
 		align-items: center;
@@ -109,13 +122,13 @@ watch(model, () => (isOpen.value = false));
 		}
 	}
 
-	.options {
+	.options-attach {
 		position: absolute;
 		bottom: -0.5rem;
 		left: 0;
 		width: 100%;
 
-		.list {
+		.option-list {
 			position: absolute;
 			top: 0;
 			left: 0;
