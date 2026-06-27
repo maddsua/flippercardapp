@@ -1,25 +1,21 @@
 <script setup lang="ts">
-import { getAppInfo } from '@/app';
-import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 
 const props = defineProps<{
 	backHref?: string;
 	starrable?: boolean;
 	starred?: boolean;
-	share?: ShareData | null;
+	shareable?: boolean;
 }>();
 
 const emit = defineEmits<{
 	(e: 'toggleStar'): void;
+	(e: 'share'): void;
 }>();
 
 const router = useRouter();
 
-const canShare = computed(() => props.share && getAppInfo().mode === 'PWA' && 'share' in navigator);
-
 const goBack = () => props.backHref ? router.push(props.backHref) : null;
-const share = () => props.share ? navigator.share(props.share) : null;
 
 </script>
 
@@ -49,9 +45,9 @@ const share = () => props.share ? navigator.share(props.share) : null;
 			</div>
 		</div>
 
-		<div v-if="starred || starrable || canShare" class="side-actions">
+		<div v-if="starred || starrable || shareable" class="side-actions">
 			<button v-if="starred || starrable" type="button" class="star" :class="{ starred }" @click="emit('toggleStar')"></button>
-			<button v-if="canShare" type="button" class="share" @click="share"></button>
+			<button v-if="shareable" type="button" class="share" @click="emit('share')"></button>
 		</div>
 
 	</header>

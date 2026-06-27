@@ -6,6 +6,7 @@ import DashboardAppInfo from './DashboardAppInfo.vue';
 import { useLanguage, intl, defaultLang } from '@/intl';
 import { onMounted, reactive, watch } from 'vue';
 import { useStorage } from '@/storage/storage';
+import { appCanShare } from '@/share';
 import GenericDropdown from '@/components/App/Inputs/GenericDropdown.vue';
 import DashboardSettingsGroup from './DashboardSettingsGroup.vue';
 import GenericToggle from '@/components/App/Inputs/GenericToggle.vue';
@@ -117,7 +118,7 @@ onMounted(() => {
 
 	</DashboardMenuSection>
 
-	<DashboardMenuSection>
+	<DashboardMenuSection v-if="appCanShare()">
 
 		<template v-slot:title>
 			{{ intl(state.lang, {
