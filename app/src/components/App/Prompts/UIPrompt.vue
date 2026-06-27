@@ -56,7 +56,7 @@ const emit = defineEmits<{
 			flex-flow: row nowrap;
 			border-radius: 0.25rem;
 			overflow: hidden;
-			gap: 0.125rem;
+			gap: 0.5rem;
 			flex-grow: 1;
 		}
 

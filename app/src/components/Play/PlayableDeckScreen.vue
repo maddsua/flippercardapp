@@ -4,7 +4,6 @@ import type { CardNode } from '@/content';
 import Card from '../Cards/Card.vue';
 import CardControls from '../Cards/CardControls.vue';
 import CardDeckInfo from '../Cards/CardDeckInfo.vue';
-import UIPrompt from '../App/Prompts/UIPrompt.vue';
 import { appCanShareData, appShareData } from '@/share';
 import { useStorage } from '@/storage/storage';
 
@@ -202,7 +201,7 @@ const navigateBack = () => {
 	if (activeIdx.value > 0) {
 		prevCard();
 	} else {
-		exitView();
+		emit('exit');
 	}
 };
 
@@ -223,25 +222,6 @@ const countScore = (score: number) => {
 	scoreState.totalAnswers++;
 };
 
-const showExitPrompt = ref(false);
-
-const exitView = () => {
-
-	if (scoreState.totalAnswers > 0) {
-		showExitPrompt.value = true;
-		return
-	}
-
-	emit('exit');
-};
-
-const promptExit = (confirmed?: boolean) => {
-	if (confirmed) {
-		emit('exit');
-	}
-	showExitPrompt.value = false;
-};
-
 </script>
 
 <template>
@@ -255,7 +235,7 @@ const promptExit = (confirmed?: boolean) => {
 			:shareable="!!state.shareable"
 			@toggleMarked="emit('toggleMarked')"
 			@share="appShareData(state.shareable)"
-			@exit="exitView" />
+			@exit="emit('exit')" />
 
 		<div class="card-viewport" :class="{ noinput: state.animating }">
 			<div class="card-transition" v-for="(item, idx) of cardSlots" :key="cardSlotKey(item, idx)" :class="item?.flags">
@@ -274,10 +254,6 @@ const promptExit = (confirmed?: boolean) => {
 			:has_next="activeIdx < entries.length - 1"
 			@prev="navigateBack"
 			@next="navigateForward" />
-
-		<UIPrompt v-if="showExitPrompt" @done="promptExit">
-			Exit game?
-		</UIPrompt>
 
 	</div>
 </template>

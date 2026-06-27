@@ -12,6 +12,7 @@ import LoadingMessage from '../App/Messages/LoadingMessage.vue';
 import OverlayErrorMessage from '../App/Messages/OverlayErrorMessage.vue';
 import Endscreen from '../Endscreen/Endscreen.vue';
 import PlayableDeckScreen from './PlayableDeckScreen.vue';
+import UIPrompt from '../App/Prompts/UIPrompt.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -20,9 +21,10 @@ const store = useStorage();
 const lang = useLanguage();
 
 interface RoundState {
-	startTime: Date;
+	readonly startTime: Date;
+	readonly attainableScore: number;
+	hasInteracted: boolean;
 	isFinished: boolean;
-	questions: number;
 	totalScore: number;
 	playTime: number;
 };
@@ -39,10 +41,11 @@ const state = reactive({
 		showNavigation: false,
 		disableRotation: false,
 	},
+	exitPrompt: false,
 });
 
 const statsScreen = computed(() => state.round?.isFinished ? ({
-	questions: state.round.questions,
+	questions: state.round.attainableScore,
 	score: state.round.totalScore,
 	time: state.round.playTime,
 }) : null);
@@ -64,17 +67,20 @@ const initRound = () => {
 		return null;
 	}
 
+	const questionCount = state.cards.map(item => [item.front, item.back])
+		.flat()
+		.map(item => item.content)
+		.flat()
+		.filter(item => item.type === 'poll')
+		.filter(item => item.is_quiz || item.content.some(item => item.is_answer))
+		.length;
+
 	state.round = {
-		questions: state.cards.map(item => [item.front, item.back])
-			.flat()
-			.map(item => item.content)
-			.flat()
-			.filter(item => item.type === 'poll')
-			.filter(item => item.is_quiz || item.content.some(item => item.is_answer))
-			.length,
+		attainableScore: questionCount,
 		totalScore: 0,
 		playTime: 0,
 		isFinished: false,
+		hasInteracted: false,
 		startTime: new Date(),
 	};
 };
@@ -83,6 +89,7 @@ const updateRoundScore = (delta: number) => {
 	if (!state.round) {
 		return;
 	}
+	state.round.hasInteracted = true;
 	state.round.totalScore += delta;
 };
 
@@ -163,6 +170,23 @@ const exitView = () => {
 	router.push(backHref.value);
 };
 
+const promptViewExit = () => {
+
+	if (state.round?.hasInteracted) {
+		state.exitPrompt = true;
+		return;
+	}
+
+	exitView();
+};
+
+const handleExitPrompt = (confirmed?: boolean) => {
+	if (confirmed) {
+		exitView();
+	}
+	state.exitPrompt = false;
+};
+
 </script>
 
 <template>
@@ -213,12 +237,16 @@ const exitView = () => {
 				:disableRotation="state.options.disableRotation"
 				@score="updateRoundScore"
 				@finish="finishDeck"
-				@exit="exitView"
+				@exit="promptViewExit"
 				@toggleMarked="toggleMarked" />
 
 			<Endscreen v-else :stats="statsScreen" @reset="initRound" @finish="exitView" />
 
 		</template>
+
+		<UIPrompt v-if="state.exitPrompt" @done="handleExitPrompt">
+			Exit game?
+		</UIPrompt>
 
 	</div>
 
