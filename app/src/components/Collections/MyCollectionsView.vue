@@ -16,6 +16,7 @@ import CollectionBreak from './CollectionBreak.vue';
 import CollectionEndlistAction from './CollectionEndlistAction.vue';
 import InlineErrorMessage from '../App/Messages/InlineErrorMessage.vue';
 import { collectionCompletionMetric } from '@/play';
+import { parseDateString } from '@/date';
 
 const router = useRouter();
 const client = useClient();
@@ -49,7 +50,9 @@ onMounted(async () => {
 	state.data = data.entries.map(entry => ({
 		...entry,
 		completion: collectionCompletionMetric(collectionStats, entry),
-	}));
+		rawTimestamp: parseDateString(entry.updated)?.getTime() || 0,
+	})).sort((a, b) => b.rawTimestamp - a.rawTimestamp);
+
 });
 
 const openCollection = (id: string) => {

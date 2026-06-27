@@ -16,6 +16,7 @@ import ContentListEntry from '../Content/ContentListEntry.vue';
 import ContentEntryBadge from '../Content/ContentEntryBadge.vue';
 import InlineErrorMessage from '../App/Messages/InlineErrorMessage.vue';
 import { appCanShareData, appShareData } from '@/share';
+import { fmtTimeString } from '@/date';
 
 const router = useRouter();
 const route = useRoute();
@@ -125,15 +126,6 @@ const visibilityIcons = {
 	'PRIVATE': 'lock',
 } as const;
 
-const fmtDate = (date: string) => new Date(date).toLocaleDateString('en-UK', {
-	year: 'numeric',
-	month: 'numeric',
-	day: 'numeric',
-	hour: 'numeric',
-	minute: 'numeric',
-	second: 'numeric',
-});
-
 const capitalize = (text: string) => text.slice(0, 1).toUpperCase() + text.slice(1).toLowerCase();
 
 </script>
@@ -198,7 +190,7 @@ const capitalize = (text: string) => text.slice(0, 1).toUpperCase() + text.slice
 					</ContentEntryBadge>
 
 					<ContentEntryBadge icon="clock">
-						{{ fmtDate(state.data.updated) }}
+						{{ fmtTimeString(state.data.updated) }}
 					</ContentEntryBadge>
 
 					<ContentEntryBadge icon="decks">

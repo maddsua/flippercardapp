@@ -3,6 +3,7 @@ import type { ResourceVisibility } from '@/api_models';
 import { resourceVisibilityOptions } from '@/inputs';
 import type { CardNode } from '@/content';
 import { blurInteractive } from '@/dom';
+import { fmtTimeString } from '@/date';
 import GenericDropdown from '@/components/App/Inputs/GenericDropdown.vue';
 import GenericInput from '@/components/App/Inputs/GenericInput.vue';
 import InputLabel from '@/components/App/Inputs/InputLabel.vue';
@@ -33,22 +34,6 @@ const props = defineProps<{
 const emit = defineEmits<{
 	(e: 'done'): void;
 }>();
-
-const fmtDate = (date: string | null) => {
-
-	if (!date) {
-		return 'N/A';
-	}
-
-	return new Date(date).toLocaleString('en-UK', {
-		year: 'numeric',
-		month: 'numeric',
-		day: 'numeric',
-		hour: 'numeric',
-		minute: 'numeric',
-		second: 'numeric',
-	});
-};
 
 </script>
 
@@ -105,13 +90,13 @@ const fmtDate = (date: string | null) => {
 					<span class="label">
 						Created:
 					</span>
-					{{ fmtDate(origin.created) }}
+					{{ fmtTimeString(origin.created) }}
 				</div>
 				<div class="property">
 					<span class="label">
 						Updated:
 					</span>
-					{{ fmtDate(origin.updated) }}
+					{{ fmtTimeString(origin.updated) }}
 				</div>
 			</div>
 

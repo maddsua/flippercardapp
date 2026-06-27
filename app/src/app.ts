@@ -1,4 +1,5 @@
 import { ref } from "vue";
+import { parseDateString } from "./date";
 
 export interface AppInfo {
 	readonly version: string | null;
@@ -15,20 +16,6 @@ export interface AppSource {
 
 declare let window: Window & {
 	appInfo?: AppInfo;
-};
-
-const parseDateString = (value?: string | null) => {
-
-	if (!value) {
-		return null;
-	}
-
-	try {
-		const date = new Date(value);
-		return date.toISOString().length ? date : null;
-	} catch (_) {
-		return null;
-	}
 };
 
 const pwaDisplayModes = ['standalone', 'minimal-ui', 'fullscreen'] as const;

@@ -3,6 +3,7 @@ import { onMounted, reactive } from 'vue';
 import { unwrapErrorMessage, useClient } from '@/api';
 import type { CardDeckVersion, CardDeckVersionMetadata } from '@/api_models';
 import { genericPageState, pageControls } from '@/dataloader';
+import { fmtTimeString } from '@/date';
 import GenericButton from '@/components/App/Inputs/GenericButton.vue';
 import LoadingMessage from '@/components/App/Messages/LoadingMessage.vue';
 import EditorModal from '../EditorModal.vue';
@@ -30,15 +31,6 @@ const state = reactive({
 const { reload } = pageControls(state.page, (page) => client.decks.versions.list(props.deckID, page));
 
 onMounted(reload);
-
-const fmtDate = (date: string) => new Date(date).toLocaleDateString('en-UK', {
-	year: 'numeric',
-	month: 'short',
-	day: 'numeric',
-	hour: 'numeric',
-	minute: 'numeric',
-	second: 'numeric',
-});
 
 const deleteVersion = async (versionID: string) => {
 
@@ -114,7 +106,7 @@ const loadVersion = async (versionID: string) => {
 
 					<div class="summary">
 						<div class="date">
-							{{ fmtDate(entry.created) }}
+							{{ fmtTimeString(entry.created) }}
 						</div>
 						<div class="label">
 							{{ entry.label || 'No label' }}
