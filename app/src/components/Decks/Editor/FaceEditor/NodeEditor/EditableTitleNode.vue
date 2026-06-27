@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import EditableNodeHarness from './EditableNodeHarness.vue';
+import { blurInteractive } from '@/dom';
 
 const model = defineModel<string>();
 
@@ -7,13 +8,17 @@ const model = defineModel<string>();
 
 <template>
 	<EditableNodeHarness>
+
 		<template v-slot:title>
 			Title
 		</template>
 
-		<template v-slot:content>
-			<input type="text" placeholder="Title" v-model="model" />
-		</template>
+		<input type="text"
+			placeholder="Title"
+			v-model="model"
+			@keydown.enter.stop="blurInteractive"
+			@keydown.escape.stop="blurInteractive" />
+
 	</EditableNodeHarness>
 </template>
 

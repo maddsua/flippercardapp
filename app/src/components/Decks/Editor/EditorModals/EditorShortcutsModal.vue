@@ -59,7 +59,7 @@ const emit = defineEmits<{
 			padding: 0.5rem 1rem;
 			background-color: rgba(255, 255, 255, 0.05);
 			transition: all 75ms linear;
-			
+
 			&:nth-child(2n) {
 				background-color: rgba(255, 255, 255, 0.1);
 			}
@@ -67,7 +67,7 @@ const emit = defineEmits<{
 			&:hover {
 				background-color: rgba(255, 255, 255, 0.15);
 			}
-			
+
 			.title {
 				font-size: 0.85rem;
 				font-weight: 300;

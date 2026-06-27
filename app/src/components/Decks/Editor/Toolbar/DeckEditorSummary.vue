@@ -2,6 +2,7 @@
 
 import { computed } from 'vue';
 import type { ResourceVisibility } from '@/api_models';
+import { blurInteractive } from '@/dom';
 
 interface DeckMeta {
 	name: string;
@@ -29,14 +30,16 @@ const nameInvalid = computed(() => !props.meta.name.trim().length);
 				class="name"
 				:class="{ invalid: nameInvalid }"
 				v-model="props.meta.name"
-				placeholder="Deck name" />
+				placeholder="Deck name"
+				@keydown.enter.stop="blurInteractive" />
 
 		</div>
 
 		<input v-if="showDescription" type="text"
 			class="description"
 			v-model="props.meta.description"
-			placeholder="[No description]" />
+			placeholder="[No description]"
+			@keydown.enter.stop="blurInteractive" />
 
 	</div>
 </template>

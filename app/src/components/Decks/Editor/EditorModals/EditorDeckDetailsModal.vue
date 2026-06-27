@@ -2,6 +2,7 @@
 import type { ResourceVisibility } from '@/api_models';
 import { resourceVisibilityOptions } from '@/inputs';
 import type { CardNode } from '@/content';
+import { blurInteractive } from '@/dom';
 import GenericDropdown from '@/components/App/Inputs/GenericDropdown.vue';
 import GenericInput from '@/components/App/Inputs/GenericInput.vue';
 import InputLabel from '@/components/App/Inputs/InputLabel.vue';
@@ -59,24 +60,42 @@ const fmtDate = (date: string | null) => {
 			<div class="summary-form">
 
 				<InputLabel variant="slick">
+
 					<template v-slot:label>
 						Deck name
 					</template>
-					<GenericInput placeholder="Deck name" variant="borderless" v-model="content.summary.name" />
+
+					<GenericInput placeholder="Deck name"
+						variant="borderless"
+						v-model="content.summary.name"
+						@keydown.enter.stop="blurInteractive"
+						@keydown.escape.stop="blurInteractive" />
+
 				</InputLabel>
 
 				<InputLabel variant="slick">
+
 					<template v-slot:label>
 						Deck summary
 					</template>
-					<GenericInput placeholder="Deck summary" variant="borderless" :multiline="true" v-model="content.summary.description" />
+
+					<GenericInput placeholder="Deck summary"
+						variant="borderless"
+						:multiline="true"
+						v-model="content.summary.description"
+						@keydown.enter.stop="blurInteractive"
+						@keydown.escape.stop="blurInteractive" />
+
 				</InputLabel>
 
 				<InputLabel variant="slick">
+
 					<template v-slot:label>
 						Deck visibility
 					</template>
+
 					<GenericDropdown :options="resourceVisibilityOptions" v-model="content.summary.visibility" />
+
 				</InputLabel>
 
 			</div>

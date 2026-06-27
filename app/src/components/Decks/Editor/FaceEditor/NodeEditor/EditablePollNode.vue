@@ -38,32 +38,32 @@ const removeOption = (idx: number) => {
 
 <template>
 	<EditableNodeHarness>
+
 		<template v-slot:title>
 			Poll / Quiz
 		</template>
 
-		<template v-slot:content>
+		<div class="option-list">
+			<template v-if="model?.length">
+				<EditablePollNodeOption v-for="(option, idx) of model"
+					:checked="!!option.is_answer"
+					v-model="option.value"
+					@check="setOptionCheck(idx)"
+					@remove="removeOption(idx)" />
+			</template>
+			<template v-else>
+				<div class="no-option-message">
+					No options added yet
+				</div>
+			</template>
+		</div>
 
-			<div class="option-list">
-				<template v-if="model?.length">
-					<EditablePollNodeOption v-for="(option, idx) of model"
-						:checked="!!option.is_answer"
-						v-model="option.value"
-						@check="setOptionCheck(idx)"
-						@remove="removeOption(idx)" />
-				</template>
-				<template v-else>
-					<div class="no-option-message">
-						No options added yet
-					</div>
-				</template>
-			</div>
+		<div v-if="!model?.length || model.length < 4" class="list-actions">
+			<button type="button" @click="addOption">
+				+ Add option
+			</button>
+		</div>
 
-			<div v-if="!model?.length || model.length < 4" class="list-actions">
-				<button type="button" @click="addOption">+ Add option</button>
-			</div>
-
-		</template>
 	</EditableNodeHarness>
 </template>
 

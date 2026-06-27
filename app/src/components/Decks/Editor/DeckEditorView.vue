@@ -627,11 +627,6 @@ const registerShortcuts = () => {
 			},
 		},
 		{
-			key: 'escape',
-			prepreq: () => isInteractive(document.activeElement),
-			action: () => document.activeElement instanceof HTMLElement ? document.activeElement.blur() : void 0,
-		},
-		{
 			title: 'Previous card',
 			ctrl: true, key: 'arrowup',
 			prepreq: () => !isInteractive(document.activeElement),
@@ -739,6 +734,13 @@ onUnmounted(() => {
 		</EditorScreenOverlay>
 
 		<DeckEditorHeader @exit="saveAndExitEditor">
+
+			<template v-slot:meta>
+				<DeckEditorSummary
+					:meta="state.content.summary"
+					:changed="contentEdited"
+					:changesSaved="changesSaved" />
+			</template>
 
 			<template v-slot:autosave>
 				<DeckEditorAutosaveIndicator :changed="contentEdited" :changesSaved="changesSaved" />
@@ -883,13 +885,6 @@ onUnmounted(() => {
 
 			</template>
 
-			<template v-slot:meta>
-				<DeckEditorSummary
-					:meta="state.content.summary"
-					:changed="contentEdited"
-					:changesSaved="changesSaved" />
-			</template>
-
 		</DeckEditorHeader>
 
 		<EditorScreenOverlay v-if="state.editor.modals.exporter">
@@ -900,7 +895,7 @@ onUnmounted(() => {
 		</EditorScreenOverlay>
 
 		<EditorScreenOverlay v-else-if="state.editor.modals.importer">
-			<EditorContentImporter 
+			<EditorContentImporter
 				@addCards="cards => state.content.cards.push(...cards)"
 				@replaceCards="cards => state.content.cards = cards"
 				@updateMeta="patchDeckSummary"

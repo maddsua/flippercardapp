@@ -71,51 +71,51 @@ watch(model, fetchMetadata);
 
 <template>
 	<EditableNodeHarness>
+
 		<template v-slot:title>
 			Image
 		</template>
 
-		<template v-slot:content>
-			<div class="input">
+		<div class="image-input">
 
-				<template v-if="!state.data">
-					<GenericButton variant="thin" :disabled="uploading" :spinner="uploading" @click="uploadFile">
-						Pick a file
-					</GenericButton>
+			<template v-if="!state.data">
+				<GenericButton variant="thin" :disabled="uploading" :spinner="uploading" @click="uploadFile">
+					Pick a file
+				</GenericButton>
+			</template>
+
+			<template v-else>
+				<GenericButton variant="thin" theme="orange" :disabled="uploading" :spinner="uploading" @click="uploadFile">
+					Change file
+				</GenericButton>
+			</template>
+
+			<div class="status" :class="{ error: !!state.error }">
+
+				<template v-if="state.error">
+					{{ state.error }}
+				</template>
+
+				<template v-else-if="uploading">
+					Uploading {{ state.name }}
+				</template>
+
+				<template v-else-if="state.data">
+					{{ state.name }}
 				</template>
 
 				<template v-else>
-					<GenericButton variant="thin" theme="orange" :disabled="uploading" :spinner="uploading" @click="uploadFile">
-						Change file
-					</GenericButton>
+					No files selected
 				</template>
 
-				<div class="status" :class="{ error: !!state.error }">
-
-					<template v-if="state.error">
-						{{ state.error }}
-					</template>
-
-					<template v-else-if="uploading">
-						Uploading {{ state.name }}
-					</template>
-
-					<template v-else-if="state.data">
-						{{ state.name }}
-					</template>
-
-					<template v-else>
-						No files selected
-					</template>
-
-				</div>
 			</div>
-		</template>
+		</div>
+
 	</EditableNodeHarness>
 </template>
 
 <style lang="scss" scoped>
-	.input {
+	.image-input {
 		display: flex;
 		flex-flow: row nowrap;
 		align-items: center;

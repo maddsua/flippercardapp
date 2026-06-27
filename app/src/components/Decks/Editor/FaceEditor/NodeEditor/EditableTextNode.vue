@@ -2,6 +2,7 @@
 import { onMounted, reactive, watch } from 'vue';
 import { parseTextBoxContent, stringifyTextBoxContent, type CardTextBoxElementNode } from '@/content';
 import EditableNodeHarness from './EditableNodeHarness.vue';
+import { blurInteractive } from '@/dom';
 
 const model = defineModel<CardTextBoxElementNode[]>();
 
@@ -22,13 +23,19 @@ onMounted(() => {
 
 <template>
 	<EditableNodeHarness>
+
 		<template v-slot:title>
 			Text
 		</template>
 
-		<template v-slot:content>
-			<textarea type="text" placeholder="Text" v-model="state.raw" @focus="state.editing = true" @blur="state.editing = false"></textarea>
-		</template>
+		<textarea type="text"
+			placeholder="Text"
+			v-model="state.raw"
+			@focus="state.editing = true"
+			@blur="state.editing = false"
+			@keydown.escape.stop="blurInteractive">
+		</textarea>
+
 	</EditableNodeHarness>
 </template>
 

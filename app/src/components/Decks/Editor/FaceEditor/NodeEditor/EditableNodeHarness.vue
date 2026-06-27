@@ -18,7 +18,7 @@ const emit = defineEmits<{
 				</div>
 			</div>
 			<div class="content">
-				<slot name="content">
+				<slot>
 					[Content]
 				</slot>
 			</div>

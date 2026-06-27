@@ -22,3 +22,5 @@ export const isContainerOutsideClick = (container: HTMLElement | null, target: E
 export const isInteractive = (element: Element | null) => {
 	return !!element && (element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement);
 };
+
+export const blurInteractive = () => document.activeElement instanceof HTMLElement ? document.activeElement.blur() : void 0;
