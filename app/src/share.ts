@@ -1,6 +1,6 @@
 import { getAppInfo } from "./app";
 
-export const appCanShareData = () => getAppInfo().mode === 'PWA' && 'share' in navigator;
+export const appCanShareData = () => getAppInfo().mode === 'pwa' && 'share' in navigator;
 
 export const appShareData = async (data?: ShareData | null) => {
 

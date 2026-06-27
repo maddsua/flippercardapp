@@ -19,6 +19,7 @@ import DeckEditorView from './components/Decks/Editor/DeckEditorView.vue';
 import PlayView from './components/Play/PlayView.vue';
 import StarredView from './components/Starred/StarredView.vue';
 import DashboardSigninScreen from './components/Dashboard/Auth/DashboardSigninScreen.vue';
+import { enablePwaInstall } from './app';
 
 const client = useClient();
 
@@ -156,3 +157,5 @@ router.beforeResolve(async (to) => {
 });
 
 createApp(App).use(router).mount('#app-root')
+
+enablePwaInstall();

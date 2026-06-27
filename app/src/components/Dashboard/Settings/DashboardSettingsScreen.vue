@@ -1,15 +1,17 @@
 <script setup lang="ts">
 import AppUiHeader from '@/components/App/Layout/AppUiHeader.vue';
 import DashboardMenuSection from '../DashboardMenuSection.vue';
-import DashboardAccountSettings from './DashboardAccountSettings.vue';
+import DashboardAuthWidget from './DashboardAuthWidget.vue';
 import DashboardAppInfo from './DashboardAppInfo.vue';
 import { useLanguage, intl, defaultLang } from '@/intl';
 import { onMounted, reactive, watch } from 'vue';
 import { useStorage } from '@/storage/storage';
 import { appCanShareData } from '@/share';
+import { pwaInstallPrompt } from '@/app';
 import GenericDropdown from '@/components/App/Inputs/GenericDropdown.vue';
 import DashboardSettingsGroup from './DashboardSettingsGroup.vue';
 import GenericToggle from '@/components/App/Inputs/GenericToggle.vue';
+import GenericButton from '@/components/App/Inputs/GenericButton.vue';
 
 const store = useStorage();
 
@@ -152,7 +154,27 @@ onMounted(() => {
 			}) }}
 		</template>
 
-		<DashboardAccountSettings />
+		<DashboardAuthWidget />
+
+	</DashboardMenuSection>
+
+	<DashboardMenuSection v-if="pwaInstallPrompt">
+
+		<template v-slot:title>
+			{{ intl(state.lang, {
+				en: 'Install app on your device',
+				de: 'Die App auf Ihren Gerät installieren',
+				uk: 'Встановити застосунок на ваш пристрій'
+			}) }}
+		</template>
+
+		<GenericButton variant="thin" @click="pwaInstallPrompt.prompt()">
+			{{ intl(state.lang, {
+				en: 'Install app',
+				de: 'Die App installieren',
+				uk: 'Встановити'
+			}) }}
+		</GenericButton>
 
 	</DashboardMenuSection>
 

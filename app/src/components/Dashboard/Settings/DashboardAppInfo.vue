@@ -2,7 +2,7 @@
 import { getAppInfo, type AppSource } from '@/app';
 import { computed } from 'vue';
 
-const info = computed(() => {
+const displayInfo = computed(() => {
 
 	const info = getAppInfo();
 
@@ -34,13 +34,13 @@ const formatRepoUrl = (src: AppSource) => {
 <template>
 	<div class="app-info">
 		<p>
-			Version: {{ info.version }} built at {{ info.buildTime }}; {{ info.platform }}; distribution: {{ info.distribution }}
+			Version: {{ displayInfo.version }} built at {{ displayInfo.buildTime }}; {{ displayInfo.platform }}; distribution: {{ displayInfo.distribution }}
 		</p>
 		<p>
 			Designed by maddsua. Provided by MWS via Railway Corp.
 		</p>
-		<p v-if="info.sourceURL">
-			Source code at <a :href="info.sourceURL.href" target="_blank">{{ info.sourceURL.title }}</a>
+		<p v-if="displayInfo.sourceURL">
+			Source code at <a :href="displayInfo.sourceURL.href" target="_blank">{{ displayInfo.sourceURL.title }}</a>
 		</p>
 	</div>
 </template>
