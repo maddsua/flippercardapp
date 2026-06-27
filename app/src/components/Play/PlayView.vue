@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { intl, useLanguage } from '@/intl';
 import { computed, onMounted, reactive } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { onBeforeRouteLeave, useRoute, useRouter } from 'vue-router';
 import { useClient } from '../../api';
 import { shuffleArray } from '../../arrays';
 import type { CardNode } from '../../content';
@@ -42,6 +42,7 @@ const state = reactive({
 		disableRotation: false,
 	},
 	exitPrompt: false,
+	exitGuardDisabled: false,
 });
 
 const statsScreen = computed(() => state.round?.isFinished ? ({
@@ -93,34 +94,6 @@ const updateRoundScore = (delta: number) => {
 	state.round.totalScore += delta;
 };
 
-onMounted(async () => {
-
-	const id = route.params['deck_id'];
-	if (!id || typeof id !== 'string') {
-		state.error = 'Deck ID required';
-		return;
-	}
-
-	const { data, error } = await client.decks.load(id);
-	if (!data || error) {
-		state.error = error?.message || 'Unable to load deck';
-		return;
-	}
-
-	state.deckID = id;
-	state.isMarked = await store.decks.starred.has(id).catch(() => false);
-	state.collectionID = data.collection_id;
-	state.labels = data.labels;
-	state.cards = data.cards;
-
-	state.options = {
-		showNavigation: store.preferences.playMode.showNavigation.load(),
-		disableRotation: store.preferences.playMode.disableCardRotation.load(),
-	};
-
-	initRound();
-});
-
 const toggleMarked = async () => {
 
 	if (!state.deckID) {
@@ -167,17 +140,20 @@ const updateStats = async () => {
 const backHref = computed(() => state.collectionID ? `/collection/${state.collectionID}` : '/');
 
 const exitView = () => {
+	state.exitGuardDisabled = true;
 	router.push(backHref.value);
 };
 
-const promptViewExit = () => {
+const promptViewExit = (): boolean => {
 
 	if (state.round?.hasInteracted) {
 		state.exitPrompt = true;
-		return;
+		return false;
 	}
 
 	exitView();
+
+	return true;
 };
 
 const handleExitPrompt = (confirmed?: boolean) => {
@@ -186,6 +162,36 @@ const handleExitPrompt = (confirmed?: boolean) => {
 	}
 	state.exitPrompt = false;
 };
+
+onMounted(async () => {
+
+	const id = route.params['deck_id'];
+	if (!id || typeof id !== 'string') {
+		state.error = 'Deck ID required';
+		return;
+	}
+
+	const { data, error } = await client.decks.load(id);
+	if (!data || error) {
+		state.error = error?.message || 'Unable to load deck';
+		return;
+	}
+
+	state.deckID = id;
+	state.isMarked = await store.decks.starred.has(id).catch(() => false);
+	state.collectionID = data.collection_id;
+	state.labels = data.labels;
+	state.cards = data.cards;
+
+	state.options = {
+		showNavigation: store.preferences.playMode.showNavigation.load(),
+		disableRotation: store.preferences.playMode.disableCardRotation.load(),
+	};
+
+	initRound();
+});
+
+onBeforeRouteLeave(() => state.exitGuardDisabled ? true : promptViewExit());
 
 </script>
 
