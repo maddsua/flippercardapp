@@ -17,6 +17,7 @@ import ContentEntryBadge from '../Content/ContentEntryBadge.vue';
 import InlineErrorMessage from '../App/Messages/InlineErrorMessage.vue';
 import { appCanShareData, appShareData } from '@/share';
 import { fmtTimeString } from '@/date';
+import { appSetTitle } from '@/app';
 
 const router = useRouter();
 const route = useRoute();
@@ -42,6 +43,47 @@ const state = reactive({
 });
 
 const backRef = computed(() => state.auth?.actor?.permissions.team_member ? '/collections/all' : '/');
+
+const toggleStar = async () => {
+
+	if (!state.data) {
+		return;
+	}
+
+	const { id } = state.data;
+
+	if (state.starred) {
+		state.starred = await store.collections.starred.del(id).then(() => false).catch(() => false);
+	} else {
+		state.starred = await store.collections.starred.add(id).then(() => true).catch(() => false);
+	}
+};
+
+const openMetadataEditor = () => {
+	router.push(`/collection/${state.data!.id}/edit`);
+};
+
+const openNewDeckEditor = () => {
+	router.push(`/decks/editor?collection_id=${state.data!.id}`);
+};
+
+const openEntry = (id: string) => {
+
+	if (state.auth?.actor?.permissions.content_edit) {
+		window.open(`/decks/editor/${id}`, '_blank');
+		return;
+	}
+
+	router.push(`/play/deck/${id}`);
+};
+
+const visibilityIcons = {
+	'PUBLIC': 'world',
+	'HIDDEN': 'link',
+	'PRIVATE': 'lock',
+} as const;
+
+const capitalize = (text: string) => text.slice(0, 1).toUpperCase() + text.slice(1).toLowerCase();
 
 onMounted(async () => {
 
@@ -85,48 +127,9 @@ onMounted(async () => {
 
 	state.starred = await store.collections.starred.has(data.id).catch(() => false);
 	state.auth = await client.auth.whoami({ cached: true }).then(res => res.data || null);
+
+	appSetTitle(`Collection: ${data.name}`);
 });
-
-const toggleStar = async () => {
-
-	if (!state.data) {
-		return;
-	}
-
-	const { id } = state.data;
-
-	if (state.starred) {
-		state.starred = await store.collections.starred.del(id).then(() => false).catch(() => false);
-	} else {
-		state.starred = await store.collections.starred.add(id).then(() => true).catch(() => false);
-	}
-};
-
-const openMetadataEditor = () => {
-	router.push(`/collection/${state.data!.id}/edit`);
-};
-
-const openNewDeckEditor = () => {
-	router.push(`/decks/editor?collection_id=${state.data!.id}`);
-};
-
-const openEntry = (id: string) => {
-
-	if (state.auth?.actor?.permissions.content_edit) {
-		window.open(`/decks/editor/${id}`, '_blank');
-		return;
-	}
-
-	router.push(`/play/deck/${id}`);
-};
-
-const visibilityIcons = {
-	'PUBLIC': 'world',
-	'HIDDEN': 'link',
-	'PRIVATE': 'lock',
-} as const;
-
-const capitalize = (text: string) => text.slice(0, 1).toUpperCase() + text.slice(1).toLowerCase();
 
 </script>
 

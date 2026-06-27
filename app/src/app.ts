@@ -14,10 +14,6 @@ export interface AppSource {
 	repo?: string;
 };
 
-declare let window: Window & {
-	appInfo?: AppInfo;
-};
-
 const pwaDisplayModes = ['standalone', 'minimal-ui', 'fullscreen'] as const;
 
 const detectAppMode = () => {
@@ -57,3 +53,6 @@ export const enablePwaInstall = () => {
 
 	window.addEventListener("appinstalled", () => pwaInstallPrompt.value = null);
 };
+
+export const appSetTitle = (title: string | null) =>
+	document.title = [title, 'The FlipCard App'].filter(item => item?.length).join(' | ');

@@ -13,6 +13,7 @@ import OverlayErrorMessage from '../App/Messages/OverlayErrorMessage.vue';
 import Endscreen from '../Endscreen/Endscreen.vue';
 import PlayableDeckScreen from './PlayableDeckScreen.vue';
 import UIPrompt from '../App/Prompts/UIPrompt.vue';
+import { appSetTitle } from '@/app';
 
 const router = useRouter();
 const route = useRoute();
@@ -189,6 +190,8 @@ onMounted(async () => {
 	};
 
 	initRound();
+
+	appSetTitle(`Play: ${data.labels[0] || 'A mysterious deck'}`);
 });
 
 onBeforeRouteLeave(() => state.exitGuardDisabled ? true : promptViewExit());

@@ -19,7 +19,7 @@ import DeckEditorView from './components/Decks/Editor/DeckEditorView.vue';
 import PlayView from './components/Play/PlayView.vue';
 import StarredView from './components/Starred/StarredView.vue';
 import DashboardSigninScreen from './components/Dashboard/Auth/DashboardSigninScreen.vue';
-import { enablePwaInstall } from './app';
+import { appSetTitle, enablePwaInstall } from './app';
 
 const client = useClient();
 
@@ -28,33 +28,32 @@ const routes = [
 		path: '/',
 		component: MyCollectionsView,
 		meta: {
-			app_view: 'home'
+			app_view: 'home',
+			app_title: 'My cards',
 		},
 	},
 	{
 		path: '/collections/discover',
 		component: DiscoverView,
 		meta: {
-			app_view: 'discover'
+			app_view: 'discover',
+			app_title: 'Discover',
 		},
 	},
 	{
 		path: '/collections',
-		redirect: () => {
-			return { path: '/collections/discover' };
-		},
+		redirect: () => ({ path: '/collections/discover' }),
 	},
 	{
 		path: '/discover',
-		redirect: () => {
-			return { path: '/collections/discover' };
-		},
+		redirect: () => ({ path: '/collections/discover' }),
 	},
 	{
 		path: '/collections/all',
 		component: AllCollectionsView,
 		meta: {
-			app_view: 'discover'
+			app_view: 'discover',
+			app_title: 'All collections',
 		},
 	},
 	{
@@ -62,6 +61,7 @@ const routes = [
 		component: NewCollectionView,
 		meta: {
 			app_view: 'menu',
+			app_title: 'Create collection',
 			requiresDashboardSession: true,
 			requiresEditorPermission: true,
 		},
@@ -70,7 +70,8 @@ const routes = [
 		path: '/collection/:collection_id',
 		component: CollectionView,
 		meta: {
-			app_view: 'home'
+			app_view: 'home',
+			app_title: 'Card collection',
 		},
 	},
 	{
@@ -78,24 +79,27 @@ const routes = [
 		component: EditCollectionView,
 		meta: {
 			app_view: 'menu',
-
+			app_title: 'Edit card collection',
 		},
 	},
 	{
 		path: '/play/deck/:deck_id',
 		component: PlayView,
+		app_title: 'Play deck',
 	},
 	{
 		path: '/starred',
 		component: StarredView,
 		meta: {
-			app_view: 'starred'
+			app_view: 'starred',
+			app_title: 'Starred decks',
 		},
 	},
 	{
 		path: `/decks/editor`,
 		component: DeckEditorView,
 		meta: {
+			app_title: 'Deck editor',
 			requiresDashboardSession: true,
 			requiresEditorPermission: true,
 		},
@@ -104,6 +108,7 @@ const routes = [
 		path: `/decks/editor/:deck_id`,
 		component: DeckEditorView,
 		meta: {
+			app_title: 'Deck editor',
 			requiresDashboardSession: true,
 			requiresEditorPermission: true,
 		},
@@ -112,7 +117,8 @@ const routes = [
 		path: '/dashboard',
 		component: DashboardView,
 		meta: {
-			app_view: 'menu'
+			app_view: 'menu',
+			app_title: 'Dashboard',
 		},
 		children: [
 			{
@@ -154,6 +160,14 @@ router.beforeResolve(async (to) => {
 		return '/dashboard';
 	}
 
+});
+
+router.beforeEach((to) => {
+	if (typeof to.meta.app_title === 'string') {
+		appSetTitle(to.meta.app_title);
+	} else {
+		appSetTitle(null);
+	}
 });
 
 createApp(App).use(router).mount('#app-root')

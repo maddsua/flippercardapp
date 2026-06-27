@@ -28,6 +28,7 @@ import DeckEditorElementButton from './Toolbar/DeckEditorElementButton.vue';
 import { Shortcuts } from '@/shortcuts';
 import { isInteractive } from '@/dom';
 import EditorShortcutsModal from './EditorModals/EditorShortcutsModal.vue';
+import { appSetTitle } from '@/app';
 
 const route = useRoute();
 const router = useRouter();
@@ -65,7 +66,6 @@ const state = reactive({
 	editor: {
 		ready: false,
 		error: null as string | null,
-		prevAppTitle: null as string | null,
 		view: {
 			cardIdx: 0,
 			side: null as EditedSide | null,
@@ -427,8 +427,7 @@ const watchContentEdits = () => {
 };
 
 const updateAppTitle = () => {
-	state.editor.prevAppTitle = document.title;
-	watch(() => state.content.summary.name, (name) => document.title = `${name || 'Unnamed'} | Deck editor`, { immediate: true });
+	watch(() => state.content.summary.name, (name) => appSetTitle(`${name || 'Unnamed'} | Deck editor`), { immediate: true });
 };
 
 const patchDeckSummary = (patch: { name: string | null; description: string | null; }) => {
@@ -697,7 +696,6 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-	document.title = state.editor.prevAppTitle || '';
 	state.editor.shortcuts?.unregister();
 });
 
