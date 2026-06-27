@@ -73,9 +73,11 @@ onMounted(async () => {
 		})),
 	};
 
+	const shareLinkOnly = store.preferences.sharing.linkOnly.load();
+
 	state.shareable = {
-		title: data.name,
-		text: data.description || undefined,
+		title: !shareLinkOnly ? data.name : undefined,
+		text: (!shareLinkOnly ? data.description : null) ?? undefined,
 		url: window.location.href,
 	};
 

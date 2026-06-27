@@ -6,8 +6,8 @@
 			</slot>
 		</div>
 		<div class="content">
-			<slot name="content">
-				[Content]
+			<slot>
+				[Section]
 			</slot>
 		</div>
 	</div>

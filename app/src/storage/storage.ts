@@ -100,6 +100,9 @@ export const useStorage = () => {
 				showNavigation: new KVFlagStore('play_mode_show_navigation', true),
 				disableCardRotation: new KVFlagStore('play_mode_disable_card_rotation', false),
 			},
+			sharing: {
+				linkOnly: new KVFlagStore('share_links_only', false),
+			},
 		},
 	};
 };
