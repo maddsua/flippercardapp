@@ -842,10 +842,23 @@ onUnmounted(() => {
 				</DeckEditorMenu>
 
 				<DeckEditorMenu label="Insert">
-					<DeckEditorMenuEntry label="Insert title" :disabled="true" />
-					<DeckEditorMenuEntry label="Insert text area" :disabled="true" />
-					<DeckEditorMenuEntry label="Insert image" :disabled="true" />
-					<DeckEditorMenuEntry label="Insert poll" :disabled="true" />
+
+					<DeckEditorMenuEntry label="Insert title" icon="add-title"
+						:disabled="!insertableContentNodes.title"
+						@click="addModelNode(editedCardFace?.content, 'title')" />
+
+					<DeckEditorMenuEntry label="Insert text area" icon="add-text"
+						:disabled="!insertableContentNodes.textbox"
+						@click="addModelNode(editedCardFace?.content, 'textbox')" />
+
+					<DeckEditorMenuEntry label="Insert image" icon="add-image"
+						:disabled="!insertableContentNodes.image"
+						@click="addModelNode(editedCardFace?.content, 'image')" />
+
+					<DeckEditorMenuEntry label="Insert poll" icon="add-poll"
+						:disabled="!insertableContentNodes.poll"
+						@click="addModelNode(editedCardFace?.content, 'poll')" />
+
 				</DeckEditorMenu>
 
 				<DeckEditorMenu label="Help">

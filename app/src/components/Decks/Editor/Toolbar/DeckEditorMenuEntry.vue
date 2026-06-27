@@ -2,7 +2,7 @@
 
 const props = defineProps<{
 	label: string;
-	icon?: 'play' | 'publish' | 'delete' | 'exit' | 'history' | 'cross' | 'broom' | 'info' | 'io' | 'undo' | 'redo' | 'keyboard';
+	icon?: 'play' | 'publish' | 'delete' | 'exit' | 'history' | 'cross' | 'broom' | 'info' | 'io' | 'undo' | 'redo' | 'keyboard' | 'add-title' | 'add-text' | 'add-image' | 'add-poll';
 	disabled?: boolean;
 }>();
 
@@ -18,6 +18,7 @@ const props = defineProps<{
 </template>
 
 <style lang="scss" scoped>
+
 	button.menu-entry {
 		display: flex;
 		flex-flow: row nowrap;
@@ -107,6 +108,23 @@ const props = defineProps<{
 			&.keyboard {
 				mask-image: url(/src/assets/icons/keyboard-mask.svg);
 			}
+
+			&.add-title {
+				mask-image: url(/src/assets/icons/add-title-color.svg);
+			}
+
+			&.add-text {
+				mask-image: url(/src/assets/icons/add-text-color.svg);
+			}
+
+			&.add-image {
+				mask-image: url(/src/assets/icons/add-image-color.svg);
+			}
+
+			&.add-poll {
+				mask-image: url(/src/assets/icons/add-poll-color.svg);
+			}
 		}
 	}
+
 </style>
