@@ -6,11 +6,13 @@ const props = defineProps<{
 	size: number;
 	index: number;
 	isMarked?: boolean;
+	shareable?: boolean;
 }>();
 
 const emit = defineEmits<{
 	(e: 'exit'): void;
 	(e: 'toggleMarked'): void;
+	(e: 'share'): void;
 }>();
 
 const lang = useLanguage();
@@ -20,17 +22,17 @@ const lang = useLanguage();
 <template>
 	<div class="deck-info">
 
-		<div class="progress">
+		<div class="deck-progress">
 			<div v-for="idx of size" class="marker" :class="{ filled: idx <= index + 1 }"></div>
 		</div>
 
 		<div class="details-row">
 
-			<div class="actions">
+			<div class="deck-meta-actions">
 				<button type="button" class="icon exit" title="Exit game" @click="emit('exit')"></button>
 			</div>
 
-			<div class="summary">
+			<div class="deck-labels">
 				<template v-for="(item, idx) of labels">
 					<template v-if="idx > 0">
 						<hr />
@@ -41,8 +43,17 @@ const lang = useLanguage();
 				</template>
 			</div>
 
-			<div class="actions">
-				<button type="button" class="labeled save" :class="{ active: isMarked }" @click="emit('toggleMarked')">
+			<div class="deck-meta-actions">
+
+				<button v-if="shareable" type="button" class="labeled with-icon share" @click="emit('share')">
+					{{ intl(lang, {
+						en: 'Share',
+						de: 'Teilen',
+						uk: 'Поширити'
+					}) }}
+				</button>
+
+				<button type="button" class="labeled with-icon mark" :class="{ marked: isMarked }" @click="emit('toggleMarked')">
 					<template v-if="isMarked">
 						{{ intl(lang, {
 							en: 'Unmark',
@@ -58,6 +69,7 @@ const lang = useLanguage();
 						}) }}
 					</template>
 				</button>
+
 			</div>
 
 		</div>
@@ -77,7 +89,7 @@ const lang = useLanguage();
 		gap: 0.5rem;
 		user-select: none;
 
-		.progress {
+		.deck-progress {
 			display: flex;
 			flex-flow: row nowrap;
 			gap: 0.2rem;
@@ -96,13 +108,13 @@ const lang = useLanguage();
 		.details-row {
 			display: flex;
 			flex-flow: row nowrap;
-			gap: 1rem;
+			gap: 0.75rem;
 			padding: 0 0.5rem;
 			align-items: center;
 			justify-content: space-between;
 		}
 
-		.summary {
+		.deck-labels {
 			display: flex;
 			flex-flow: row nowrap;
 			align-items: center;
@@ -112,7 +124,7 @@ const lang = useLanguage();
 
 			span {
 				display: block;
-				font-size: 0.85rem;
+				font-size: 0.75rem;
 				white-space: nowrap;
 			}
 
@@ -130,12 +142,13 @@ const lang = useLanguage();
 			}
 		}
 
-		.actions {
+		.deck-meta-actions {
 			display: flex;
 			flex-flow: row nowrap;
 			align-items: center;
 			justify-content: end;
 			flex-shrink: 0;
+			gap: 0.5rem;
 
 			button.labeled {
 				display: flex;
@@ -143,40 +156,48 @@ const lang = useLanguage();
 				align-items: center;
 				gap: 0.25rem;
 				color: var(--app-theme-snow-white);
+				background-color: var(--app-theme-powder-trail);
 				font-weight: 600;
 				border: none;
 				outline: none;
 				border-radius: 0.25rem;
 				padding: 0.25rem 0.5rem;
-				font-size: 0.75rem;
+				font-size: 0.7rem;
 
 				&:hover {
 					cursor: pointer;
 				}
 
-				&.save {
+				&.with-icon::before {
+					content: "";
+					display: block;
+					width: 0.85rem;
+					height: 0.85rem;
+					mask-type: alpha;
+					mask-size: contain;
+					mask-position: center;
+					mask-repeat: no-repeat;
+					background-color: var(--app-theme-snow-white);
+				}
+
+				&.mark {
 					background-color: var(--app-theme-irish-green);
 
 					&::before {
-						content: "";
-						display: block;
-						width: 0.85rem;
-						height: 0.85rem;
-						mask-type: alpha;
-						mask-size: contain;
-						mask-position: center;
-						mask-repeat: no-repeat;
 						mask-image: url(/src/assets/icons/star-mask.svg);
-						background-color: var(--app-theme-snow-white);
 					}
 
-					&.active {
+					&.marked {
 						background-color: var(--app-theme-spooky-orange);
 
 						&::before {
 							mask-image: url(/src/assets/icons/star-filled-mask.svg);
 						}
 					}
+				}
+
+				&.share::before {
+					mask-image: url(/src/assets/icons/share-arrow-mask.svg);
 				}
 			}
 

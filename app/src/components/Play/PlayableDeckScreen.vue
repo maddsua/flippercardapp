@@ -5,6 +5,8 @@ import Card from '../Cards/Card.vue';
 import CardControls from '../Cards/CardControls.vue';
 import CardDeckInfo from '../Cards/CardDeckInfo.vue';
 import UIPrompt from '../App/Prompts/UIPrompt.vue';
+import { appCanShareData, appShareData } from '@/share';
+import { useStorage } from '@/storage/storage';
 
 const props = defineProps<{
 	labels: string[];
@@ -20,6 +22,8 @@ const emit = defineEmits<{
 	(e: 'score', score: number): void;
 	(e: 'toggleMarked'): void;
 }>();
+
+const store = useStorage();
 
 const activeIdx = ref(0);
 
@@ -90,12 +94,23 @@ const newAnimatedState = (direction?: SlideInDirection): CardState => {
 	return state;
 };
 
+const createShareState = (): ShareData | null => {
+
+	const shareLinkOnly = store.preferences.sharing.linkOnly.load();
+
+	return appCanShareData() ? {
+		title: (!shareLinkOnly && props.labels.length) ? `Play: ${props.labels[0]}` : undefined,
+		url: window.location.href,
+	} : null;
+};
+
 const state = reactive({
 	slots: {
 		a: newAnimatedState(),
 		b: null as CardState | null,
 	},
 	animating: false,
+	shareable: createShareState(),
 })
 
 const cardSlots = computed(() => ([state.slots.a, state.slots.b]))
@@ -237,7 +252,9 @@ const promptExit = (confirmed?: boolean) => {
 			:size="entries.length"
 			:index="activeIdx"
 			:isMarked="isMarked"
+			:shareable="!!state.shareable"
 			@toggleMarked="emit('toggleMarked')"
+			@share="appShareData(state.shareable)"
 			@exit="exitView" />
 
 		<div class="card-viewport" :class="{ noinput: state.animating }">

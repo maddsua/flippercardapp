@@ -15,7 +15,7 @@ import ContentList from '../Content/ContentList.vue';
 import ContentListEntry from '../Content/ContentListEntry.vue';
 import ContentEntryBadge from '../Content/ContentEntryBadge.vue';
 import InlineErrorMessage from '../App/Messages/InlineErrorMessage.vue';
-import { appCanShare, appShareLink } from '@/share';
+import { appCanShareData, appShareData } from '@/share';
 
 const router = useRouter();
 const route = useRoute();
@@ -76,7 +76,7 @@ onMounted(async () => {
 
 	const shareLinkOnly = store.preferences.sharing.linkOnly.load();
 
-	state.shareable = appCanShare() ? {
+	state.shareable = appCanShareData() ? {
 		title: !shareLinkOnly ? data.name : undefined,
 		text: (!shareLinkOnly ? data.description : null) ?? undefined,
 		url: window.location.href,
@@ -147,7 +147,7 @@ const capitalize = (text: string) => text.slice(0, 1).toUpperCase() + text.slice
 			:starred="state.starred"
 			:shareable="!!state.shareable"
 			@toggleStar="toggleStar"
-			@share="appShareLink(state.shareable)">
+			@share="appShareData(state.shareable)">
 
 			<template v-slot:title>
 

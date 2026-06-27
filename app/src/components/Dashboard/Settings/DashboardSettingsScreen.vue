@@ -6,7 +6,7 @@ import DashboardAppInfo from './DashboardAppInfo.vue';
 import { useLanguage, intl, defaultLang } from '@/intl';
 import { onMounted, reactive, watch } from 'vue';
 import { useStorage } from '@/storage/storage';
-import { appCanShare } from '@/share';
+import { appCanShareData } from '@/share';
 import GenericDropdown from '@/components/App/Inputs/GenericDropdown.vue';
 import DashboardSettingsGroup from './DashboardSettingsGroup.vue';
 import GenericToggle from '@/components/App/Inputs/GenericToggle.vue';
@@ -118,7 +118,7 @@ onMounted(() => {
 
 	</DashboardMenuSection>
 
-	<DashboardMenuSection v-if="appCanShare()">
+	<DashboardMenuSection v-if="appCanShareData()">
 
 		<template v-slot:title>
 			{{ intl(state.lang, {
@@ -132,9 +132,9 @@ onMounted(() => {
 
 			<GenericToggle v-model="state.shareLinksOnly">
 				{{ intl(state.lang, {
-					en: 'Share links only',
-					de: 'Nur Links teilen',
-					uk: 'Поширбвати лише посилання'
+					en: 'Exclude link titles',
+					de: 'Link-Titel ausschließen',
+					uk: 'Не підписувати посилання'
 				}) }}
 			</GenericToggle>
 		
