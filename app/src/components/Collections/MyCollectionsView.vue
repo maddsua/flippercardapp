@@ -15,14 +15,14 @@ import ContentListEntry from '../Content/ContentListEntry.vue';
 import CollectionBreak from './CollectionBreak.vue';
 import CollectionEndlistAction from './CollectionEndlistAction.vue';
 import InlineErrorMessage from '../App/Messages/InlineErrorMessage.vue';
-import { distributeCollectionPlayScore } from '@/play';
+import { collectionCompletionMetric } from '@/play';
 
 const router = useRouter();
 const client = useClient();
 const store = useStorage();
 
 interface Entry extends CollectionMetadata {
-	score: number;
+	completion: number;
 };
 
 const state = reactive({
@@ -46,9 +46,9 @@ onMounted(async () => {
 
 	const collectionStats = new Map(await store.collections.stats.aggregated(data.entries.map(item => item.id)).catch(() => []));
 
-	state.data = data.entries.map(item => ({
-		...item,
-		score: distributeCollectionPlayScore(collectionStats, item),
+	state.data = data.entries.map(entry => ({
+		...entry,
+		completion: collectionCompletionMetric(collectionStats, entry),
 	}));
 });
 
@@ -96,7 +96,7 @@ const lang = useLanguage();
 				:date="item.updated"
 				:starred="true"
 				:deckCount="item.size"
-				:completion="item.score"
+				:completion="item.completion"
 				@click="openCollection(item.id)" />
 		</ContentList>
 

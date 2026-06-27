@@ -9,7 +9,7 @@ import ContentListEntry from '@/components/Content/ContentListEntry.vue';
 import Searchbar from './Searchbar.vue';
 import { useStorage } from '@/storage/storage';
 import InlineErrorMessage from '@/components/App/Messages/InlineErrorMessage.vue';
-import { distributeCollectionPlayScore } from '@/play';
+import { collectionCompletionMetric } from '@/play';
 
 const props = defineProps<{
 	starred: Set<string>;
@@ -54,7 +54,7 @@ const execSearchQuery = async (term: string) => {
 	state.data = data.entries.map(item => ({
 		... item,
 		starred: props.starred.has(item.id),
-		score: distributeCollectionPlayScore(collectionStats, item),
+		score: collectionCompletionMetric(collectionStats, item),
 	}));
 };
 

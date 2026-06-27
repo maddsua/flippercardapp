@@ -12,7 +12,7 @@ export interface CollectionPlayStats {
 	decks_played: number;
 };
 
-export const distributeCollectionPlayScore = (stats: Map<string, CollectionPlayStats>, meta: CollectionMetadata)  =>{
+export const collectionCompletionMetric = (stats: Map<string, CollectionPlayStats>, meta: CollectionMetadata)  =>{
 	const stat = stats.get(meta.id);
 	if (!stat) {
 		return 0;

@@ -13,18 +13,45 @@ import { intl, useLanguage } from '@/intl';
 import { onMounted, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import InlineErrorMessage from '@/components/App/Messages/InlineErrorMessage.vue';
+import { useStorage } from '@/storage/storage';
+import { collectionCompletionMetric } from '@/play';
 
 const lang = useLanguage();
 const router = useRouter();
 const client = useClient();
+const store = useStorage();
+
+interface Entry extends CollectionMetadata {
+	completion: number;
+	starred: boolean;
+};
 
 const state = reactive({
-	page: genericPageState<CollectionMetadata>(),
+	page: genericPageState<Entry>(),
 	auth: null as  AuthState | null,
 });
 
-const { more: loadMore } = pageControls(state.page, async (pagination: Pagination) => {
-	return client.collections.list(pagination);
+const { more: loadMore } = pageControls<Entry>(state.page, async (pagination: Pagination) => {
+
+	const { data, error } = await client.collections.list(pagination);
+	if (!data || error) {
+		return { data: null, error };
+	}
+
+	const collectionStats = new Map(await store.collections.stats.aggregated(data.entries.map(item => item.id)).catch(() => []));
+	const starSet = new Set(await store.collections.starred.all().catch(() => []));
+
+	return {
+		data: {
+			... data,
+			entries: data.entries.map(entry => ({
+				... entry,
+				completion: collectionCompletionMetric(collectionStats, entry),
+				starred: starSet.has(entry.id),
+			}))
+		},
+		error: null,
+	}
 });
 
 onMounted(loadMore);
@@ -88,13 +115,16 @@ const openCollection = async (id: string) => {
 			<template v-if="state.page.entries.length">
 
 				<ContentList>
-					<ContentListEntry v-for="item of state.page.entries"
-						:title="item.name"
-						:summary="item.description"
-						:date="item.updated"
-						:visibility="item.visibility"
-						:deckCount="item.size"
-						@click="openCollection(item.id)" />
+					<ContentListEntry v-for="entry of state.page.entries"
+						:title="entry.name"
+						:summary="entry.description"
+						:date="entry.updated"
+						:visibility="entry.visibility"
+						:deckCount="entry.size"
+						:starrable="true"
+						:starred="entry.starred"
+						:completion="entry.completion"
+						@click="openCollection(entry.id)" />
 				</ContentList>
 
 				<div v-if="state.page.has_next" class="actions">

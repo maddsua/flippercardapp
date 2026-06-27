@@ -9,7 +9,7 @@ import ContentList from '@/components/Content/ContentList.vue';
 import ContentListEntry from '@/components/Content/ContentListEntry.vue';
 import { useStorage } from '@/storage/storage';
 import InlineErrorMessage from '@/components/App/Messages/InlineErrorMessage.vue';
-import { distributeCollectionPlayScore } from '@/play';
+import { collectionCompletionMetric } from '@/play';
 
 const client = useClient();
 const lang = useLanguage();
@@ -46,7 +46,7 @@ onMounted(async () => {
 	state.data = data.entries.map(item => ({
 		... item,
 		starred: props.starred.has(item.id),
-		score: distributeCollectionPlayScore(collectionStats, item),
+		score: collectionCompletionMetric(collectionStats, item),
 	}));
 });
 
