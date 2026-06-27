@@ -481,6 +481,10 @@ const applyPublishedMeta = async (meta: CardDeckMetadata) => {
 
 	await clearStateSnapshot();
 
+	if (!state.origin.deckID) {
+		router.push(`/decks/editor/${meta.id}`);
+	}
+
 	state.origin = {
 		deckID: meta.id,
 		collectionID: meta.collection_id,
