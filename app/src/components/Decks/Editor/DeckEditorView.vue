@@ -645,6 +645,18 @@ const registerShortcuts = () => {
 				state.editor.view.cardIdx = Math.min(state.editor.view.cardIdx + 1, state.content.cards.length - 1);
 			},
 		},
+		{
+			title: 'Undo change',
+			ctrl: true, key: 'z',
+			prepreq: () => editorReady.value && historyCanUndo.value,
+			action: editorHistoryBack,
+		},
+		{
+			title: 'Redo change',
+			ctrl: true, key: 'y',
+			prepreq: () => editorReady.value && historyCanRedo.value,
+			action: editorHistoryForward,
+		},
 	]);
 	state.editor.shortcuts.register();
 };
