@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Generator: SVG Repo Mixer Tools -->
+
+<svg
+   width="733.48895"
+   height="466.82236"
+   viewBox="0 0 22.004669 14.004671"
+   fill="none"
+   version="1.1"
+   id="svg1"
+   sodipodi:docname="keyboard-alt-1-svgrepo-com.svg"
+   inkscape:export-filename="../oss/flippercardapp/app/src/assets/icons/keyboard-mask.svg"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1" />
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#505050">
+    <inkscape:page
+       x="0"
+       y="0"
+       width="22.004669"
+       height="14.004671"
+       id="page2"
+       margin="0"
+       bleed="0" />
+  </sodipodi:namedview>
+  <path
+     d="m 6.0023351,9.0023352 h 9.9999999 m -10.9999999,-4 h 0.01 m 3.99,0 h 0.01 m 3.9899999,0 h 0.01 m 3.99,0 h 0.01 M 4.2023351,13.002335 H 17.802335 c 1.1201,0 1.6802,0 2.108,-0.218 0.3763,-0.1917 0.6823,-0.4977 0.874,-0.874 0.218,-0.4278 0.218,-0.9879 0.218,-2.1079998 v -5.6 c 0,-1.1201 0,-1.68016 -0.218,-2.10798 -0.1917,-0.37633 -0.4977,-0.68229 -0.874,-0.87403 -0.4278,-0.21799 -0.9879,-0.21799 -2.108,-0.21799 H 4.2023351 c -1.12011,0 -1.68016,0 -2.10798,0.21799 -0.37633,0.19174 -0.68229,0.4977 -0.87403,0.87403 -0.21799,0.42782 -0.21799,0.98787 -0.21799,2.10798 v 5.6 c 0,1.1200998 0,1.6801998 0.21799,2.1079998 0.19174,0.3763 0.4977,0.6823 0.87403,0.874 0.42782,0.218 0.98788,0.218 2.10798,0.218 z"
+     stroke="#000000"
+     stroke-width="2"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     id="path1"
+     style="fill:none;fill-opacity:1;stroke:#ffffff;stroke-opacity:1" />
+</svg>

@@ -27,6 +27,7 @@ import DeckEditorElementColorDropdown from './Toolbar/DeckEditorElementColorDrop
 import DeckEditorElementButton from './Toolbar/DeckEditorElementButton.vue';
 import { Shortcuts } from '@/shortcuts';
 import { isInteractive } from '@/dom';
+import EditorShortcutsModal from './EditorModals/EditorShortcutsModal.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -75,6 +76,7 @@ const state = reactive({
 			exporter: false,
 			publish: false,
 			details: false,
+			shortcuts: false,
 		},
 		history: {
 			entries: [] as ResumableState[],
@@ -573,36 +575,44 @@ const exitEditor = () => router.push(backHref.value);
 const registerShortcuts = () => {
 	state.editor.shortcuts = new Shortcuts([
 		{
+			title: 'Publish deck changes',
 			ctrl: true, key: 'u',
 			action: () => !modalsOpen.value ? state.editor.modals.publish = true : void 0,
 		},
 		{
+			title: 'Import deck file',
 			ctrl: true, key: 'i',
 			action: () => !modalsOpen.value ? state.editor.modals.importer = true : void 0,
 		},
 		{
+			title: 'Export deck file',
 			ctrl: true, key: 'e',
 			action: () => !modalsOpen.value ? state.editor.modals.exporter = true : void 0,
 		},
 		{
+			title: 'Show deck version history',
 			ctrl: true, key: 'h',
 			action: () => !modalsOpen.value ? state.editor.modals.versions = true : void 0,
 		},
 		{
+			title: 'Play deck',
 			ctrl: true, key: 'p',
 			action: () => deckPublished.value ? openPlayView() : void 0,
 		},
 		{
+			title: 'Focus the front card side',
 			ctrl: true, key: 'arrowleft',
 			prepreq: () => !isInteractive(document.activeElement),
 			action: () => state.editor.view.side = EditedSide.Front,
 		},
 		{
+			title: 'Focus the back card side',
 			ctrl: true, key: 'arrowright',
 			prepreq: () => !isInteractive(document.activeElement),
 			action: () => state.editor.view.side = EditedSide.Back,
 		},
 		{
+			title: 'Clear card side focus',
 			key: 'escape',
 			prepreq: () => !isInteractive(document.activeElement) && !!state.editor.view.side,
 			action: () => {
@@ -618,6 +628,7 @@ const registerShortcuts = () => {
 			action: () => document.activeElement instanceof HTMLElement ? document.activeElement.blur() : void 0,
 		},
 		{
+			title: 'Previous card',
 			ctrl: true, key: 'arrowup',
 			prepreq: () => !isInteractive(document.activeElement),
 			action: () => {
@@ -626,6 +637,7 @@ const registerShortcuts = () => {
 			},
 		},
 		{
+			title: 'Next card',
 			ctrl: true, key: 'arrowdown',
 			prepreq: () => !isInteractive(document.activeElement),
 			action: () => {
@@ -836,6 +848,10 @@ onUnmounted(() => {
 					<DeckEditorMenuEntry label="Insert poll" :disabled="true" />
 				</DeckEditorMenu>
 
+				<DeckEditorMenu label="Help">
+					<DeckEditorMenuEntry label="Keyboard shortcuts" icon="keyboard" @click="state.editor.modals.shortcuts = true" />
+				</DeckEditorMenu>
+
 			</template>
 
 			<template v-slot:meta>
@@ -854,7 +870,7 @@ onUnmounted(() => {
 				@done="state.editor.modals.exporter = false" />
 		</EditorScreenOverlay>
 
-		<EditorScreenOverlay v-if="state.editor.modals.importer">
+		<EditorScreenOverlay v-else-if="state.editor.modals.importer">
 			<EditorContentImporter 
 				@addCards="cards => state.content.cards.push(...cards)"
 				@replaceCards="cards => state.content.cards = cards"
@@ -862,14 +878,14 @@ onUnmounted(() => {
 				@done="state.editor.modals.importer = false" />
 		</EditorScreenOverlay>
 
-		<EditorScreenOverlay v-if="state.editor.modals.versions && state.origin.deckID">
+		<EditorScreenOverlay v-else-if="state.editor.modals.versions && state.origin.deckID">
 			<EditorVersionControlModal
 				:deckID="state.origin.deckID"
 				@pull="applyPulledVersion"
 				@done="state.editor.modals.versions = false" />
 		</EditorScreenOverlay>
 
-		<EditorScreenOverlay v-if="state.editor.modals.publish">
+		<EditorScreenOverlay v-else-if="state.editor.modals.publish">
 			<EditorVersionPublishModal
 				:origin="state.origin"
 				:content="state.content"
@@ -878,8 +894,12 @@ onUnmounted(() => {
 				@done="state.editor.modals.publish = false" />
 		</EditorScreenOverlay>
 
-		<EditorScreenOverlay v-if="state.editor.modals.details">
+		<EditorScreenOverlay v-else-if="state.editor.modals.details">
 			<EditorDeckDetailsModal :content="state.content" :origin="state.origin" @done="state.editor.modals.details = false" />
+		</EditorScreenOverlay>
+
+		<EditorScreenOverlay v-else-if="state.editor.modals.shortcuts">
+			<EditorShortcutsModal :shortcuts="state.editor.shortcuts?.entries()" @done="state.editor.modals.shortcuts = false" />
 		</EditorScreenOverlay>
 
 		<div class="deck-editor-canvas">

@@ -2,7 +2,7 @@
 
 const props = defineProps<{
 	label: string;
-	icon?: 'play' | 'publish' | 'delete' | 'exit' | 'history' | 'cross' | 'broom' | 'info' | 'io' | 'undo' | 'redo';
+	icon?: 'play' | 'publish' | 'delete' | 'exit' | 'history' | 'cross' | 'broom' | 'info' | 'io' | 'undo' | 'redo' | 'keyboard';
 	disabled?: boolean;
 }>();
 
@@ -102,6 +102,10 @@ const props = defineProps<{
 			&.redo {
 				mask-image: url(/src/assets/icons/undo-mask.svg);
 				transform: rotate(180deg);
+			}
+
+			&.keyboard {
+				mask-image: url(/src/assets/icons/keyboard-mask.svg);
 			}
 		}
 	}
