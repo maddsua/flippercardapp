@@ -646,13 +646,13 @@ const registerShortcuts = () => {
 		{
 			title: 'Undo change',
 			ctrl: true, key: 'z',
-			prepreq: () => editorReady.value && historyCanUndo.value,
+			prepreq: () => editorReady.value && !isInteractive(document.activeElement) && historyCanUndo.value,
 			action: editorHistoryBack,
 		},
 		{
 			title: 'Redo change',
 			ctrl: true, key: 'y',
-			prepreq: () => editorReady.value && historyCanRedo.value,
+			prepreq: () => editorReady.value && !isInteractive(document.activeElement) && historyCanRedo.value,
 			action: editorHistoryForward,
 		},
 	]);
