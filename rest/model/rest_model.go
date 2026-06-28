@@ -211,8 +211,14 @@ type CardDeckVersion struct {
 }
 
 func (model *CardDeckVersion) FromRow(row db_gen.DeckVersion) {
+
 	model.CardDeckVersionMetaBase.FromRow(row)
 	model.Content = row.Content
+
+	// ensure that an empty array is always returned instead of a null
+	if model.Content.Cards == nil {
+		model.Content.Cards = make([]db_model.CardNode, 0)
+	}
 }
 
 type CollectionPatch struct {

@@ -53,6 +53,7 @@ func (rslv *resolver) LoadCardDeck(ctx context.Context, deckID uuid.UUID) (*mode
 	result := model.CardDeck{
 		CardDeckMeta: db_pkg.TransformRow[model.CardDeckMeta](deck),
 		Labels:       []string{deck.Name},
+		Cards:        make([]db_model.CardNode, 0),
 	}
 
 	if version, err := rslv.getDeckLatestVersion(ctx, &rslv.db.Queries, deck.ID, deck.LatestVersionID); err != nil {
