@@ -661,7 +661,7 @@ func (rslv *resolver) UpdateCardDeck(ctx context.Context, deckID uuid.UUID, para
 		contentVersionParams.Valid = true
 		contentVersionParams.V.Cards = params.Content.Cards
 
-	} else if params.Label != "" {
+	} else if params.Summary != nil || params.Label != "" {
 
 		if version, err := rslv.getDeckLatestVersion(ctx, &tx.Queries, deck.ID, deck.LatestVersionID); err != nil {
 			return nil, err
