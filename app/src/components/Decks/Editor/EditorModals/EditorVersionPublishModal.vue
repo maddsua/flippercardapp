@@ -164,13 +164,6 @@ const publishChanges = async (deckID: string): Promise<CardDeckMeta | null> => {
 					<GenericInput placeholder="Deck summary" :multiline="true" v-model="state.meta.description" />
 				</InputLabel>
 
-				<InputLabel variant="slick">
-					<template v-slot:label>
-						Deck visibility
-					</template>
-					<GenericDropdown :options="resourceVisibilityOptions" v-model="state.meta.visibility" />
-				</InputLabel>
-
 			</template>
 
 			<InputLabel variant="slick">
@@ -178,6 +171,13 @@ const publishChanges = async (deckID: string): Promise<CardDeckMeta | null> => {
 					Version label
 				</template>
 				<GenericInput placeholder="Label, e.g. 'New version'" v-model="state.versionLabel" />
+			</InputLabel>
+
+			<InputLabel variant="slick">
+				<template v-slot:label>
+					Deck visibility
+				</template>
+				<GenericDropdown :options="resourceVisibilityOptions" v-model="state.meta.visibility" />
 			</InputLabel>
 
 			<GenericToggle label="Edit summary" v-model="state.editSummary" />

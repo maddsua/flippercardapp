@@ -107,7 +107,7 @@ onMounted(() => {
 					uk: 'Показувати кнопки навігації в режимі гри'
 				}) }}
 			</GenericToggle>
-		
+
 			<GenericToggle v-model="state.disableCardRotation">
 				{{ intl(state.lang, {
 					en: 'Disable card rotation',
@@ -139,7 +139,7 @@ onMounted(() => {
 					uk: 'Не підписувати посилання'
 				}) }}
 			</GenericToggle>
-		
+
 		</DashboardSettingsGroup>
 
 	</DashboardMenuSection>
