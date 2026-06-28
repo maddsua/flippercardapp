@@ -101,7 +101,7 @@ const publishNew = async (collectionID: string): Promise<CardDeckMeta | null> =>
 	const { data, error } = await client.decks.create({
 		summary: {
 			name: state.meta.name,
-			description: state.meta.description,
+			description: state.meta.description || null,
 		},
 		visibility: state.meta.visibility,
 		content: { cards: props.content.cards },
@@ -123,7 +123,7 @@ const publishChanges = async (deckID: string): Promise<CardDeckMeta | null> => {
 	const { data, error } = await client.decks.update(deckID, {
 		summary: summaryChanged.value ? {
 			name: state.meta.name,
-			description: state.meta.description,
+			description: state.meta.description || null,
 		} : null,
 		visibility: state.meta.visibility,
 		content: props.changes.cards ? { cards: props.content.cards } : null,
