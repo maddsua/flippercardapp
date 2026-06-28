@@ -34,7 +34,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return auth.TerminateWebSession(req.Context())
 	}))
 
-	mux.Handle("GET /collections", MethodHandleFunc(func(req *http.Request) (*Page[model.CollectionMetadata], error) {
+	mux.Handle("GET /collections", MethodHandleFunc(func(req *http.Request) (*Page[model.CollectionMeta], error) {
 		idSet, err := ParseUUIDSet(req.URL.Query().Get("ids"))
 		if err != nil {
 			return nil, err
@@ -58,7 +58,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return rslv.LoadCollection(req.Context(), collectionID)
 	}))
 
-	mux.Handle("PUT /collections/new", MethodHandleFunc(func(req *http.Request) (*model.CollectionMetadata, error) {
+	mux.Handle("PUT /collections/new", MethodHandleFunc(func(req *http.Request) (*model.CollectionMeta, error) {
 		params, err := ParseGenericJSON[model.CollectionPatch](req)
 		if err != nil {
 			return nil, err
@@ -66,7 +66,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return rslv.CreateContentCollection(req.Context(), params)
 	}))
 
-	mux.Handle("PATCH /collections/{id}", MethodHandleFunc(func(req *http.Request) (*model.CollectionMetadata, error) {
+	mux.Handle("PATCH /collections/{id}", MethodHandleFunc(func(req *http.Request) (*model.CollectionMeta, error) {
 
 		collectionID, err := ParseUUID(req.PathValue("id"))
 		if err != nil {
@@ -90,7 +90,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return nil, rslv.DeleteCollection(req.Context(), collectionID, recursive)
 	}))
 
-	mux.Handle("GET /decks", MethodHandleFunc(func(req *http.Request) (*Page[model.CardDeckMetadata], error) {
+	mux.Handle("GET /decks", MethodHandleFunc(func(req *http.Request) (*Page[model.CardDeckMeta], error) {
 		idSet, err := ParseUUIDSet(req.URL.Query().Get("ids"))
 		if err != nil {
 			return nil, err
@@ -106,7 +106,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return rslv.LoadCardDeck(req.Context(), deckID)
 	}))
 
-	mux.Handle("GET /decks/{id}/versions", MethodHandleFunc(func(req *http.Request) (*Page[model.CardDeckVersionMetadata], error) {
+	mux.Handle("GET /decks/{id}/versions", MethodHandleFunc(func(req *http.Request) (*Page[model.CardDeckVersionMeta], error) {
 		deckID, err := ParseUUID(req.PathValue("id"))
 		if err != nil {
 			return nil, err
@@ -126,7 +126,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return rslv.LoadCardDeckVersion(req.Context(), deckID, versionID)
 	}))
 
-	mux.Handle("DELETE /decks/{id}/version/{vid}", MethodHandleFunc(func(req *http.Request) (*model.CardDeckMetadata, error) {
+	mux.Handle("DELETE /decks/{id}/version/{vid}", MethodHandleFunc(func(req *http.Request) (*model.CardDeckMeta, error) {
 		deckID, err := ParseUUID(req.PathValue("id"))
 		if err != nil {
 			return nil, err
@@ -138,7 +138,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return nil, rslv.DeleteCardDeckVersion(req.Context(), deckID, versionID)
 	}))
 
-	mux.Handle("PUT /decks/new", MethodHandleFunc(func(req *http.Request) (*model.CardDeckMetadata, error) {
+	mux.Handle("PUT /decks/new", MethodHandleFunc(func(req *http.Request) (*model.CardDeckMeta, error) {
 		params, err := ParseGenericJSON[model.CardDeckPatch](req)
 		if err != nil {
 			return nil, err
@@ -146,7 +146,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return rslv.CreateCardDeck(req.Context(), params)
 	}))
 
-	mux.Handle("PATCH /decks/{id}", MethodHandleFunc(func(req *http.Request) (*model.CardDeckMetadata, error) {
+	mux.Handle("PATCH /decks/{id}", MethodHandleFunc(func(req *http.Request) (*model.CardDeckMeta, error) {
 
 		deckID, err := ParseUUID(req.PathValue("id"))
 		if err != nil {
@@ -169,7 +169,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return nil, rslv.DeleteDeck(req.Context(), deckID)
 	}))
 
-	mux.Handle("PUT /images/upload", MethodHandleFunc(func(req *http.Request) (*model.ImageMetadata, error) {
+	mux.Handle("PUT /images/upload", MethodHandleFunc(func(req *http.Request) (*model.ImageMeta, error) {
 
 		if req.ContentLength <= 0 {
 			return nil, &model.Error{Message: "Image uploads must be of a known size", Code: http.StatusLengthRequired}
@@ -180,7 +180,7 @@ func NewHandler(dbconn *sql.DB) http.Handler {
 		return rslv.UploadImage(req.Context(), req.URL.Query().Get("name"), req.Body)
 	}))
 
-	mux.Handle("GET /images/{id}/metadata", MethodHandleFunc(func(req *http.Request) (*model.ImageMetadata, error) {
+	mux.Handle("GET /images/{id}/metadata", MethodHandleFunc(func(req *http.Request) (*model.ImageMeta, error) {
 		return rslv.ImageMetadata(req.Context(), req.PathValue("id"))
 	}))
 

@@ -1,29 +1,32 @@
 import type { CardNode } from "./content";
 
-export interface ContentEntryMetaBase {
+interface ContentSummary {
+	name: string;
+	description?: string | null;
+};
+
+interface ContentEntryMeta extends ContentSummary {
 	name: string;
 	description?: string | null;
 	visibility: ResourceVisibility;
+	id: string;
+	created: string;
+	updated: string;
 };
 
 export type ResourceVisibility = 'PRIVATE' | 'HIDDEN' | 'PUBLIC';
 
-export interface CollectionMetadata extends ContentEntryMetaBase{
-	id: string;
-	created: string;
-	updated: string;
+export interface CollectionMeta extends ContentEntryMeta {
 	size: number;
 };
 
-export interface CollectionSearchResult extends CollectionMetadata {
+export interface CollectionSearchResult extends CollectionMeta {
 	rank: number;
 };
 
-export interface CardDeckMetadata extends ContentEntryMetaBase {
-	id: string;
+export interface CardDeckMeta extends ContentEntryMeta {
 	collection_id: string;
-	created: string;
-	updated: string;
+	version_id?: string | null;
 	size: number;
 };
 
@@ -31,12 +34,12 @@ export interface CardDeckContent {
 	cards: CardNode[];
 };
 
-export interface CardDeck extends CardDeckMetadata, CardDeckContent {
+export interface CardDeck extends CardDeckMeta, CardDeckContent {
 	labels: string[];
 };
 
-export interface Collection extends CollectionMetadata {
-	decks: CardDeckMetadata[];
+export interface Collection extends CollectionMeta {
+	decks: CardDeckMeta[];
 };
 
 export interface AuthState {
@@ -65,15 +68,15 @@ export interface SignInParams {
 	password: string;
 };
 
-export interface CollectionPatch {
-	name: string;
-	description?: string;
+export interface CollectionPatch extends ContentSummary {
+	visibility: ResourceVisibility;
 };
 
 export interface CardDeckPatch {
 	collection_id?: string | null;
 	label?: string | null;
-	meta?: ContentEntryMetaBase | null;
+	summary?: ContentSummary | null;
+	visibility?: ResourceVisibility | null;
 	content?: CardDeckContentPatch | null;
 };
 
@@ -85,7 +88,7 @@ export interface CardPatch extends Omit<CardNode, 'id'> {
 	id?: string | null;
 };
 
-export interface ImageMetadata {
+export interface ImageMeta {
 	id: string;
 	created: string;
 	mimetype: string;
@@ -95,7 +98,7 @@ export interface ImageMetadata {
 	data_size: number;
 };
 
-export interface CardDeckVersionMetadata {
+interface CardDeckVersionMetaBase {
 	id: string;
 	created: string;
 	deck_id: string;
@@ -104,6 +107,10 @@ export interface CardDeckVersionMetadata {
 	label?: string | null;
 };
 
-export interface CardDeckVersion extends CardDeckVersionMetadata {
+export interface CardDeckVersionMeta extends CardDeckVersionMetaBase {
+	summary?: ContentSummary | null;
+};
+
+export interface CardDeckVersion extends CardDeckVersionMetaBase {
 	content: CardDeckContent;
 };

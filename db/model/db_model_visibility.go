@@ -15,8 +15,8 @@ const (
 	ResourceVisibilityPublic
 )
 
-func (visibility ResourceVisibility) String() string {
-	switch visibility {
+func (val ResourceVisibility) String() string {
+	switch val {
 	case ResourceVisibilityPrivate:
 		return "PRIVATE"
 	case ResourceVisibilityHidden:
@@ -28,60 +28,64 @@ func (visibility ResourceVisibility) String() string {
 	}
 }
 
-func (visibility ResourceVisibility) MarshalText() ([]byte, error) {
-	val := visibility.String()
-	if val == "" {
-		return nil, nil
-	}
-	return []byte(val), nil
+func (val *ResourceVisibility) Valid() bool {
+	return val != nil && val.String() != ""
 }
 
-func (visibility *ResourceVisibility) UnmarshalText(data []byte) error {
+func (val ResourceVisibility) MarshalText() ([]byte, error) {
+	text := val.String()
+	if text == "" {
+		return nil, nil
+	}
+	return []byte(text), nil
+}
 
-	if val, err := strconv.ParseInt(string(data), 10, 64); err == nil {
-		return visibility.UnmarshalEnum(byte(val))
+func (val *ResourceVisibility) UnmarshalText(data []byte) error {
+
+	if enum, err := strconv.ParseInt(string(data), 10, 64); err == nil {
+		return val.UnmarshalEnum(byte(enum))
 	}
 
 	switch string(data) {
 	case "PRIVATE":
-		*visibility = ResourceVisibilityPrivate
+		*val = ResourceVisibilityPrivate
 	case "HIDDEN":
-		*visibility = ResourceVisibilityHidden
+		*val = ResourceVisibilityHidden
 	case "PUBLIC":
-		*visibility = ResourceVisibilityPublic
+		*val = ResourceVisibilityPublic
 	default:
 		return fmt.Errorf("invalid ResourceVisibility string value (%v)", string(data))
 	}
 	return nil
 }
 
-func (visibility ResourceVisibility) Value() (driver.Value, error) {
-	return int64(visibility), nil
+func (val ResourceVisibility) Value() (driver.Value, error) {
+	return int64(val), nil
 }
 
-func (visibility *ResourceVisibility) Scan(src any) error {
+func (val *ResourceVisibility) Scan(src any) error {
 	switch src := src.(type) {
 	case int:
-		return visibility.UnmarshalEnum(byte(src))
+		return val.UnmarshalEnum(byte(src))
 	case int64:
-		return visibility.UnmarshalEnum(byte(src))
+		return val.UnmarshalEnum(byte(src))
 	case string:
-		return visibility.UnmarshalText([]byte(src))
+		return val.UnmarshalText([]byte(src))
 	case []byte:
-		return visibility.UnmarshalText(src)
+		return val.UnmarshalText(src)
 	default:
 		return fmt.Errorf("unable to scan %T into ResourceVisibility", src)
 	}
 }
 
-func (visibility *ResourceVisibility) UnmarshalEnum(val byte) error {
-	switch val {
+func (val *ResourceVisibility) UnmarshalEnum(enum byte) error {
+	switch enum {
 	case ResourceVisibilityPrivate,
 		ResourceVisibilityHidden,
 		ResourceVisibilityPublic:
-		*visibility = ResourceVisibility(val)
+		*val = ResourceVisibility(enum)
 	default:
-		return fmt.Errorf("invalid ResourceVisibility enum value (%v)", val)
+		return fmt.Errorf("invalid ResourceVisibility enum value (%v)", enum)
 	}
 	return nil
 }
@@ -134,4 +138,11 @@ func (rvset *ResourceVisibilities) Scan(src any) error {
 	default:
 		return fmt.Errorf("unable to scan %T into ResourceVisibilitySet", src)
 	}
+}
+
+func ResourceVisibilityFromPtr(ptr *ResourceVisibility) ResourceVisibility {
+	if ptr.Valid() {
+		return *ptr
+	}
+	return ResourceVisibilityPrivate
 }

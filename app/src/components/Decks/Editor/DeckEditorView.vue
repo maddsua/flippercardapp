@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, onUnmounted, reactive, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { unwrapErrorMessage, useClient } from '@/api';
-import type { CardDeckMetadata, CardDeckVersion, ResourceVisibility } from '@/api_models';
+import type { CardDeckMeta, CardDeckVersion, ResourceVisibility } from '@/api_models';
 import type { CardCanvasTheme, CardContentElementTheme, CardNode } from '@/content';
 import { addModelNode } from '@/content';
 import { useStorage, type DeckEditorHistoryMetaEntry } from '@/storage/storage';
@@ -474,7 +474,7 @@ const applyPulledVersion = (version: CardDeckVersion) => {
 	state.editor.view.cardIdx = 0;
 };
 
-const applyPublishedMeta = async (meta: CardDeckMetadata) => {
+const applyPublishedMeta = async (meta: CardDeckMeta) => {
 
 	state.editor.ready = false;
 

@@ -283,13 +283,7 @@ func (q *Queries) GetDeckVersion(ctx context.Context, arg GetDeckVersionParams) 
 }
 
 const getDeckVersionsBatch = `-- name: GetDeckVersionsBatch :many
-select
-	id,
-	created_at,
-	deck_id,
-	card_count,
-	label
-from deck_versions
+select id, created_at, deck_id, card_count, content, label from deck_versions
 where deck_id = ?1
 order by created_at desc
 limit ?3 offset ?2
@@ -301,28 +295,21 @@ type GetDeckVersionsBatchParams struct {
 	Limit  int64
 }
 
-type GetDeckVersionsBatchRow struct {
-	ID        uuid.UUID
-	CreatedAt types.Time
-	DeckID    uuid.UUID
-	CardCount int64
-	Label     sql.NullString
-}
-
-func (q *Queries) GetDeckVersionsBatch(ctx context.Context, arg GetDeckVersionsBatchParams) ([]GetDeckVersionsBatchRow, error) {
+func (q *Queries) GetDeckVersionsBatch(ctx context.Context, arg GetDeckVersionsBatchParams) ([]DeckVersion, error) {
 	rows, err := q.db.QueryContext(ctx, getDeckVersionsBatch, arg.DeckID, arg.Offset, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetDeckVersionsBatchRow
+	var items []DeckVersion
 	for rows.Next() {
-		var i GetDeckVersionsBatchRow
+		var i DeckVersion
 		if err := rows.Scan(
 			&i.ID,
 			&i.CreatedAt,
 			&i.DeckID,
 			&i.CardCount,
+			&i.Content,
 			&i.Label,
 		); err != nil {
 			return nil, err
@@ -779,21 +766,21 @@ func (q *Queries) UpdateCollectionMtime(ctx context.Context, arg UpdateCollectio
 const updateDeckMetadata = `-- name: UpdateDeckMetadata :one
 update decks
 set
-	collection_id = coalesce(?1, collection_id),
+	collection_id = ?1,
 	name = ?2,
 	description = ?3,
 	visibility = ?4,
-	updated_at = coalesce(?5, updated_at)
+	updated_at = ?5
 where id = ?6
 returning id, collection_id, created_at, updated_at, name, description, visibility, latest_version_id
 `
 
 type UpdateDeckMetadataParams struct {
-	CollectionID uuid.NullUUID
+	CollectionID uuid.UUID
 	Name         string
 	Description  sql.NullString
 	Visibility   model.ResourceVisibility
-	UpdatedAt    types.NullTime
+	UpdatedAt    types.Time
 	ID           uuid.UUID
 }
 

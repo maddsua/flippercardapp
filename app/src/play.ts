@@ -1,4 +1,4 @@
-import type { CollectionMetadata } from "./api_models";
+import type { CollectionMeta } from "./api_models";
 
 export interface DeckPlayStats {
 	deck_id: string;
@@ -12,7 +12,7 @@ export interface CollectionPlayStats {
 	decks_played: number;
 };
 
-export const collectionCompletionMetric = (stats: Map<string, CollectionPlayStats>, meta: CollectionMetadata)  =>{
+export const collectionCompletionMetric = (stats: Map<string, CollectionPlayStats>, meta: CollectionMeta)  =>{
 	const stat = stats.get(meta.id);
 	if (!stat) {
 		return 0;

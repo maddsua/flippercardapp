@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import type { CollectionMetadata, ResourceVisibility } from '@/api_models';
+import type { CollectionMeta, ResourceVisibility } from '@/api_models';
 import { resourceVisibilityOptions } from '@/inputs';
 import { useClient } from '@/api';
 import AppUI from '@/components/App/Layout/AppUI.vue';
@@ -24,7 +24,7 @@ const router = useRouter();
 const client = useClient();
 
 const state = reactive({
-	data: null as CollectionMetadata | null,
+	data: null as CollectionMeta | null,
 	dataValid: false,
 	inputs: {
 		name: '',

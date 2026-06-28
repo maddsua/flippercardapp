@@ -2,7 +2,7 @@
 import { onMounted, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { useClient } from '../../api';
-import type { CollectionMetadata } from '../../api_models';
+import type { CollectionMeta } from '../../api_models';
 import { intl, useLanguage } from '../../intl';
 import { useStorage } from '../../storage/storage';
 import AppUI from '../App/Layout/AppUI.vue';
@@ -22,7 +22,7 @@ const router = useRouter();
 const client = useClient();
 const store = useStorage();
 
-interface Entry extends CollectionMetadata {
+interface Entry extends CollectionMeta {
 	completion: number;
 };
 

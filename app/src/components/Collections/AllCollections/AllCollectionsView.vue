@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useClient, type Pagination } from '@/api';
-import type { AuthState, CollectionMetadata } from '@/api_models';
+import type { AuthState, CollectionMeta } from '@/api_models';
 import AppUI from '@/components/App/Layout/AppUI.vue';
 import AppUiHeader from '@/components/App/Layout/AppUiHeader.vue';
 import CentralMessage from '@/components/App/Messages/CentralMessage.vue';
@@ -21,7 +21,7 @@ const router = useRouter();
 const client = useClient();
 const store = useStorage();
 
-interface Entry extends CollectionMetadata {
+interface Entry extends CollectionMeta {
 	completion: number;
 	starred: boolean;
 };

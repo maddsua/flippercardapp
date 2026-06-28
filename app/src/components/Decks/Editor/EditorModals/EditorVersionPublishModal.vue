@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive } from 'vue';
 import { unwrapErrorMessage, useClient } from '@/api';
-import type { CardDeckMetadata, ResourceVisibility } from '@/api_models';
+import type { CardDeckMeta, ResourceVisibility } from '@/api_models';
 import { resourceVisibilityOptions } from '@/inputs';
 import type { CardNode } from '@/content';
 import GenericButton from '@/components/App/Inputs/GenericButton.vue';
@@ -41,7 +41,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
 	(e: 'done'): void;
-	(e: 'publish', meta: CardDeckMetadata): void;
+	(e: 'publish', meta: CardDeckMeta): void;
 }>();
 
 const client = useClient();
@@ -76,7 +76,7 @@ const publishVersion = async () => {
 
 	const { deckID, collectionID } = props.origin;
 
-	let meta: CardDeckMetadata | null = null;
+	let meta: CardDeckMeta | null = null;
 
 	if (deckID) {
 		meta = await publishChanges(deckID);
@@ -98,10 +98,14 @@ const publishVersion = async () => {
 	state.busy = false;
 };
 
-const publishNew = async (collectionID: string): Promise<CardDeckMetadata | null> => {
+const publishNew = async (collectionID: string): Promise<CardDeckMeta | null> => {
 
 	const { data, error } = await client.decks.create({
-		meta: state.meta,
+		summary: {
+			name: state.meta.name,
+			description: state.meta.description,
+		},
+		visibility: state.meta.visibility,
 		content: { cards: props.content.cards },
 		collection_id: collectionID,
 		label: state.versionLabel || null,
@@ -116,10 +120,14 @@ const publishNew = async (collectionID: string): Promise<CardDeckMetadata | null
 	return data;
 };
 
-const publishChanges = async (deckID: string): Promise<CardDeckMetadata | null> => {
+const publishChanges = async (deckID: string): Promise<CardDeckMeta | null> => {
 
 	const { data, error } = await client.decks.update(deckID, {
-		meta: metaChanged.value ? state.meta : null,
+		summary: metaChanged.value ? {
+			name: state.meta.name,
+			description: state.meta.description,
+		} : null,
+		visibility: metaChanged.value ? state.meta.visibility : null,
 		content: props.changes.cards ? { cards: props.content.cards } : null,
 		label: state.versionLabel || null,
 	});

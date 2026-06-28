@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, watch } from 'vue';
 import { useClient } from '@/api';
-import type { ImageMetadata } from '@/api_models';
+import type { ImageMeta } from '@/api_models';
 import { pickLocalFiles } from '@/files';
 import EditableNodeHarness from './EditableNodeHarness.vue';
 import GenericButton from '@/components/App/Inputs/GenericButton.vue';
@@ -9,7 +9,7 @@ import GenericButton from '@/components/App/Inputs/GenericButton.vue';
 const model = defineModel<string | null | undefined>();
 
 const state = reactive({
-	data: null as ImageMetadata | null,
+	data: null as ImageMeta | null,
 	name: null as string | null,
 	error: null as string | null,
 });

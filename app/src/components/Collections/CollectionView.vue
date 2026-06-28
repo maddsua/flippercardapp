@@ -2,7 +2,7 @@
 import { computed, onMounted, reactive } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useClient } from '@/api';
-import type { AuthState, CardDeckMetadata, CollectionMetadata } from '@/api_models';
+import type { AuthState, CardDeckMeta, CollectionMeta } from '@/api_models';
 import { intl, useLanguage } from '@/intl';
 import { useStorage } from '@/storage/storage';
 import AppUI from '../App/Layout/AppUI.vue';
@@ -25,12 +25,12 @@ const client = useClient();
 const store = useStorage();
 const lang = useLanguage();
 
-interface DeckEntry extends CardDeckMetadata {
+interface DeckEntry extends CardDeckMeta {
 	starred: boolean;
 	score: number;
 };
 
-interface CollectionEntry extends CollectionMetadata {
+interface CollectionEntry extends CollectionMeta {
 	decks: DeckEntry[];
 };
 

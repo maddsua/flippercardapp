@@ -2,7 +2,7 @@
 import { onMounted, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { useClient } from '../../api';
-import type { CardDeckMetadata } from '../../api_models';
+import type { CardDeckMeta } from '../../api_models';
 import { intl, useLanguage } from '../../intl';
 import { useStorage } from '../../storage/storage';
 import AppUI from '../App/Layout/AppUI.vue';
@@ -13,7 +13,7 @@ import ContentList from '../Content/ContentList.vue';
 import ContentListEntry from '../Content/ContentListEntry.vue';
 import InlineErrorMessage from '../App/Messages/InlineErrorMessage.vue';
 
-interface Entry extends CardDeckMetadata {
+interface Entry extends CardDeckMeta {
 	score: number;
 };
 

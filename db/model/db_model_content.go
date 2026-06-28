@@ -3,13 +3,17 @@ package model
 import (
 	"database/sql/driver"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"math"
+	"strings"
 
 	"github.com/google/uuid"
 )
 
 type DeckVersionContent struct {
-	Cards []CardNode `json:"cards"`
+	Summary ContentSummary `json:"summary"`
+	Cards   []CardNode     `json:"cards"`
 }
 
 func (content DeckVersionContent) Value() (driver.Value, error) {
@@ -25,6 +29,28 @@ func (content *DeckVersionContent) Scan(src any) error {
 	default:
 		return fmt.Errorf("unable to scan %T into CardNodeContent", src)
 	}
+}
+
+type ContentSummary struct {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+}
+
+func (val *ContentSummary) Valid() error {
+
+	if val.Name = strings.TrimSpace(val.Name); val.Name == "" {
+		return errors.New("'name' field is empty")
+	} else if len(val.Name) > math.MaxUint8 {
+		return errors.New("'name' field too long")
+	} else if len(val.Description) > math.MaxUint8 {
+		return errors.New("'description' field too long")
+	}
+
+	return nil
+}
+
+func (val *ContentSummary) Empty() bool {
+	return val.Name == "" && val.Description == ""
 }
 
 type CardNode struct {

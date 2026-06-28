@@ -24,13 +24,7 @@ select * from deck_versions
 where id = sqlc.arg(version_id) and (deck_id = sqlc.narg(deck_id) or sqlc.narg(deck_id) is null);
 
 -- name: GetDeckVersionsBatch :many
-select
-	id,
-	created_at,
-	deck_id,
-	card_count,
-	label
-from deck_versions
+select * from deck_versions
 where deck_id = sqlc.arg(deck_id)
 order by created_at desc
 limit sqlc.arg(limit) offset sqlc.arg(offset);
@@ -172,11 +166,11 @@ returning *;
 -- name: UpdateDeckMetadata :one
 update decks
 set
-	collection_id = coalesce(sqlc.narg(collection_id), collection_id),
+	collection_id = sqlc.arg(collection_id),
 	name = sqlc.arg(name),
 	description = sqlc.arg(description),
 	visibility = sqlc.arg(visibility),
-	updated_at = coalesce(sqlc.narg(updated_at), updated_at)
+	updated_at = sqlc.arg(updated_at)
 where id = sqlc.arg(id)
 returning *;
 

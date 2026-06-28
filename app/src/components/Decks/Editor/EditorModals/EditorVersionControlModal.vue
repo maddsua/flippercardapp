@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, reactive } from 'vue';
 import { unwrapErrorMessage, useClient } from '@/api';
-import type { CardDeckVersion, CardDeckVersionMetadata } from '@/api_models';
+import type { CardDeckVersion, CardDeckVersionMeta } from '@/api_models';
 import { genericPageState, pageControls } from '@/dataloader';
 import { fmtTimeString } from '@/date';
 import GenericButton from '@/components/App/Inputs/GenericButton.vue';
@@ -21,7 +21,7 @@ const emit = defineEmits<{
 }>();
 
 const state = reactive({
-	page: genericPageState<CardDeckVersionMetadata>(),
+	page: genericPageState<CardDeckVersionMeta>(),
 	actions: {
 		busy: false,
 		error: null as string | null,

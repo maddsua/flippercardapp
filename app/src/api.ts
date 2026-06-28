@@ -1,15 +1,15 @@
 import type {
 	AuthState,
 	CardDeck,
-	CardDeckMetadata,
+	CardDeckMeta,
 	CardDeckPatch,
 	CardDeckVersion,
-	CardDeckVersionMetadata,
+	CardDeckVersionMeta,
 	Collection,
-	CollectionMetadata,
+	CollectionMeta,
 	CollectionPatch,
 	CollectionSearchResult,
-	ImageMetadata,
+	ImageMeta,
 	SignInParams,
 } from "./api_models";
 
@@ -277,7 +277,7 @@ export class ApiClient {
 	collections = {
 
 		list: async (params?: { ids?: string[] | null } & Partial<Pagination>) =>
-			this.execJSON<Page<CollectionMetadata>>('GET', '/collections', params),
+			this.execJSON<Page<CollectionMeta>>('GET', '/collections', params),
 
 		search: async (term: string) =>
 			this.execJSON<Page<CollectionSearchResult>>('GET', '/collections/search', { term }),
@@ -286,10 +286,10 @@ export class ApiClient {
 			this.execJSON<Collection>('GET', `/collections/${id}`),
 
 		create: async (patch: CollectionPatch) =>
-			this.execJSON<CollectionMetadata>('PUT', '/collections/new', {}, patch),
+			this.execJSON<CollectionMeta>('PUT', '/collections/new', {}, patch),
 
 		update: async (id: string, patch: CollectionPatch) =>
-			this.execJSON<CollectionMetadata>('PATCH', `/collections/${id}`, {}, patch),
+			this.execJSON<CollectionMeta>('PATCH', `/collections/${id}`, {}, patch),
 
 		remove: async (id: string, opts?: { recursive?: boolean }) =>
 			this.execJSON<null>('DELETE', `/collections/${id}`, opts),
@@ -298,16 +298,16 @@ export class ApiClient {
 	decks = {
 
 		list: async (params?: { ids?: string[] | null, collection_id?: string } & Partial<Pagination>) =>
-			this.execJSON<Page<CardDeckMetadata>>('GET','/decks', params),
+			this.execJSON<Page<CardDeckMeta>>('GET','/decks', params),
 
 		load: async (id: string) =>
 			this.execJSON<CardDeck>('GET',`/decks/${id}`),
 
 		create: async (patch: CardDeckPatch) =>
-			this.execJSON<CardDeckMetadata>('PUT', '/decks/new', {}, patch),
+			this.execJSON<CardDeckMeta>('PUT', '/decks/new', {}, patch),
 
 		update: async (id: string, patch: CardDeckPatch) =>
-			this.execJSON<CardDeckMetadata>('PATCH', `/decks/${id}`, {}, patch),
+			this.execJSON<CardDeckMeta>('PATCH', `/decks/${id}`, {}, patch),
 
 		remove: async (id: string) =>
 			this.execJSON<null>('DELETE', `/decks/${id}`),
@@ -315,7 +315,7 @@ export class ApiClient {
 		versions: {
 
 			list: async (id: string, params?: Partial<Pagination>) =>
-				this.execJSON<Page<CardDeckVersionMetadata>>('GET', `/decks/${id}/versions`, params),
+				this.execJSON<Page<CardDeckVersionMeta>>('GET', `/decks/${id}/versions`, params),
 
 			load: async (deckID: string, versionID: string) =>
 				this.execJSON<CardDeckVersion>('GET', `/decks/${deckID}/version/${versionID}`),
@@ -328,13 +328,13 @@ export class ApiClient {
 	images = {
 
 		upload: async (img: File | Blob, blobName?: string) =>
-			this.execJSON<ImageMetadata>('PUT', '/images/upload', { name: img instanceof File ? img.name : blobName }, img),
+			this.execJSON<ImageMeta>('PUT', '/images/upload', { name: img instanceof File ? img.name : blobName }, img),
 
 		blob: async (id: string) =>
 			this.execBlob('GET', `/images/${id}/blob`),
 
 		metadata: async (id: string) =>
-			this.execJSON<ImageMetadata>('GET', `/images/${id}/metadata`),
+			this.execJSON<ImageMeta>('GET', `/images/${id}/metadata`),
 	};
 };
 

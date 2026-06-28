@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, reactive } from 'vue';
 import { useClient } from '@/api';
-import type { CollectionMetadata } from '@/api_models';
+import type { CollectionMeta } from '@/api_models';
 import { intl, useLanguage } from '@/intl';
 import CentralMessage from '@/components/App/Messages/CentralMessage.vue';
 import LoadingMessage from '@/components/App/Messages/LoadingMessage.vue';
@@ -23,7 +23,7 @@ const emit = defineEmits<{
 	(e: 'open', entry: RecommendedEntry): void;
 }>();
 
-interface RecommendedEntry extends CollectionMetadata {
+interface RecommendedEntry extends CollectionMeta {
 	starred: boolean;
 	score: number;
 };

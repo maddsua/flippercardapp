@@ -3,10 +3,7 @@ package model
 import (
 	"encoding/hex"
 	"encoding/json"
-	"fmt"
-	"math"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -65,139 +62,117 @@ type SignInParams struct {
 	Password string `json:"password"`
 }
 
-type ContentEntryMetaBase struct {
-	Name        string                      `json:"name"`
-	Description string                      `json:"description,omitempty"`
-	Visibility  db_model.ResourceVisibility `json:"visibility"`
+type ContentEntryMeta struct {
+	db_model.ContentSummary
+	ID         uuid.UUID                   `json:"id"`
+	Created    time.Time                   `json:"created"`
+	Updated    time.Time                   `json:"updated"`
+	Visibility db_model.ResourceVisibility `json:"visibility"`
 }
 
-func (val *ContentEntryMetaBase) Valid() error {
+type CollectionMeta struct {
+	ContentEntryMeta
+	Size int `json:"size"`
+}
 
-	if val.Name = strings.TrimSpace(val.Name); val.Name == "" {
-		return &Error{Message: "Summary invalid: 'name' field is empty"}
-	} else if len(val.Name) > math.MaxUint8 {
-		return &Error{Message: "Summary invalid: 'name' field too long"}
-	} else if len(val.Description) > math.MaxUint8 {
-		return &Error{Message: "Summary invalid: 'description' field too long"}
+func (model *CollectionMeta) FromRow(row db_gen.Collection) {
+
+	model.ContentEntryMeta = ContentEntryMeta{
+
+		ContentSummary: db_model.ContentSummary{
+			Name:        row.Name,
+			Description: row.Description.String,
+		},
+
+		ID:         row.ID,
+		Created:    row.CreatedAt.Time,
+		Updated:    row.UpdatedAt.Time,
+		Visibility: row.Visibility,
+	}
+}
+
+func (model *CollectionMeta) FromBatchRow(row db_gen.GetCollectionBatchRow) {
+
+	model.ContentEntryMeta = ContentEntryMeta{
+
+		ContentSummary: db_model.ContentSummary{
+			Name:        row.Name,
+			Description: row.Description.String,
+		},
+
+		ID:         row.ID,
+		Created:    row.CreatedAt.Time,
+		Updated:    row.UpdatedAt.Time,
+		Visibility: row.Visibility,
 	}
 
-	return nil
-}
-
-type CollectionMetadata struct {
-	ContentEntryMetaBase
-	ID      uuid.UUID `json:"id"`
-	Created time.Time `json:"created"`
-	Updated time.Time `json:"updated"`
-	Size    int       `json:"size"`
-}
-
-func (meta *CollectionMetadata) Valid() error {
-
-	if meta.ID == uuid.Nil {
-		return &Error{Message: "Invalid collection ID"}
-	}
-
-	return meta.ContentEntryMetaBase.Valid()
-}
-
-func (meta *CollectionMetadata) FromRow(row db_gen.Collection) {
-	meta.ContentEntryMetaBase = ContentEntryMetaBase{
-		Name:        row.Name,
-		Description: row.Description.String,
-		Visibility:  row.Visibility,
-	}
-	meta.ID = row.ID
-	meta.Created = row.CreatedAt.Time
-	meta.Updated = row.UpdatedAt.Time
-}
-
-func (meta *CollectionMetadata) FromBatchRow(row db_gen.GetCollectionBatchRow) {
-	meta.ContentEntryMetaBase = ContentEntryMetaBase{
-		Name:        row.Name,
-		Description: row.Description.String,
-		Visibility:  row.Visibility,
-	}
-	meta.ID = row.ID
-	meta.Created = row.CreatedAt.Time
-	meta.Updated = row.UpdatedAt.Time
-	meta.Size = int(row.Size)
+	model.Size = int(row.Size)
 }
 
 type CollectionSearchResult struct {
-	CollectionMetadata
+	CollectionMeta
 	Rank int `json:"rank"`
 }
 
 type Collection struct {
-	CollectionMetadata
-	Decks []CardDeckMetadata `json:"decks"`
+	CollectionMeta
+	Decks []CardDeckMeta `json:"decks"`
 }
 
-type CollectionBundle struct {
-	CollectionMetadata
-	Decks []CardDeckBundle `json:"decks"`
-}
-
-func (bundle *CollectionBundle) Valid() error {
-
-	if err := bundle.CollectionMetadata.Valid(); err != nil {
-		return err
-	}
-
-	for idx, deck := range bundle.Decks {
-
-		if err := deck.CardDeckMetadata.Valid(); err != nil {
-			return &Error{Message: fmt.Sprintf("Deck at index %d: %v", idx, err)}
-		}
-	}
-
-	return nil
-}
-
-type CardDeckMetadata struct {
-	ContentEntryMetaBase
-	ID           uuid.UUID     `json:"id"`
+type CardDeckMeta struct {
+	ContentEntryMeta
 	CollectionID uuid.UUID     `json:"collection_id"`
 	VersionID    uuid.NullUUID `json:"version_id"`
-	Created      time.Time     `json:"created"`
-	Updated      time.Time     `json:"updated"`
 	Size         int           `json:"size"`
 }
 
-func (meta *CardDeckMetadata) FromRow(row db_gen.Deck) {
-	meta.ContentEntryMetaBase = ContentEntryMetaBase{
-		Name:        row.Name,
-		Description: row.Description.String,
-		Visibility:  row.Visibility,
+func (model *CardDeckMeta) FromRow(row db_gen.Deck) {
+
+	model.ContentEntryMeta = ContentEntryMeta{
+
+		ContentSummary: db_model.ContentSummary{
+			Name:        row.Name,
+			Description: row.Description.String,
+		},
+
+		ID:         row.ID,
+		Created:    row.CreatedAt.Time,
+		Updated:    row.UpdatedAt.Time,
+		Visibility: row.Visibility,
 	}
-	meta.ID = row.ID
-	meta.CollectionID = row.CollectionID
-	meta.VersionID = row.LatestVersionID
-	meta.Created = row.CreatedAt.Time
-	meta.Updated = row.UpdatedAt.Time
+
+	model.CollectionID = row.CollectionID
+	model.VersionID = row.LatestVersionID
 }
 
-func (meta *CardDeckMetadata) FromBatchRow(row db_gen.GetDecksBatchRow) {
-	meta.ContentEntryMetaBase = ContentEntryMetaBase{
-		Name:        row.Name,
-		Description: row.Description.String,
-		Visibility:  row.Visibility,
+func (model *CardDeckMeta) FromBatchRow(row db_gen.GetDecksBatchRow) {
+
+	model.ContentEntryMeta = ContentEntryMeta{
+
+		ContentSummary: db_model.ContentSummary{
+			Name:        row.Name,
+			Description: row.Description.String,
+		},
+
+		ID:         row.ID,
+		Created:    row.CreatedAt.Time,
+		Updated:    row.UpdatedAt.Time,
+		Visibility: row.Visibility,
 	}
-	meta.ID = row.ID
-	meta.CollectionID = row.CollectionID
-	meta.Created = row.CreatedAt.Time
-	meta.Updated = row.UpdatedAt.Time
-	meta.Size = int(row.Size.Int64)
+
+	model.CollectionID = row.CollectionID
+	model.VersionID = row.LatestVersionID
+
+	model.Size = int(row.Size.Int64)
 }
 
 type CardDeck struct {
-	CardDeckMetadata
+	CardDeckMeta
 	Labels []string            `json:"labels"`
 	Cards  []db_model.CardNode `json:"cards"`
 }
 
-type CardDeckVersionMetadata struct {
+type CardDeckVersionMetaBase struct {
 	ID        uuid.UUID `json:"id"`
 	Created   time.Time `json:"created"`
 	DeckID    uuid.UUID `json:"deck_id"`
@@ -206,53 +181,58 @@ type CardDeckVersionMetadata struct {
 	Label     string    `json:"label,omitempty"`
 }
 
-func (meta *CardDeckVersionMetadata) FromRow(row db_gen.DeckVersion) {
-	meta.ID = row.ID
-	meta.Created = row.CreatedAt.Time
-	meta.DeckID = row.DeckID
-	meta.CardCount = int(row.CardCount)
-	meta.Label = row.Label.String
+func (model *CardDeckVersionMetaBase) FromRow(row db_gen.DeckVersion) {
+	*model = CardDeckVersionMetaBase{
+		ID:        row.ID,
+		Created:   row.CreatedAt.Time,
+		DeckID:    row.DeckID,
+		CardCount: int(row.CardCount),
+		Label:     row.Label.String,
+	}
 }
 
-func (meta *CardDeckVersionMetadata) FromBatchRow(row db_gen.GetDeckVersionsBatchRow) {
-	meta.ID = row.ID
-	meta.Created = row.CreatedAt.Time
-	meta.DeckID = row.DeckID
-	meta.CardCount = int(row.CardCount)
-	meta.Label = row.Label.String
+type CardDeckVersionMeta struct {
+	CardDeckVersionMetaBase
+	Summary *db_model.ContentSummary `json:"summary,omitempty"`
+}
+
+func (model *CardDeckVersionMeta) FromRow(row db_gen.DeckVersion) {
+
+	model.CardDeckVersionMetaBase.FromRow(row)
+
+	if !row.Content.Summary.Empty() {
+		model.Summary = &row.Content.Summary
+	}
 }
 
 type CardDeckVersion struct {
-	CardDeckVersionMetadata
+	CardDeckVersionMetaBase
 	Content db_model.DeckVersionContent `json:"content"`
 }
 
-func (version *CardDeckVersion) FromRow(row db_gen.DeckVersion) {
-	version.CardDeckVersionMetadata.FromRow(row)
-	version.Content = row.Content
+func (model *CardDeckVersion) FromRow(row db_gen.DeckVersion) {
+	model.CardDeckVersionMetaBase.FromRow(row)
+	model.Content = row.Content
 }
 
 type CollectionPatch struct {
-	ContentEntryMetaBase
+	db_model.ContentSummary
+	Visibility db_model.ResourceVisibility `json:"visibility"`
 }
 
 type CardDeckPatch struct {
-	CollectionID uuid.NullUUID         `json:"collection_id"`
-	Label        string                `json:"label,omitempty"`
-	Meta         *ContentEntryMetaBase `json:"meta,omitempty"`
-	Content      *CardDeckContentPatch `json:"content,omitempty"`
+	CollectionID uuid.NullUUID                `json:"collection_id"`
+	Label        string                       `json:"label,omitempty"`
+	Summary      *db_model.ContentSummary     `json:"summary,omitempty"`
+	Visibility   *db_model.ResourceVisibility `json:"visibility,omitempty"`
+	Content      *CardDeckContentPatch        `json:"content,omitempty"`
 }
 
 type CardDeckContentPatch struct {
-	db_model.DeckVersionContent
+	Cards []db_model.CardNode `json:"cards"`
 }
 
-type CardPatch struct {
-	db_model.CardNode
-	ID uuid.NullUUID `json:"id"`
-}
-
-type ImageMetadata struct {
+type ImageMeta struct {
 	ID               string    `json:"id"`
 	Created          time.Time `json:"created"`
 	Mimetype         string    `json:"mimetype"`
@@ -262,7 +242,7 @@ type ImageMetadata struct {
 	DataSize         int       `json:"data_size"`
 }
 
-func (meta *ImageMetadata) FromRow(row db_gen.Image) {
+func (meta *ImageMeta) FromRow(row db_gen.Image) {
 	meta.ID = row.ID
 	meta.Created = row.CreatedAt.Time
 	meta.Mimetype = row.Mimetype
@@ -270,15 +250,4 @@ func (meta *ImageMetadata) FromRow(row db_gen.Image) {
 	meta.SourceSha512Hash = row.SourceSha512Hash
 	meta.DataSize = int(row.DataSize)
 	meta.DataSha512Hash = row.DataSha512Hash
-}
-
-type ImageBundle struct {
-	ImageMetadata
-	Data []byte `json:"data"`
-}
-
-type CardDeckBundle struct {
-	CardDeckMetadata
-	Cards  []db_model.CardNode    `json:"cards"`
-	Images map[string]ImageBundle `json:"images"`
 }
