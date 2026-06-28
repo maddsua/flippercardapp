@@ -30,6 +30,7 @@ interface ContentMeta {
 interface ContentChanges {
 	summary: boolean;
 	cards: boolean;
+	meta: boolean;
 };
 
 const props = defineProps<{
@@ -47,7 +48,7 @@ const client = useClient();
 
 const state = reactive({
 	busy: false,
-	meta: {
+	inputs: {
 		name: props.content.meta.summary.name,
 		description: props.content.meta.summary.description || '',
 		visibility: props.content.meta.visibility,
@@ -59,8 +60,13 @@ const state = reactive({
 
 const summaryChanged = computed(() =>
 	props.changes.summary ||
-	state.meta.name !== props.content.meta.summary.name ||
-	state.meta.description !== props.content.meta.summary.description);
+	state.inputs.name !== props.content.meta.summary.name ||
+	state.inputs.description !== props.content.meta.summary.description);
+
+const metaChanged = computed(() =>
+	props.changes.meta ||
+	state.inputs.visibility !== props.content.meta.visibility,
+);
 
 const publishVersion = async () => {
 
@@ -100,10 +106,10 @@ const publishNew = async (collectionID: string): Promise<CardDeckMeta | null> =>
 
 	const { data, error } = await client.decks.create({
 		summary: {
-			name: state.meta.name,
-			description: state.meta.description || null,
+			name: state.inputs.name,
+			description: state.inputs.description || null,
 		},
-		visibility: state.meta.visibility,
+		visibility: state.inputs.visibility,
 		content: { cards: props.content.cards },
 		collection_id: collectionID,
 		label: state.versionLabel || null,
@@ -122,10 +128,10 @@ const publishChanges = async (deckID: string): Promise<CardDeckMeta | null> => {
 
 	const { data, error } = await client.decks.update(deckID, {
 		summary: summaryChanged.value ? {
-			name: state.meta.name,
-			description: state.meta.description || null,
+			name: state.inputs.name,
+			description: state.inputs.description || null,
 		} : null,
-		visibility: state.meta.visibility,
+		visibility: metaChanged.value ? state.inputs.visibility : null,
 		content: props.changes.cards ? { cards: props.content.cards } : null,
 		label: state.versionLabel || null,
 	});
@@ -152,14 +158,14 @@ const publishChanges = async (deckID: string): Promise<CardDeckMeta | null> => {
 					<template v-slot:label>
 						Deck name
 					</template>
-					<GenericInput placeholder="Deck name" v-model="state.meta.name" />
+					<GenericInput placeholder="Deck name" v-model="state.inputs.name" />
 				</InputLabel>
 
 				<InputLabel variant="slick">
 					<template v-slot:label>
 						Deck summary
 					</template>
-					<GenericInput placeholder="Deck summary" :multiline="true" v-model="state.meta.description" />
+					<GenericInput placeholder="Deck summary" :multiline="true" v-model="state.inputs.description" />
 				</InputLabel>
 
 			</template>
@@ -175,7 +181,7 @@ const publishChanges = async (deckID: string): Promise<CardDeckMeta | null> => {
 				<template v-slot:label>
 					Deck visibility
 				</template>
-				<GenericDropdown :options="resourceVisibilityOptions" v-model="state.meta.visibility" />
+				<GenericDropdown :options="resourceVisibilityOptions" v-model="state.inputs.visibility" />
 			</InputLabel>
 
 			<GenericToggle label="Edit summary" v-model="state.editSummary" />

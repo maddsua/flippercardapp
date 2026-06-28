@@ -408,21 +408,25 @@ const fetchRemoteState = async (deckID: string) => {
 
 const watchContentEdits = () => {
 
-	watch(() => state.content.meta, (val, old) => {
+	watch(() => state.content.meta, () => {
 
 		if (!state.editor.ready) {
 			return;
 		}
 
-		if (
-			val.summary.name !== old.summary.name ||
-			val.summary.description !== old.summary.description
-		) {
-			state.editor.changes.summary = true;
+		state.editor.changes.meta = true;
+		autosaveStateSnapshot();
+
+	}, { deep: true });
+
+	watch(() => state.content.meta.summary, () => {
+
+		if (!state.editor.ready) {
+			return;
 		}
 
+		state.editor.changes.summary = true;
 		autosaveStateSnapshot();
-		state.editor.changes.meta = true;
 
 	}, { deep: true });
 
