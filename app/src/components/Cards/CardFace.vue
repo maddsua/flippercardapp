@@ -55,7 +55,7 @@ const faceStyle = computed((): CSSProperties => {
 				<CardTextBox v-else-if="node.type === 'textbox'">
 					<template v-for="txtnode of node.content">
 						<CardTextNode v-if="txtnode.type === 'text' && txtnode.content.length" :theme="txtnode.theme">
-							{{ txtnode.content.trim() }}
+							{{ txtnode.content }}
 						</CardTextNode>
 						<br v-else-if="txtnode.type === 'newline'" />
 					</template>

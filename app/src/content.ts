@@ -138,12 +138,14 @@ export const stringifyTextBoxContent = (nodes: CardTextBoxElementNode[]): string
 				result += '\n';
 				continue;
 			case 'text':
-				result += stringifyTextBoxNode(node);
+				if (node.content.trim().length) {
+					result += stringifyTextBoxNode(node);
+				}
 				continue;
 		}
 	}
 
-	return result.trim();
+	return result;
 };
 
 const escapeTextBoxNodeContent = (content: string): string => {
@@ -248,8 +250,7 @@ const prefixedAttributeValue = (attr: string, prefix: string): string | null => 
 
 export const parseTextBoxContent = (value: string): CardTextBoxElementNode[] => {
 
-	value = value.trim();
-	if (!value.length) {
+	if (!value.trim().length) {
 		return [];
 	}
 
