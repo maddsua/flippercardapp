@@ -53,7 +53,18 @@ export interface CardTextboxElementTheme {
 	bold?: boolean | null;
 	italic?: boolean | null;
 	decoration?: 'underline' | 'strikethrough' | null;
+	size?: TextSize;
 }
+
+type TextSize = 'xs' | 's' | 'm' | 'l' | 'xl';
+
+const textSizeSet = new Set<string>(Object.keys({
+	xs: null,
+	s: null,
+	m: null,
+	l: null,
+	xl: null,
+} satisfies Record<TextSize, null>));
 
 export interface CardTextboxElementTextHighlight {
 	text_color?: string | null;
@@ -146,6 +157,10 @@ const stringifyTextBoxNode = (node: CardTextboxTextNode): string => {
 
 	const modifiers: string[] = [];
 
+	if (node.theme?.size) {
+		modifiers.push(`size-${node.theme?.size}`);
+	}
+
 	if (node.theme?.bold) {
 		modifiers.push('bold');
 	}
@@ -175,9 +190,6 @@ const stringifyTextBoxNode = (node: CardTextboxTextNode): string => {
 
 const parseTextBoxNode = (content: string, modifiers?: string | null): CardTextboxTextNode => {
 
-	const textColorPrefix = 'text-';
-	const fillColorPrefix = 'fill-';
-
 	const attributes = modifiers?.split('|').map(item => item.trim()).filter(item => item.length) || [];
 
 	const theme: CardTextboxElementTheme = {};
@@ -199,24 +211,39 @@ const parseTextBoxNode = (content: string, modifiers?: string | null): CardTextb
 				continue;
 		}
 
-		if (attr.toLowerCase().startsWith(textColorPrefix)) {
+		const textColorAttr = prefixedAttributeValue(attr, 'text-');
+		if (textColorAttr) {
 			if (!theme.highlight) {
 				theme.highlight = {};
 			}
-			theme.highlight.text_color = attr.slice(textColorPrefix.length);
+			theme.highlight.text_color = textColorAttr;
 			continue;
 		}
 
-		if (attr.toLowerCase().startsWith(fillColorPrefix)) {
+		const fillColorAttr = prefixedAttributeValue(attr, 'fill-');
+		if (fillColorAttr) {
 			if (!theme.highlight) {
 				theme.highlight = {};
 			}
-			theme.highlight.fill_color = attr.slice(fillColorPrefix.length);
+			theme.highlight.fill_color = fillColorAttr;
+			continue;
+		}
+
+		const sizeAttr = prefixedAttributeValue(attr, 'size-');
+		if (sizeAttr && textSizeSet.has(sizeAttr)) {
+			theme.size = sizeAttr as TextSize;
 			continue;
 		}
 	}
 
 	return { type: 'text', content, theme };
+};
+
+const prefixedAttributeValue = (attr: string, prefix: string): string | null => {
+	if (!attr.toLowerCase().startsWith(prefix)) {
+		return null;
+	}
+	return attr.slice(prefix.length) || null;
 };
 
 export const parseTextBoxContent = (value: string): CardTextBoxElementNode[] => {

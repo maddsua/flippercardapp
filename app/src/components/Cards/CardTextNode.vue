@@ -10,6 +10,7 @@ const elementClass = computed((): Record<string, boolean> => ({
 	italic: !!props.theme?.italic,
 	bold: !!props.theme?.bold,
 	[`${props.theme?.decoration}`]: !!props.theme?.decoration,
+	[`size-${props.theme?.size}`]: !!props.theme?.size,
 }));
 
 const elementStyle = computed((): CSSProperties => ({
@@ -28,6 +29,7 @@ const elementStyle = computed((): CSSProperties => ({
 </template>
 
 <style lang="scss" scoped>
+
 	.card-text-node {
 		display: inline;
 		font-weight: 500;
@@ -51,5 +53,26 @@ const elementStyle = computed((): CSSProperties => ({
 			text-decoration: line-through;
 			text-decoration-thickness: 0.25em;
 		}
+
+		&.size-xs {
+			font-size: 1.25em;
+		}
+
+		&.size-s {
+			font-size: 1.5em;
+		}
+
+		&.size-m {
+			font-size: 1.75em;
+		}
+
+		&.size-l {
+			font-size: 2em;
+		}
+
+		&.size-xl {
+			font-size: 2.25em;
+		}
 	}
+
 </style>

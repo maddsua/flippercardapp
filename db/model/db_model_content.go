@@ -212,20 +212,14 @@ type CardTextboxElementTheme struct {
 	Highlight  *CardTextboxElementTextHighlight `json:"highlight,omitempty"`
 	Bold       bool                             `json:"bold,omitempty"`
 	Italic     bool                             `json:"italic,omitempty"`
-	Decoration CardTextboxElementDecoration     `json:"decoration,omitempty"`
+	Decoration string                           `json:"decoration,omitempty"`
+	Size       string                           `json:"size,omitempty"`
 }
 
 type CardTextboxElementTextHighlight struct {
 	TextColor string `json:"text_color,omitempty"`
 	FillColor string `json:"fill_color,omitempty"`
 }
-
-type CardTextboxElementDecoration string
-
-const (
-	CardTextboxElementDecorationUnderline     = CardTextboxElementDecoration("underline")
-	CardTextboxElementDecorationStrikethrough = CardTextboxElementDecoration("strikethrough")
-)
 
 type CardTextboxNewlineNode struct {
 	CardContentNodeBase
