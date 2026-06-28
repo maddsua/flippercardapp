@@ -9,6 +9,7 @@ import {
 	type CardImageNode,
 	type CardNode,
 	type ContentBundle,
+	type ContentSummary,
 } from '@/content';
 import { pickLocalFiles } from '@/files';
 import GenericButton from '@/components/App/Inputs/GenericButton.vue';
@@ -21,16 +22,11 @@ import OverlayErrorMessage from '@/components/App/Messages/OverlayErrorMessage.v
 
 const client = useClient();
 
-interface Meta {
-	name: string | null;
-	description: string | null;
-};
-
 const emit = defineEmits<{
 	(e: 'done'): void;
 	(e: 'addCards', cards: CardNode[]): void;
 	(e: 'replaceCards', cards: CardNode[]): void;
-	(e: 'updateMeta', meta: Meta): void;
+	(e: 'updateSummary', summary: Partial<ContentSummary>): void;
 }>();
 
 interface ImageData {
@@ -43,8 +39,10 @@ interface ImageData {
 const state = reactive({
 	content: {
 		meta: {
-			name: null as string | null,
-			description: null as string | null,
+			summary: {
+				name: null as string | null,
+				description: null as string | null,
+			},
 		},
 		cards: [] as CardNode[],
 		images: [] as ImageData[],
@@ -186,7 +184,11 @@ const loadJSONFile = async (file: File) => {
 const parseBundleJSON = async (bundle: ContentBundle | null) => {
 
 	const cards: CardNode[] = [];
-	const meta: Meta = { name: null, description: null, };
+
+	const summary = {
+		name: null as string | null,
+		description: null as string | null,
+	};
 
 	if (bundle?.decks?.length) {
 
@@ -216,12 +218,12 @@ const parseBundleJSON = async (bundle: ContentBundle | null) => {
 				});
 			}
 
-			if (!meta.name && deck.name.length) {
-				meta.name = deck.name;
+			if (!summary.name && deck.name.length) {
+				summary.name = deck.name;
 			}
 
-			if (!meta.description && deck.description?.length) {
-				meta.description = deck.description;
+			if (!summary.description && deck.description?.length) {
+				summary.description = deck.description;
 			}
 		}
 	}
@@ -263,8 +265,20 @@ const parseBundleJSON = async (bundle: ContentBundle | null) => {
 	const imageUrlMap = new Map(images.map(item => ([ item.media_id, item.media_url ])));
 	filterImageNodes(cards).forEach(item => item.media_url = imageUrlMap.get(item.media_id || ''));
 
-	state.content = { cards, images, meta };
-	state.options = { setMetadata: { available: true, value: true }, overwriteContent: true };
+	state.content = {
+		cards,
+		images,
+		meta: { summary },
+	};
+
+	state.options = {
+		setMetadata: {
+			available: true,
+			value: true,
+		},
+		overwriteContent: true,
+	};
+
 	state.source.ready = true;
 };
 
@@ -345,8 +359,25 @@ const loadFileCSV = async (file: File) => {
 		return;
 	}
 
-	state.content = { cards, images: [], meta: { name: null, description: null } };
-	state.options = { setMetadata: { available: false, value: false }, overwriteContent: true };
+	state.content = {
+		cards,
+		images: [],
+		meta: {
+			summary: {
+				name: null,
+				description: null,
+			},
+		},
+	};
+
+	state.options = {
+		setMetadata: {
+			available: false,
+			value: false,
+		},
+		overwriteContent: true,
+	};
+
 	state.source.ready = true;
 };
 
@@ -404,7 +435,10 @@ const importData = async () => {
 	}
 
 	if (state.options.setMetadata.value) {
-		emit('updateMeta', state.content.meta);
+		emit('updateSummary', {
+			name: state.content.meta.summary.name || undefined,
+			description: state.content.meta.summary.description || undefined,
+		});
 	}
 
 	state.busy = false;
@@ -483,11 +517,11 @@ const importData = async () => {
 					<div class="value masked">
 						{{ state.source.name || 'None' }}
 					</div>
-					<div v-if="state.content.meta.name" class="value">
-						{{ state.content.meta.name }}
+					<div v-if="state.content.meta.summary.name" class="value">
+						{{ state.content.meta.summary.name }}
 					</div>
-					<div v-if="state.content.meta.description" class="value">
-						{{ state.content.meta.description }}
+					<div v-if="state.content.meta.summary.description" class="value">
+						{{ state.content.meta.summary.description }}
 					</div>
 				</div>
 

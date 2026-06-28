@@ -11,6 +11,7 @@ import {
 	type CardPollNode,
 	type CardTextBoxNode,
 	type ContentBundle,
+	type ContentSummary,
 	type ImageBlobBundle
 } from '@/content';
 import { blobToJson, downloadBlob, escapeFileName } from '@/files';
@@ -35,14 +36,13 @@ interface ContentOriginMeta {
 	collectionID: string | null;
 };
 
-interface ContentSummary {
-	name: string;
-	description: string | null;
+interface ContentMeta {
+	summary: ContentSummary;
 	visibility: ResourceVisibility;
 };
 
 interface Content {
-	summary: ContentSummary;
+	meta: ContentMeta;
 	cards: CardNode[];
 };
 
@@ -130,7 +130,7 @@ const exitTool = () => {
 
 onMounted(() => {
 	selectAllCards();
-	state.options.filename = `${escapeFileName(props.content.summary.name)}-export-${new Date().getTime()}`;
+	state.options.filename = `${escapeFileName(props.content.meta.summary.name)}-export-${new Date().getTime()}`;
 });
 
 const exportDeck = async () => {
@@ -161,7 +161,7 @@ const exportDeck = async () => {
 
 const exportDeckJSON = async (opts?: { compress?: boolean }) => {
 
-	const { name, description } = props.content.summary;
+	const { name, description } = props.content.meta.summary;
 
 	const contentNodes = selectedCards.value.map(item => [item.front, item.back])
 		.flat().map(item => item.content).flat();
@@ -202,7 +202,7 @@ const exportDeckJSON = async (opts?: { compress?: boolean }) => {
 			deck_id: props.meta.deckID || 'unknown',
 			collection_id: props.meta.collectionID || 'unknown',
 			name,
-			description,
+			description: description || null,
 			cards: selectedCards.value
 		}],
 		image_blobs: imageBlobs.length ? imageBlobs : undefined,

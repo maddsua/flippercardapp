@@ -3,10 +3,10 @@
 import { computed } from 'vue';
 import type { ResourceVisibility } from '@/api_models';
 import { blurInteractive } from '@/dom';
+import type { ContentSummary } from '@/content';
 
 interface DeckMeta {
-	name: string;
-	description: string | null;
+	summary: ContentSummary;
 	visibility: ResourceVisibility;
 };
 
@@ -15,7 +15,7 @@ const props = defineProps<{
 	showDescription?: boolean;
 }>();
 
-const nameInvalid = computed(() => !props.meta.name.trim().length);
+const nameInvalid = computed(() => !props.meta.summary.name.trim().length);
 
 </script>
 
@@ -29,7 +29,7 @@ const nameInvalid = computed(() => !props.meta.name.trim().length);
 			<input type="text"
 				class="name"
 				:class="{ invalid: nameInvalid }"
-				v-model="props.meta.name"
+				v-model="props.meta.summary.name"
 				placeholder="Deck name"
 				@keydown.enter.stop="blurInteractive" />
 
@@ -37,7 +37,7 @@ const nameInvalid = computed(() => !props.meta.name.trim().length);
 
 		<input v-if="showDescription" type="text"
 			class="description"
-			v-model="props.meta.description"
+			v-model="props.meta.summary.description"
 			placeholder="[No description]"
 			@keydown.enter.stop="blurInteractive" />
 

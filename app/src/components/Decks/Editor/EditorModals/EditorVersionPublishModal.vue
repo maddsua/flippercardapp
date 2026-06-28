@@ -3,7 +3,7 @@ import { computed, reactive } from 'vue';
 import { unwrapErrorMessage, useClient } from '@/api';
 import type { CardDeckMeta, ResourceVisibility } from '@/api_models';
 import { resourceVisibilityOptions } from '@/inputs';
-import type { CardNode } from '@/content';
+import type { CardNode, ContentSummary } from '@/content';
 import GenericButton from '@/components/App/Inputs/GenericButton.vue';
 import GenericDropdown from '@/components/App/Inputs/GenericDropdown.vue';
 import GenericInput from '@/components/App/Inputs/GenericInput.vue';
@@ -18,13 +18,12 @@ interface Origin {
 };
 
 interface Content {
-	summary: ContentSummary;
+	meta: ContentMeta;
 	cards: CardNode[]
 };
 
-interface ContentSummary {
-	name: string;
-	description: string | null;
+interface ContentMeta {
+	summary: ContentSummary;
 	visibility: ResourceVisibility;
 };
 
@@ -49,20 +48,19 @@ const client = useClient();
 const state = reactive({
 	busy: false,
 	meta: {
-		name: props.content.summary.name,
-		description: props.content.summary.description || '',
-		visibility: props.content.summary.visibility,
+		name: props.content.meta.summary.name,
+		description: props.content.meta.summary.description || '',
+		visibility: props.content.meta.visibility,
 	},
 	editSummary: false,
 	versionLabel: '',
 	error: null as string | null,
 });
 
-const metaChanged = computed(() =>
+const summaryChanged = computed(() =>
 	props.changes.summary ||
-	state.meta.name !== props.content.summary.name ||
-	state.meta.description !== props.content.summary.description ||
-	state.meta.visibility !== props.content.summary.visibility);
+	state.meta.name !== props.content.meta.summary.name ||
+	state.meta.description !== props.content.meta.summary.description);
 
 const publishVersion = async () => {
 
@@ -123,11 +121,11 @@ const publishNew = async (collectionID: string): Promise<CardDeckMeta | null> =>
 const publishChanges = async (deckID: string): Promise<CardDeckMeta | null> => {
 
 	const { data, error } = await client.decks.update(deckID, {
-		summary: metaChanged.value ? {
+		summary: summaryChanged.value ? {
 			name: state.meta.name,
 			description: state.meta.description,
 		} : null,
-		visibility: metaChanged.value ? state.meta.visibility : null,
+		visibility: state.meta.visibility,
 		content: props.changes.cards ? { cards: props.content.cards } : null,
 		label: state.versionLabel || null,
 	});

@@ -1,4 +1,9 @@
 
+export interface ContentSummary {
+	name: string;
+	description?: string | null;
+};
+
 export interface CardNode {
 	id: string;
 	front: CardContentFace;

@@ -3,7 +3,7 @@ import { computed, nextTick, onMounted, onUnmounted, reactive, watch } from 'vue
 import { useRoute, useRouter } from 'vue-router';
 import { unwrapErrorMessage, useClient } from '@/api';
 import type { CardDeckMeta, CardDeckVersion, ResourceVisibility } from '@/api_models';
-import type { CardCanvasTheme, CardContentElementTheme, CardNode } from '@/content';
+import type { CardCanvasTheme, CardContentElementTheme, CardNode, ContentSummary } from '@/content';
 import { addModelNode } from '@/content';
 import { useStorage, type DeckEditorHistoryMetaEntry } from '@/storage/storage';
 import GenericButton from '@/components/App/Inputs/GenericButton.vue';
@@ -35,9 +35,11 @@ const router = useRouter();
 const store = useStorage();
 const client = useClient();
 
-const defaultDeckSummary = () => ({
-	name: 'Unnamed deck',
-	description: null as string | null,
+const defaultDeckMeta = () => ({
+	summary: {
+		name: 'Unnamed deck',
+		description: null as string | null,
+	},
 	visibility: 'HIDDEN' as ResourceVisibility,
 });
 
@@ -52,7 +54,7 @@ enum EditedSide {
 const state = reactive({
 
 	content: {
-		summary: defaultDeckSummary(),
+		meta: defaultDeckMeta(),
 		cards: [] as CardNode[],
 	},
 
@@ -85,6 +87,7 @@ const state = reactive({
 		changes: {
 			summary: false,
 			cards: false,
+			meta: false,
 		},
 		snapshots: {
 			timer: null as NodeJS.Timeout | null,
@@ -97,7 +100,7 @@ const state = reactive({
 });
 
 const editorReady = computed(() => state.editor.ready && !state.editor.error);
-const contentEdited = computed(() => !!state.content.cards.length && (state.editor.changes.cards || state.editor.changes.summary));
+const contentEdited = computed(() => state.editor.changes.cards || state.editor.changes.summary || state.editor.changes.meta);
 const changesSaved = computed(() => !state.editor.snapshots.timer && !!(state.editor.snapshots.loadedVersion || state.editor.snapshots.writtenVersion));
 const deckPublished = computed(() => !!state.origin.deckID);
 const localDeckID = computed(() => state.origin.deckID || 'new');
@@ -350,7 +353,7 @@ const restoreStateSnapshot = async () => {
 	state.editor.view.cardIdx = latest.editor.view.cardIdx;
 
 	state.editor.history.entries = entries;
-	state.editor.changes = { summary: true, cards: true };
+	state.editor.changes = { meta: true, summary: true, cards: true };
 	state.editor.snapshots.loadedVersion = { deck_id: latest.deck_id, timestamp: latest.timestamp };
 };
 
@@ -382,9 +385,11 @@ const fetchRemoteState = async (deckID: string) => {
 	}
 
 	state.content = {
-		summary: {
-			name: data.name,
-			description: data.description || null,
+		meta: {
+			summary: {
+				name: data.name,
+				description: data.description || null,
+			},
 			visibility: data.visibility,
 		},
 		cards: data.cards,
@@ -397,20 +402,27 @@ const fetchRemoteState = async (deckID: string) => {
 		updated: data.updated,
 	};
 
-	state.editor.changes = { summary: false, cards: false };
+	state.editor.changes = { meta: false, summary: false, cards: false };
 	state.editor.view.cardIdx = 0;
 };
 
 const watchContentEdits = () => {
 
-	watch(() => state.content.summary, () => {
+	watch(() => state.content.meta, (val, old) => {
 
 		if (!state.editor.ready) {
 			return;
 		}
 
-		state.editor.changes.summary = true;
+		if (
+			val.summary.name !== old.summary.name ||
+			val.summary.description !== old.summary.description
+		) {
+			state.editor.changes.summary = true;
+		}
+
 		autosaveStateSnapshot();
+		state.editor.changes.meta = true;
 
 	}, { deep: true });
 
@@ -427,12 +439,14 @@ const watchContentEdits = () => {
 };
 
 const updateAppTitle = () => {
-	watch(() => state.content.summary.name, (name) => appSetTitle(`${name || 'Unnamed'} | Deck editor`), { immediate: true });
+	watch(() => state.content.meta.summary.name, (name) => appSetTitle(`${name || 'Unnamed'} | Deck editor`), { immediate: true });
 };
 
-const patchDeckSummary = (patch: { name: string | null; description: string | null; }) => {
-	state.content.summary.name = patch.name || defaultDeckSummary().name;
-	state.content.summary.description = patch.description;
+const patchDeckSummary = (patch: ContentSummary) => {
+	state.content.meta.summary = {
+		name: patch.name || defaultDeckMeta().summary.name,
+		description: patch.description || null,
+	};
 };
 
 const handleCardCanvasThemeUpdate = (opts: Partial<CardCanvasTheme>) => {
@@ -467,13 +481,15 @@ const handleCardContentElementThemeUpdate = (opts: Partial<CardContentElementThe
 
 const applyPulledVersion = (version: CardDeckVersion) => {
 
-	state.content.summary.name = version.content.summary.name || state.content.summary.name;
-	state.content.summary.description = version.content.summary.description || state.content.summary.description;
+	state.content.meta.summary = {
+		name: version.content.summary.name || state.content.meta.summary.name,
+		description: version.content.summary.description || state.content.meta.summary.description,
+	};
 
 	state.content.cards = version.content.cards;
 	state.origin.updated = version.created;
 
-	state.editor.changes = { summary: false, cards: false };
+	state.editor.changes = { meta: false, summary: false, cards: false };
 	state.editor.view.cardIdx = 0;
 };
 
@@ -494,13 +510,15 @@ const applyPublishedMeta = async (meta: CardDeckMeta) => {
 		updated: meta.updated,
 	};
 
-	state.content.summary = {
-		name: meta.name,
-		description: meta.description || null,
+	state.content.meta = {
+		summary: {
+			name: meta.name,
+			description: meta.description || null,
+		},
 		visibility: meta.visibility,
 	};
 
-	state.editor.changes = { summary: false, cards: false };
+	state.editor.changes = { meta: false, summary: false, cards: false };
 
 	nextTick(() => state.editor.ready = true);
 };
@@ -514,7 +532,7 @@ const dropLocalChanges = async () => {
 	state.editor.ready = false;
 	state.editor.error = null;
 
-	state.editor.changes = { summary: false, cards: false };
+	state.editor.changes = { meta: false, summary: false, cards: false };
 	state.editor.history = { entries: [], point: null };
 
 	await clearStateSnapshot();
@@ -522,7 +540,7 @@ const dropLocalChanges = async () => {
 	if (state.origin.deckID) {
 		await fetchRemoteState(state.origin.deckID);
 	} else {
-		state.content.summary = defaultDeckSummary();
+		state.content.meta = defaultDeckMeta();
 		state.content.cards = [];
 	}
 
@@ -583,27 +601,28 @@ const registerShortcuts = () => {
 		{
 			title: 'Publish deck changes',
 			ctrl: true, key: 'u',
-			action: () => !modalsOpen.value ? state.editor.modals.publish = true : void 0,
+			action: () => editorReady.value && contentEdited.value && !modalsOpen.value ?
+				state.editor.modals.publish = true : void 0,
 		},
 		{
 			title: 'Import deck file',
 			ctrl: true, key: 'i',
-			action: () => !modalsOpen.value ? state.editor.modals.importer = true : void 0,
+			action: () => editorReady.value && !modalsOpen.value ? state.editor.modals.importer = true : void 0,
 		},
 		{
 			title: 'Export deck file',
 			ctrl: true, key: 'e',
-			action: () => !modalsOpen.value ? state.editor.modals.exporter = true : void 0,
+			action: () => editorReady.value && !modalsOpen.value ? state.editor.modals.exporter = true : void 0,
 		},
 		{
 			title: 'Show deck version history',
 			ctrl: true, key: 'h',
-			action: () => !modalsOpen.value ? state.editor.modals.versions = true : void 0,
+			action: () => editorReady.value && !modalsOpen.value ? state.editor.modals.versions = true : void 0,
 		},
 		{
 			title: 'Play deck',
 			ctrl: true, key: 'p',
-			action: () => deckPublished.value ? openPlayView() : void 0,
+			action: () => editorReady.value && deckPublished.value ? openPlayView() : void 0,
 		},
 		{
 			title: 'Focus the front card side',
@@ -738,7 +757,7 @@ onUnmounted(() => {
 
 			<template v-slot:meta>
 				<DeckEditorSummary
-					:meta="state.content.summary"
+					:meta="state.content.meta"
 					:changed="contentEdited"
 					:changesSaved="changesSaved" />
 			</template>

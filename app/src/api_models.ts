@@ -1,9 +1,4 @@
-import type { CardNode } from "./content";
-
-interface ContentSummary {
-	name: string;
-	description?: string | null;
-};
+import type { CardNode, ContentSummary } from "./content";
 
 interface ContentEntryMeta extends ContentSummary {
 	name: string;

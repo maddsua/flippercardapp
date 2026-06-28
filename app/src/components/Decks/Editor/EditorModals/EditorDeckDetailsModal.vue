@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ResourceVisibility } from '@/api_models';
 import { resourceVisibilityOptions } from '@/inputs';
-import type { CardNode } from '@/content';
+import type { CardNode, ContentSummary } from '@/content';
 import { blurInteractive } from '@/dom';
 import { fmtTimeString } from '@/date';
 import GenericDropdown from '@/components/App/Inputs/GenericDropdown.vue';
@@ -11,13 +11,12 @@ import EditorModal from '../EditorModal.vue';
 import GenericButton from '@/components/App/Inputs/GenericButton.vue';
 
 interface Content {
-	summary: ContentSummary;
+	meta: ContentMeta;
 	cards: CardNode[]
 };
 
-interface ContentSummary {
-	name: string;
-	description: string | null;
+interface ContentMeta {
+	summary: ContentSummary;
 	visibility: ResourceVisibility;
 };
 
@@ -52,7 +51,7 @@ const emit = defineEmits<{
 
 					<GenericInput placeholder="Deck name"
 						variant="borderless"
-						v-model="content.summary.name"
+						v-model="content.meta.summary.name"
 						@keydown.enter.stop="blurInteractive"
 						@keydown.escape.stop="blurInteractive" />
 
@@ -67,7 +66,7 @@ const emit = defineEmits<{
 					<GenericInput placeholder="Deck summary"
 						variant="borderless"
 						:multiline="true"
-						v-model="content.summary.description"
+						v-model="content.meta.summary.description"
 						@keydown.enter.stop="blurInteractive"
 						@keydown.escape.stop="blurInteractive" />
 
@@ -79,7 +78,7 @@ const emit = defineEmits<{
 						Deck visibility
 					</template>
 
-					<GenericDropdown :options="resourceVisibilityOptions" v-model="content.summary.visibility" />
+					<GenericDropdown :options="resourceVisibilityOptions" v-model="content.meta.visibility" />
 
 				</InputLabel>
 
