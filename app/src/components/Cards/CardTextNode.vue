@@ -67,11 +67,11 @@ const elementStyle = computed((): CSSProperties => ({
 		}
 
 		&.size-l {
-			font-size: 2em;
+			font-size: 2.25em;
 		}
 
 		&.size-xl {
-			font-size: 2.25em;
+			font-size: 2.75em;
 		}
 	}
 
