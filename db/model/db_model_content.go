@@ -11,16 +11,16 @@ import (
 	"github.com/google/uuid"
 )
 
-type DeckVersionContent struct {
+type CardDeckVersionContent struct {
 	Summary ContentSummary `json:"summary"`
 	Cards   []CardNode     `json:"cards"`
 }
 
-func (content DeckVersionContent) Value() (driver.Value, error) {
+func (content CardDeckVersionContent) Value() (driver.Value, error) {
 	return json.Marshal(content)
 }
 
-func (content *DeckVersionContent) Scan(src any) error {
+func (content *CardDeckVersionContent) Scan(src any) error {
 	switch src := src.(type) {
 	case []byte:
 		return json.Unmarshal(src, content)

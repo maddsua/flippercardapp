@@ -207,7 +207,7 @@ func (model *CardDeckVersionMeta) FromRow(row db_gen.DeckVersion) {
 
 type CardDeckVersion struct {
 	CardDeckVersionMetaBase
-	Content db_model.DeckVersionContent `json:"content"`
+	Content db_model.CardDeckVersionContent `json:"content"`
 }
 
 func (model *CardDeckVersion) FromRow(row db_gen.DeckVersion) {

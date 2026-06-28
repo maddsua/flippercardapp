@@ -111,6 +111,10 @@ export interface CardDeckVersionMeta extends CardDeckVersionMetaBase {
 	summary?: ContentSummary | null;
 };
 
+export interface CardDeckVersionContent extends CardDeckContent {
+	summary: ContentSummary;
+};
+
 export interface CardDeckVersion extends CardDeckVersionMetaBase {
-	content: CardDeckContent;
+	content: CardDeckVersionContent;
 };

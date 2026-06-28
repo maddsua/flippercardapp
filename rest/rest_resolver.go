@@ -530,7 +530,7 @@ func (rslv *resolver) CreateCardDeck(ctx context.Context, params model.CardDeckP
 
 	result := db_pkg.TransformRow[model.CardDeckMeta](deck)
 
-	version, err := rslv.addDeckVersion(ctx, &tx.Queries, deck.ID, "Deck created", db_model.DeckVersionContent{
+	version, err := rslv.addDeckVersion(ctx, &tx.Queries, deck.ID, "Deck created", db_model.CardDeckVersionContent{
 		Summary: *params.Summary,
 		Cards:   params.Content.Cards,
 	})
@@ -549,7 +549,7 @@ func (rslv *resolver) CreateCardDeck(ctx context.Context, params model.CardDeckP
 	return &result, nil
 }
 
-func (rslv *resolver) addDeckVersion(ctx context.Context, tx *db_gen.Queries, deckID uuid.UUID, label string, content db_model.DeckVersionContent) (db_gen.DeckVersion, error) {
+func (rslv *resolver) addDeckVersion(ctx context.Context, tx *db_gen.Queries, deckID uuid.UUID, label string, content db_model.CardDeckVersionContent) (db_gen.DeckVersion, error) {
 
 	entry, err := tx.InsertDeckVersion(ctx, db_gen.InsertDeckVersionParams{
 		ID:        uuid.New(),
@@ -622,8 +622,8 @@ func (rslv *resolver) UpdateCardDeck(ctx context.Context, deckID uuid.UUID, para
 		}
 	}
 
-	contentVersionParams := sql.Null[db_model.DeckVersionContent]{
-		V: db_model.DeckVersionContent{
+	contentVersionParams := sql.Null[db_model.CardDeckVersionContent]{
+		V: db_model.CardDeckVersionContent{
 			Summary: db_model.ContentSummary{
 				Name:        deck.Name,
 				Description: deck.Description.String,

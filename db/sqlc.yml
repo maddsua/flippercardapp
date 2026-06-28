@@ -38,7 +38,7 @@ sql:
           - db_type: "deck_version_content"
             go_type:
               import: "github.com/maddsua/flippercardapp/db/model"
-              type: "DeckVersionContent"
+              type: "CardDeckVersionContent"
           - db_type: "resource_visibility"
             go_type:
               import: "github.com/maddsua/flippercardapp/db/model"

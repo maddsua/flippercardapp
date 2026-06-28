@@ -37,7 +37,7 @@ type DeckVersion struct {
 	CreatedAt types.Time
 	DeckID    uuid.UUID
 	CardCount int64
-	Content   model.DeckVersionContent
+	Content   model.CardDeckVersionContent
 	Label     sql.NullString
 }
 

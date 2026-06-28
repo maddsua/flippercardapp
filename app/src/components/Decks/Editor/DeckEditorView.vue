@@ -467,6 +467,9 @@ const handleCardContentElementThemeUpdate = (opts: Partial<CardContentElementThe
 
 const applyPulledVersion = (version: CardDeckVersion) => {
 
+	state.content.summary.name = version.content.summary.name || state.content.summary.name;
+	state.content.summary.description = version.content.summary.description || state.content.summary.description;
+
 	state.content.cards = version.content.cards;
 	state.origin.updated = version.created;
 
@@ -812,11 +815,8 @@ onUnmounted(() => {
 					<DeckEditorMenuEntry label="Export deck" icon="io"
 						:disabled="!editorReady" @click="state.editor.modals.exporter = true" />
 
-					<DeckEditorMenuEntry label="Publish changes" icon="publish"
+					<DeckEditorMenuEntry label="Publish/update" icon="publish"
 						:disabled="!editorReady || !contentEdited" @click="state.editor.modals.publish = true" />
-
-					<DeckEditorMenuEntry label="Discard local changes" icon="broom"
-						:disabled="!editorReady || !contentEdited" @click="dropLocalChanges" />
 
 					<DeckEditorMenuEntry label="Discard all and exit" icon="cross"
 						:disabled="!editorReady || !contentEdited" @click="clearAndExitEditorPrompt" />
@@ -838,6 +838,9 @@ onUnmounted(() => {
 					<DeckEditorMenuEntry label="Redo" icon="redo"
 						:disabled="!editorReady || !historyCanRedo"
 						@click="editorHistoryForward" />
+
+					<DeckEditorMenuEntry label="Discard local changes" icon="broom"
+						:disabled="!editorReady || !contentEdited" @click="dropLocalChanges" />
 
 				</DeckEditorMenu>
 
