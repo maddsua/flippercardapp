@@ -23,7 +23,7 @@ const emit = defineEmits<{
 	(e: 'finish'): void;
 }>();
 
-const scoreFraction = computed(() => props.stats.score / props.stats.questions);
+const scoreFraction = computed(() => props.stats.score / props.stats.questions || 1);
 
 const time = computed(() => {
 
