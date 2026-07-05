@@ -2,8 +2,8 @@
 import { computed, nextTick, reactive, ref } from 'vue';
 import type { CardNode } from '@/content';
 import Card from '../Cards/Card.vue';
-import CardControls from '../Cards/CardControls.vue';
-import CardDeckInfo from '../Cards/CardDeckInfo.vue';
+import CardDeckControls from './CardDeckControls.vue';
+import CardDeckInfo from './CardDeckInfo.vue';
 import { appCanShareData, appShareData } from '@/share';
 import { useStorage } from '@/storage/storage';
 
@@ -249,7 +249,7 @@ const countScore = (score: number) => {
 			</div>
 		</div>
 
-		<CardControls v-if="showNavigation"
+		<CardDeckControls v-if="showNavigation"
 			:has_prev="activeIdx > 0"
 			:has_next="activeIdx < entries.length - 1"
 			@prev="navigateBack"

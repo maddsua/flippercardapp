@@ -23,7 +23,7 @@ const lang = useLanguage();
 	<div class="deck-info">
 
 		<div class="deck-progress">
-			<div v-for="idx of size" class="marker" :class="{ filled: idx <= index + 1 }"></div>
+			<div v-for="idx of size" class="marker" :class="{ filled: idx < index + 1 }"></div>
 		</div>
 
 		<div class="details-row">
