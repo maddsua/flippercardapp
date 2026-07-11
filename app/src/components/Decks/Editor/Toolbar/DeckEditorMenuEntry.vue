@@ -2,7 +2,7 @@
 
 const props = defineProps<{
 	label: string;
-	icon?: 'play' | 'publish' | 'delete' | 'exit' | 'history' | 'cross' | 'broom' | 'info' | 'io' | 'undo' | 'redo' | 'keyboard' | 'add-title' | 'add-text' | 'add-image' | 'add-poll';
+	icon?: 'play' | 'publish' | 'delete' | 'exit' | 'history' | 'cross' | 'broom' | 'info' | 'io' | 'undo' | 'redo' | 'keyboard' | 'add-title' | 'add-text' | 'add-image' | 'add-poll' | 'copy';
 	disabled?: boolean;
 }>();
 
@@ -123,6 +123,10 @@ const props = defineProps<{
 
 			&.add-poll {
 				mask-image: url(/src/assets/icons/add-poll-color.svg);
+			}
+
+			&.copy {
+				mask-image: url(/src/assets/icons/copy-mask.svg);
 			}
 		}
 	}

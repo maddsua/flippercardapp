@@ -296,7 +296,7 @@ const applyEditorHistoryVersion = (version: ResumableState) => {
 	nextTick(() => state.editor.ready = ready);
 };
 
-const autosaveStateSnapshot = () => {
+const queueStateSnapshot = () => {
 
 	if (!state.editor.ready || state.editor.snapshots.lock) {
 		return;
@@ -348,6 +348,7 @@ const restoreStateSnapshot = async () => {
 
 	state.origin.created = latest.origin.created;
 	state.origin.updated = new Date().toISOString();
+	state.origin.collectionID = latest.origin.collectionID || state.origin.collectionID;
 
 	state.content = latest.content;
 	state.editor.view.cardIdx = latest.editor.view.cardIdx;
@@ -415,7 +416,7 @@ const watchContentEdits = () => {
 		}
 
 		state.editor.changes.meta = true;
-		autosaveStateSnapshot();
+		queueStateSnapshot();
 
 	}, { deep: true });
 
@@ -426,7 +427,7 @@ const watchContentEdits = () => {
 		}
 
 		state.editor.changes.summary = true;
-		autosaveStateSnapshot();
+		queueStateSnapshot();
 
 	}, { deep: true });
 
@@ -437,13 +438,13 @@ const watchContentEdits = () => {
 		}
 
 		state.editor.changes.cards = true;
-		autosaveStateSnapshot();
+		queueStateSnapshot();
 
 	}, { deep: true });
 };
 
-const updateAppTitle = () => {
-	watch(() => state.content.meta.summary.name, (name) => appSetTitle(`${name || 'Unnamed'} | Deck editor`), { immediate: true });
+const updateAppTitle = (name?: string) => {
+	appSetTitle(`${name || state.content.meta.summary.name || 'Unnamed'} | Deck editor`);
 };
 
 const patchDeckSummary = (patch: ContentSummary) => {
@@ -570,6 +571,31 @@ const deleteDeckAndExit = async () => {
 	await clearAndExitEditor();
 };
 
+const duplicateDeck = async () => {
+
+	const { collectionID } = state.origin;
+
+	if (!collectionID) {
+		console.error('Unable to duplicate a deck without a related collection ID');
+		return;
+	}
+
+	state.origin.deckID = null;
+	state.origin.created = new Date().toISOString();
+	state.origin.updated = state.origin.created;
+
+	router.push(`/decks/editor?collection_id=${collectionID}`);
+
+	queueStateSnapshot();
+
+	//	ideally this should be handled by nextTick, but it doesn't fucking work,
+	//	as per usual in the world of javascript
+	setTimeout(() => {
+		const { name } = state.content.meta.summary;
+		updateAppTitle(name ? `Copy of ${name}` : 'Edit copy');
+	}, 250);
+};
+
 const openPlayView = () => {
 	if (!state.origin.deckID) {
 		return;
@@ -611,22 +637,26 @@ const registerShortcuts = () => {
 		{
 			title: 'Import deck file',
 			ctrl: true, key: 'i',
-			action: () => editorReady.value && !modalsOpen.value ? state.editor.modals.importer = true : void 0,
+			action: () => editorReady.value && !modalsOpen.value ?
+				state.editor.modals.importer = true : void 0,
 		},
 		{
 			title: 'Export deck file',
 			ctrl: true, key: 'e',
-			action: () => editorReady.value && !modalsOpen.value ? state.editor.modals.exporter = true : void 0,
+			action: () => editorReady.value && !modalsOpen.value ?
+				state.editor.modals.exporter = true : void 0,
 		},
 		{
 			title: 'Show deck version history',
 			ctrl: true, key: 'h',
-			action: () => editorReady.value && !modalsOpen.value ? state.editor.modals.versions = true : void 0,
+			action: () => editorReady.value && !modalsOpen.value && deckPublished.value ?
+				state.editor.modals.versions = true : void 0,
 		},
 		{
 			title: 'Play deck',
 			ctrl: true, key: 'p',
-			action: () => editorReady.value && deckPublished.value ? openPlayView() : void 0,
+			action: () => editorReady.value && deckPublished.value ?
+				openPlayView() : void 0,
 		},
 		{
 			title: 'Focus the front card side',
@@ -687,7 +717,8 @@ const registerShortcuts = () => {
 
 onMounted(async () => {
 
-	updateAppTitle();
+	watch(() => state.content.meta.summary.name, updateAppTitle, { immediate: true });
+
 	watchContentEdits();
 	registerShortcuts();
 
@@ -830,7 +861,7 @@ onUnmounted(() => {
 						:disabled="!editorReady" @click="state.editor.modals.details = true" />
 
 					<DeckEditorMenuEntry label="Versions" icon="history"
-						:disabled="!editorReady" @click="state.editor.modals.versions = true" />
+						:disabled="!editorReady || !deckPublished" @click="state.editor.modals.versions = true" />
 
 					<DeckEditorMenuEntry label="Import deck" icon="io"
 						:disabled="!editorReady" @click="state.editor.modals.importer = true" />
@@ -841,11 +872,14 @@ onUnmounted(() => {
 					<DeckEditorMenuEntry label="Publish/update" icon="publish"
 						:disabled="!editorReady || !contentEdited" @click="state.editor.modals.publish = true" />
 
+					<DeckEditorMenuEntry label="Duplicate deck" icon="copy"
+						:disabled="!editorReady || !deckPublished" @click="duplicateDeck" />
+
 					<DeckEditorMenuEntry label="Discard all and exit" icon="cross"
 						:disabled="!editorReady || !contentEdited" @click="clearAndExitEditorPrompt" />
 
 					<DeckEditorMenuEntry label="Delete deck" icon="delete"
-						:disabled="!editorReady" @click="deleteDeckAndExit" />
+						:disabled="!editorReady || !deckPublished" @click="deleteDeckAndExit" />
 
 					<DeckEditorMenuEntry label="Exit" icon="exit"
 						@click="saveAndExitEditor" />

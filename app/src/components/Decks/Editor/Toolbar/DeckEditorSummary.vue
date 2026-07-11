@@ -60,7 +60,8 @@ const nameInvalid = computed(() => !props.meta.summary.name.trim().length);
 			flex-flow: row nowrap;
 			align-items: center;
 			width: 100%;
-			gap: 0.5rem;
+			gap: 0.25rem;
+			padding: 0 0.25rem;
 		}
 
 		input {
