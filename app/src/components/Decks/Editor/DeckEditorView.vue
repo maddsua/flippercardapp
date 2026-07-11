@@ -595,6 +595,8 @@ const duplicateDeck = async () => {
 	//	ideally this should be handled by nextTick, but it doesn't fucking work,
 	//	as per usual in the world of javascript
 	setTimeout(updateAppTitle, 250);
+
+	state.editor.changes.meta = true;
 };
 
 const openPlayView = () => {
