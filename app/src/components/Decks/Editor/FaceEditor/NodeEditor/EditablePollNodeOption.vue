@@ -14,7 +14,7 @@ const emit = defineEmits<{
 
 <template>
 	<div class="poll-option-editor">
-		<button type="button" class="check" :class="{ checked }" @click="emit('check')"></button>
+		<button type="button" class="chech-marker" :class="{ checked }" @click="emit('check')"></button>
 		<input type="text" placeholder="Option value" v-model="model" />
 		<button type="button" class="remove" @click="emit('remove')"></button>
 	</div>
@@ -72,15 +72,20 @@ const emit = defineEmits<{
 				mask-image: url(/src/assets/icons/delete-mask.svg);
 			}
 
-			&.check {
+			&.chech-marker {
 				border: 2px solid white;
 				border-radius: 100%;
 
 				&.checked {
-					border-color: var(--app-theme-irish-green);
-					background-color: var(--app-theme-irish-green);
+					border-color: transparent;
+					background-color: var(--app-theme-sporty-yellow);
 					opacity: 1;
 					cursor: default;
+					mask-type: alpha;
+					mask-image: url(/src/assets/icons/star-filled-mask.svg);
+					mask-size: contain;
+					mask-repeat: no-repeat;
+					mask-position: center;
 				}
 			}
 		}
