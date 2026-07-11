@@ -124,8 +124,6 @@ const emit = defineEmits<{
 		&.autosave {
 			height: fit-content;
 			padding: 0.25rem;
-			width: 8rem;
-			overflow: hidden;
 		}
 	}
 
