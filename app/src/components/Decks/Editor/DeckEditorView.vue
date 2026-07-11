@@ -632,7 +632,7 @@ const registerShortcuts = () => {
 		{
 			title: 'Publish deck changes',
 			ctrl: true, key: 'u',
-			action: () => editorReady.value && contentEdited.value && !modalsOpen.value ?
+			action: () => editorReady.value && !modalsOpen.value ?
 				state.editor.modals.publish = true : void 0,
 		},
 		{
@@ -871,7 +871,7 @@ onUnmounted(() => {
 						:disabled="!editorReady" @click="state.editor.modals.exporter = true" />
 
 					<DeckEditorMenuEntry label="Publish/update" icon="publish"
-						:disabled="!editorReady || !contentEdited" @click="state.editor.modals.publish = true" />
+						:disabled="!editorReady" @click="state.editor.modals.publish = true" />
 
 					<DeckEditorMenuEntry label="Duplicate deck" icon="copy"
 						:disabled="!editorReady || !deckPublished" @click="duplicateDeck" />
