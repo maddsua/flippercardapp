@@ -443,8 +443,12 @@ const watchContentEdits = () => {
 	}, { deep: true });
 };
 
-const updateAppTitle = (name?: string) => {
-	appSetTitle(`${name || state.content.meta.summary.name || 'Unnamed'} | Deck editor`);
+const updateAppTitle = () => {
+
+	const name = state.content.meta.summary.name || 'Unnamed';
+	const title = deckPublished.value ? name : `Draft: ${name}`;
+
+	appSetTitle(`${title} | Deck editor`);
 };
 
 const patchDeckSummary = (patch: ContentSummary) => {
@@ -590,10 +594,7 @@ const duplicateDeck = async () => {
 
 	//	ideally this should be handled by nextTick, but it doesn't fucking work,
 	//	as per usual in the world of javascript
-	setTimeout(() => {
-		const { name } = state.content.meta.summary;
-		updateAppTitle(name ? `Copy of ${name}` : 'Edit copy');
-	}, 250);
+	setTimeout(updateAppTitle, 250);
 };
 
 const openPlayView = () => {
@@ -876,7 +877,7 @@ onUnmounted(() => {
 						:disabled="!editorReady || !deckPublished" @click="duplicateDeck" />
 
 					<DeckEditorMenuEntry label="Discard all and exit" icon="cross"
-						:disabled="!editorReady || !contentEdited" @click="clearAndExitEditorPrompt" />
+						:disabled="!editorReady" @click="clearAndExitEditorPrompt" />
 
 					<DeckEditorMenuEntry label="Delete deck" icon="delete"
 						:disabled="!editorReady || !deckPublished" @click="deleteDeckAndExit" />
