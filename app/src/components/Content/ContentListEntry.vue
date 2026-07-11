@@ -38,46 +38,46 @@ const showNewBadge = computed(() => {
 
 	<button type="button" class="content-list-entry" :class="{ 'badge-new': showNewBadge }" :style="{ backgroundColor: themeColor ?? undefined }">
 
-		<div class="row-group">
+		<div class="summary-group">
 
 			<div class="entry-title">
 				{{ title }}
 			</div>
 
-			<div v-if="starred || starrable || visibility || score || completion || cardCount || deckCount" class="entry-badges">
-
-				<ContentEntryBadge v-if="completion" icon="completion">
-					{{ completion.toFixed(0) }}%
-				</ContentEntryBadge>
-
-				<ContentEntryBadge v-if="score" icon="score">
-					{{ score.toFixed(0) }}%
-				</ContentEntryBadge>
-
-				<ContentEntryBadge v-if="cardCount" icon="cards">
-					{{ cardCount.toFixed(0) }}
-				</ContentEntryBadge>
-
-				<ContentEntryBadge v-if="deckCount" icon="decks">
-					{{ deckCount.toFixed(0) }}
-				</ContentEntryBadge>
-
-				<template v-if="visibility">
-					<ContentEntryBadge v-if="visibility === 'PRIVATE'" icon="lock" />
-					<ContentEntryBadge v-else-if="visibility === 'HIDDEN'" icon="link" />
-				</template>
-
-				<template v-if="starred || starrable">
-					<ContentEntryBadge v-if="starred" icon="star-filled" />
-					<ContentEntryBadge v-else icon="star" />
-				</template>
-
+			<div v-if="summary" class="entry-summary">
+				{{ summary }}
 			</div>
 
 		</div>
 
-		<div v-if="summary" class="entry-summary">
-			{{ summary }}
+		<div v-if="starred || starrable || visibility || score || completion || cardCount || deckCount" class="entry-badges">
+
+			<ContentEntryBadge v-if="completion" icon="completion">
+				{{ completion.toFixed(0) }}%
+			</ContentEntryBadge>
+
+			<ContentEntryBadge v-if="score" icon="score">
+				{{ score.toFixed(0) }}%
+			</ContentEntryBadge>
+
+			<ContentEntryBadge v-if="cardCount" icon="cards">
+				{{ cardCount.toFixed(0) }}
+			</ContentEntryBadge>
+
+			<ContentEntryBadge v-if="deckCount" icon="decks">
+				{{ deckCount.toFixed(0) }}
+			</ContentEntryBadge>
+
+			<template v-if="visibility">
+				<ContentEntryBadge v-if="visibility === 'PRIVATE'" icon="lock" />
+				<ContentEntryBadge v-else-if="visibility === 'HIDDEN'" icon="link" />
+			</template>
+
+			<template v-if="starred || starrable">
+				<ContentEntryBadge v-if="starred" icon="star-filled" />
+				<ContentEntryBadge v-else icon="star" />
+			</template>
+
 		</div>
 
 	</button>
@@ -94,7 +94,7 @@ const showNewBadge = computed(() => {
 		display: flex;
 		flex-direction: column;
 		align-items: start;
-		gap: 0.25rem;
+		gap: 0.5rem;
 		width: 100%;
 		padding: 1rem 1.5rem;
 		border: none;
@@ -136,24 +136,23 @@ const showNewBadge = computed(() => {
 			box-shadow: 0 0 0.5rem rgba(0, 0, 0, 0.25);
 		}
 
-		.row-group {
+		.summary-group {
 			display: flex;
-			flex-flow: row nowrap;
+			flex-direction: column;
 			align-items: start;
-			width: 100%;
-			gap: 1rem;
-		}
+			gap: 0.125rem;
 
-		.entry-title {
-			font-size: 1rem;
-			font-weight: 600;
-			width: 100%;
-		}
+			.entry-title {
+				font-size: 1rem;
+				font-weight: 600;
+				width: 100%;
+			}
 
-		.entry-summary {
-			font-size: 0.85rem;
-			font-weight: 400;
-			width: 100%;
+			.entry-summary {
+				font-size: 0.85rem;
+				font-weight: 400;
+				width: 100%;
+			}
 		}
 
 		.entry-badges {
