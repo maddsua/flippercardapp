@@ -14,6 +14,7 @@ import InputLabel from '@/components/App/Inputs/InputLabel.vue';
 import InputRow from '@/components/App/Inputs/InputRow.vue';
 import CollectionFormHeader from './CollectionFormHeader.vue';
 import CollectionFormWrapper from './CollectionFormWrapper.vue';
+import CollectionColorSwatch from './CollectionColorSwatch.vue';
 
 const client = useClient();
 const router = useRouter();
@@ -23,6 +24,7 @@ const state = reactive({
 		name: '',
 		description: '',
 		visibility: 'HIDDEN' as ResourceVisibility,
+		theme_color: null as string | null,
 	},
 	error: null as string | null,
 });
@@ -86,6 +88,16 @@ const openCollection = (id: string) => {
 				</template>
 
 				<GenericInput type="text" variant="borderless" placeholder="Describe the purpose of this collection" v-model="state.inputs.description" />
+
+			</InputLabel>
+
+			<InputLabel>
+
+				<template v-slot:label>
+					Color theme
+				</template>
+
+				<CollectionColorSwatch v-model="state.inputs.theme_color" />
 
 			</InputLabel>
 

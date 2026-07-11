@@ -100,6 +100,7 @@ const lang = useLanguage();
 				:starred="true"
 				:deckCount="item.size"
 				:completion="item.completion"
+				:themeColor="item.theme_color"
 				@click="openCollection(item.id)" />
 		</ContentList>
 

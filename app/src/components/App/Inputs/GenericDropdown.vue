@@ -72,7 +72,6 @@ onUnmounted(() => {
 <style lang="scss" scoped>
 .dropdown {
 	position: relative;
-	z-index: 1;
 	width: 100%;
 
 	.dropdown-header {
@@ -124,12 +123,14 @@ onUnmounted(() => {
 
 	.options-attach {
 		position: absolute;
+		z-index: 10;
 		bottom: -0.5rem;
 		left: 0;
 		width: 100%;
 
 		.option-list {
 			position: absolute;
+			z-index: 1;
 			top: 0;
 			left: 0;
 			width: 100%;

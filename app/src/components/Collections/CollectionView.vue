@@ -224,6 +224,7 @@ onMounted(async () => {
 				:cardCount="item.size"
 				:starred="item.starred"
 				:score="item.score"
+				:themeColor="item.collection_theme_color"
 				@click="openEntry(item.id)"  />
 		</ContentList>
 

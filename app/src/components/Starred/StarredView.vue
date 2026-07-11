@@ -86,6 +86,7 @@ const openDeck = (id: string) => {
 				:starred="true"
 				:cardCount="item.size"
 				:score="item.score"
+				:themeColor="item.collection_theme_color"
 				@click="openDeck(item.id)" />
 		</ContentList>
 

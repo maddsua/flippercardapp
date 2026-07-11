@@ -21,7 +21,7 @@ import (
 	db_pkg "github.com/maddsua/flippercardapp/db"
 	db_gen "github.com/maddsua/flippercardapp/db/generated"
 	db_model "github.com/maddsua/flippercardapp/db/model"
-	"github.com/maddsua/flippercardapp/db/types"
+	db_types "github.com/maddsua/flippercardapp/db/types"
 	"github.com/maddsua/flippercardapp/rest/model"
 
 	"github.com/maddsua/flippercardapp/utils"
@@ -59,7 +59,7 @@ func (rslv *resolver) LoadCardDeck(ctx context.Context, deckID uuid.UUID) (*mode
 	if version, err := rslv.getDeckLatestVersion(ctx, &rslv.db.Queries, deck.ID, deck.LatestVersionID); err != nil {
 		return nil, err
 	} else if version.Valid {
-		result.VersionID = types.NewNullUUID(version.V.ID)
+		result.VersionID = db_types.NewNullUUID(version.V.ID)
 		result.Cards = version.V.Content.Cards
 		result.Size = int(version.V.CardCount)
 	}
@@ -149,7 +149,7 @@ func (rslv *resolver) DeleteCardDeckVersion(ctx context.Context, deckID uuid.UUI
 	defer tx.Rollback()
 
 	version, err := tx.GetDeckVersion(ctx, db_gen.GetDeckVersionParams{
-		DeckID:    types.NewNullUUID(deckID),
+		DeckID:    db_types.NewNullUUID(deckID),
 		VersionID: versionID,
 	})
 
@@ -187,7 +187,7 @@ func (rslv *resolver) LoadCardDeckVersion(ctx context.Context, deckID uuid.UUID,
 		return nil, err
 	}
 
-	entry, err := rslv.db.GetDeckVersion(ctx, db_gen.GetDeckVersionParams{DeckID: types.NewNullUUID(deckID), VersionID: versionID})
+	entry, err := rslv.db.GetDeckVersion(ctx, db_gen.GetDeckVersionParams{DeckID: db_types.NewNullUUID(deckID), VersionID: versionID})
 	if db_pkg.IsNull(err) {
 		return nil, &model.Error{Message: "Version not found", Code: http.StatusNotFound}
 	} else if err != nil {
@@ -201,7 +201,7 @@ func (rslv *resolver) LoadCardDeckVersion(ctx context.Context, deckID uuid.UUID,
 func (rslv *resolver) ListCardDeckBatch(ctx context.Context, ids uuid.UUIDs, page PagePointers) (*Page[model.CardDeckMeta], error) {
 
 	entries, err := rslv.db.GetDecksBatch(ctx, db_gen.GetDecksBatchParams{
-		IdsSet:        types.NewNullUUIDs(ids),
+		IdsSet:        db_types.NewNullUUIDs(ids),
 		VisibilitySet: ResourceVisibilityFilter(ctx, ids),
 		Limit:         page.QueryLimit(),
 		Offset:        page.QueryOffset(),
@@ -226,7 +226,7 @@ func (rslv *resolver) LoadCollection(ctx context.Context, collectionID uuid.UUID
 	}
 
 	decks, err := rslv.db.GetDecksBatch(ctx, db_gen.GetDecksBatchParams{
-		CollectionID:  types.NewNullUUID(collection.ID),
+		CollectionID:  db_types.NewNullUUID(collection.ID),
 		VisibilitySet: ResourceVisibilityFilter(ctx, nil),
 		Limit:         math.MaxInt32,
 	})
@@ -252,7 +252,7 @@ func (rslv *resolver) LoadCollection(ctx context.Context, collectionID uuid.UUID
 func (rslv *resolver) ListCollectionsBatch(ctx context.Context, ids uuid.UUIDs, page PagePointers) (*Page[model.CollectionMeta], error) {
 
 	entries, err := rslv.db.GetCollectionBatch(ctx, db_gen.GetCollectionBatchParams{
-		IdsSet:        types.NewNullUUIDs(ids),
+		IdsSet:        db_types.NewNullUUIDs(ids),
 		VisibilitySet: ResourceVisibilityFilter(ctx, ids),
 		Limit:         page.QueryLimit(),
 		Offset:        page.QueryOffset(),
@@ -274,7 +274,7 @@ func (rslv *resolver) SearchCollections(ctx context.Context, term string, page P
 	}
 
 	entries, err := rslv.db.GetCollectionBatch(ctx, db_gen.GetCollectionBatchParams{
-		IdsSet: types.NewNullUUIDs(UnwrapSearchIndex(matchIndex, page)),
+		IdsSet: db_types.NewNullUUIDs(UnwrapSearchIndex(matchIndex, page)),
 		Limit:  page.QueryLimit(),
 	})
 
@@ -368,10 +368,10 @@ func (rslv *resolver) CreateContentCollection(ctx context.Context, params model.
 
 	entry, err := tx.InsertCollection(ctx, db_gen.InsertCollectionParams{
 		ID:          uuid.New(),
-		CreatedAt:   types.NewTime(time.Now()),
-		UpdatedAt:   types.NewTime(time.Now()),
+		CreatedAt:   db_types.NewTime(time.Now()),
+		UpdatedAt:   db_types.NewTime(time.Now()),
 		Name:        params.Name,
-		Description: types.NewNullString(params.Description),
+		Description: db_types.NewNullString(params.Description),
 		Visibility:  params.Visibility,
 	})
 
@@ -425,9 +425,10 @@ func (rslv *resolver) UpdateContentCollection(ctx context.Context, collectionID 
 	if entry, err = tx.UpdateCollection(ctx, db_gen.UpdateCollectionParams{
 		ID:          collectionID,
 		Name:        params.Name,
-		Description: types.NewNullString(params.Description),
+		Description: db_types.NewNullString(params.Description),
 		Visibility:  params.Visibility,
-		UpdatedAt:   types.NewTime(time.Now()),
+		UpdatedAt:   db_types.NewTime(time.Now()),
+		ThemeColor:  db_types.NewNullString(params.ThemeColor),
 	}); err != nil {
 		return nil, InternalError("sqlc.UpdateCollection", err)
 	}
@@ -507,7 +508,7 @@ func (rslv *resolver) CreateCardDeck(ctx context.Context, params model.CardDeckP
 	defer tx.Rollback()
 
 	if affected, err := tx.UpdateCollectionMtime(ctx, db_gen.UpdateCollectionMtimeParams{
-		UpdatedAt: types.NewTime(time.Now()),
+		UpdatedAt: db_types.NewTime(time.Now()),
 		ID:        params.CollectionID.UUID,
 	}); err != nil {
 		return nil, InternalError("sqlc.UpdateCollectionMtime", err)
@@ -518,10 +519,10 @@ func (rslv *resolver) CreateCardDeck(ctx context.Context, params model.CardDeckP
 	deck, err := tx.InsertDeck(ctx, db_gen.InsertDeckParams{
 		ID:           uuid.New(),
 		CollectionID: params.CollectionID.UUID,
-		CreatedAt:    types.NewTime(time.Now()),
-		UpdatedAt:    types.NewTime(time.Now()),
+		CreatedAt:    db_types.NewTime(time.Now()),
+		UpdatedAt:    db_types.NewTime(time.Now()),
 		Name:         params.Summary.Name,
-		Description:  types.NewNullString(params.Summary.Description),
+		Description:  db_types.NewNullString(params.Summary.Description),
 		Visibility:   db_model.ResourceVisibilityFromPtr(params.Visibility),
 	})
 
@@ -540,7 +541,7 @@ func (rslv *resolver) CreateCardDeck(ctx context.Context, params model.CardDeckP
 		return nil, err
 	}
 
-	result.VersionID = types.NewNullUUID(version.ID)
+	result.VersionID = db_types.NewNullUUID(version.ID)
 	result.Size = len(version.Content.Cards)
 
 	if err := tx.Commit(); err != nil {
@@ -554,11 +555,11 @@ func (rslv *resolver) addDeckVersion(ctx context.Context, tx *db_gen.Queries, de
 
 	entry, err := tx.InsertDeckVersion(ctx, db_gen.InsertDeckVersionParams{
 		ID:        uuid.New(),
-		CreatedAt: types.NewTime(time.Now()),
+		CreatedAt: db_types.NewTime(time.Now()),
 		DeckID:    deckID,
 		CardCount: int64(len(content.Cards)),
 		Content:   content,
-		Label:     types.NewNullString(label),
+		Label:     db_types.NewNullString(label),
 	})
 	if err != nil {
 		return db_gen.DeckVersion{}, InternalError("sqlc.InsertDeckVersion", err)
@@ -566,8 +567,8 @@ func (rslv *resolver) addDeckVersion(ctx context.Context, tx *db_gen.Queries, de
 
 	if _, err = tx.SetDeckLatestVersion(ctx, db_gen.SetDeckLatestVersionParams{
 		DeckID:          entry.DeckID,
-		UpdatedAt:       types.NewNullTime(time.Now()),
-		LatestVersionID: types.NewNullUUID(entry.ID),
+		UpdatedAt:       db_types.NewNullTime(time.Now()),
+		LatestVersionID: db_types.NewNullUUID(entry.ID),
 	}); err != nil {
 		return db_gen.DeckVersion{}, InternalError("sqlc.SetDeckLatestVersion", err)
 	}
@@ -600,7 +601,7 @@ func (rslv *resolver) UpdateCardDeck(ctx context.Context, deckID uuid.UUID, para
 		V: db_gen.UpdateDeckMetadataParams{
 			ID:           deckID,
 			CollectionID: deck.CollectionID,
-			UpdatedAt:    types.NewTime(time.Now()),
+			UpdatedAt:    db_types.NewTime(time.Now()),
 			Name:         deck.Name,
 			Description:  deck.Description,
 			Visibility:   deck.Visibility,
@@ -614,7 +615,7 @@ func (rslv *resolver) UpdateCardDeck(ctx context.Context, deckID uuid.UUID, para
 		metaPatchParams.V.CollectionID = params.CollectionID.UUID
 
 		if affected, err := tx.UpdateCollectionMtime(ctx, db_gen.UpdateCollectionMtimeParams{
-			UpdatedAt: types.NewTime(time.Now()),
+			UpdatedAt: db_types.NewTime(time.Now()),
 			ID:        params.CollectionID.UUID,
 		}); err != nil {
 			return nil, InternalError("sqlc.UpdateCollectionMtime", err)
@@ -640,7 +641,7 @@ func (rslv *resolver) UpdateCardDeck(ctx context.Context, deckID uuid.UUID, para
 
 		metaPatchParams.Valid = true
 		metaPatchParams.V.Name = params.Summary.Name
-		metaPatchParams.V.Description = types.NewNullString(params.Summary.Description)
+		metaPatchParams.V.Description = db_types.NewNullString(params.Summary.Description)
 
 		contentVersionParams.V.Summary = db_model.ContentSummary{
 			Name:        params.Summary.Name,
@@ -687,7 +688,7 @@ func (rslv *resolver) UpdateCardDeck(ctx context.Context, deckID uuid.UUID, para
 			return nil, err
 		}
 
-		result.VersionID = types.NewNullUUID(version.ID)
+		result.VersionID = db_types.NewNullUUID(version.ID)
 		result.Size = len(version.Content.Cards)
 	}
 
@@ -784,7 +785,7 @@ func (rslv *resolver) UploadImage(ctx context.Context, name string, reader io.Re
 
 	entry, err := rslv.db.InsertImage(ctx, db_gen.InsertImageParams{
 		ID:               utils.NewRandomBase64Token(64),
-		CreatedAt:        types.NewTime(time.Now()),
+		CreatedAt:        db_types.NewTime(time.Now()),
 		Mimetype:         "image/webp",
 		SourceName:       name,
 		SourceSha512Hash: sourceHash.Sum(nil),

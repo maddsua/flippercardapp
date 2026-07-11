@@ -5,9 +5,11 @@ where id = sqlc.arg(id);
 -- name: GetDecksBatch :many
 select
 	distinct decks.*,
-	deck_versions.card_count as size
+	deck_versions.card_count as size,
+	collections.theme_color as collection_theme_color
 from decks
 	left join deck_versions on deck_versions.id = decks.latest_version_id
+	left join collections on collections.id = decks.collection_id
 where (sqlc.narg(ids_set) is null or decks.id in (
 	select value from json_each(sqlc.narg(ids_set))
 )) and (decks.collection_id = sqlc.narg(collection_id)
@@ -94,7 +96,8 @@ set
 	updated_at = sqlc.arg(updated_at),
 	name = sqlc.arg(name),
 	description = sqlc.arg(description),
-	visibility = sqlc.arg(visibility)
+	visibility = sqlc.arg(visibility),
+	theme_color = sqlc.arg(theme_color)
 where id = sqlc.arg(id)
 returning *;
 

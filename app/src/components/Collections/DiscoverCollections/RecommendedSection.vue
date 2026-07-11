@@ -92,6 +92,7 @@ onMounted(async () => {
 				:starred="item.starred"
 				:deckCount="item.size"
 				:completion="item.score"
+				:themeColor="item.theme_color"
 				@click="emit('open', item)" />
 		</ContentList>
 

@@ -72,7 +72,8 @@ type ContentEntryMeta struct {
 
 type CollectionMeta struct {
 	ContentEntryMeta
-	Size int `json:"size"`
+	Size       int    `json:"size"`
+	ThemeColor string `json:"theme_color,omitempty"`
 }
 
 func (model *CollectionMeta) FromRow(row db_gen.Collection) {
@@ -89,6 +90,8 @@ func (model *CollectionMeta) FromRow(row db_gen.Collection) {
 		Updated:    row.UpdatedAt.Time,
 		Visibility: row.Visibility,
 	}
+
+	model.ThemeColor = row.ThemeColor.String
 }
 
 func (model *CollectionMeta) FromBatchRow(row db_gen.GetCollectionBatchRow) {
@@ -107,6 +110,7 @@ func (model *CollectionMeta) FromBatchRow(row db_gen.GetCollectionBatchRow) {
 	}
 
 	model.Size = int(row.Size)
+	model.ThemeColor = row.ThemeColor.String
 }
 
 type CollectionSearchResult struct {
@@ -121,9 +125,10 @@ type Collection struct {
 
 type CardDeckMeta struct {
 	ContentEntryMeta
-	CollectionID uuid.UUID     `json:"collection_id"`
-	VersionID    uuid.NullUUID `json:"version_id"`
-	Size         int           `json:"size"`
+	CollectionID         uuid.UUID     `json:"collection_id"`
+	VersionID            uuid.NullUUID `json:"version_id"`
+	Size                 int           `json:"size"`
+	CollectionThemeColor string        `json:"collection_theme_color"`
 }
 
 func (model *CardDeckMeta) FromRow(row db_gen.Deck) {
@@ -164,6 +169,7 @@ func (model *CardDeckMeta) FromBatchRow(row db_gen.GetDecksBatchRow) {
 	model.VersionID = row.LatestVersionID
 
 	model.Size = int(row.Size.Int64)
+	model.CollectionThemeColor = row.CollectionThemeColor.String
 }
 
 type CardDeck struct {
@@ -224,6 +230,7 @@ func (model *CardDeckVersion) FromRow(row db_gen.DeckVersion) {
 type CollectionPatch struct {
 	db_model.ContentSummary
 	Visibility db_model.ResourceVisibility `json:"visibility"`
+	ThemeColor string                      `json:"theme_color"`
 }
 
 type CardDeckPatch struct {

@@ -124,6 +124,7 @@ const openCollection = async (id: string) => {
 						:starrable="true"
 						:starred="entry.starred"
 						:completion="entry.completion"
+						:themeColor="entry.theme_color"
 						@click="openCollection(entry.id)" />
 				</ContentList>
 

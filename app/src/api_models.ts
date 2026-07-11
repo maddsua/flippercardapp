@@ -13,6 +13,7 @@ export type ResourceVisibility = 'PRIVATE' | 'HIDDEN' | 'PUBLIC';
 
 export interface CollectionMeta extends ContentEntryMeta {
 	size: number;
+	theme_color?: string | null;
 };
 
 export interface CollectionSearchResult extends CollectionMeta {
@@ -23,6 +24,7 @@ export interface CardDeckMeta extends ContentEntryMeta {
 	collection_id: string;
 	version_id?: string | null;
 	size: number;
+	collection_theme_color?: string | null;
 };
 
 export interface CardDeckContent {
@@ -65,6 +67,7 @@ export interface SignInParams {
 
 export interface CollectionPatch extends ContentSummary {
 	visibility: ResourceVisibility;
+	theme_color?: string | null;
 };
 
 export interface CardDeckPatch {

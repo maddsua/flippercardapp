@@ -88,7 +88,7 @@ func (q *Queries) DeleteDeckVersion(ctx context.Context, arg DeleteDeckVersionPa
 
 const getCollectionBatch = `-- name: GetCollectionBatch :many
 select
-	collections.id, collections.created_at, collections.updated_at, collections.name, collections.description, collections.visibility,
+	collections.id, collections.created_at, collections.updated_at, collections.name, collections.description, collections.visibility, collections.theme_color,
 	count(decks.id) as size
 from collections
 	left join decks on decks.collection_id = collections.id
@@ -116,6 +116,7 @@ type GetCollectionBatchRow struct {
 	Name        string
 	Description sql.NullString
 	Visibility  model.ResourceVisibility
+	ThemeColor  sql.NullString
 	Size        int64
 }
 
@@ -140,6 +141,7 @@ func (q *Queries) GetCollectionBatch(ctx context.Context, arg GetCollectionBatch
 			&i.Name,
 			&i.Description,
 			&i.Visibility,
+			&i.ThemeColor,
 			&i.Size,
 		); err != nil {
 			return nil, err
@@ -156,7 +158,7 @@ func (q *Queries) GetCollectionBatch(ctx context.Context, arg GetCollectionBatch
 }
 
 const getCollectionById = `-- name: GetCollectionById :one
-select id, created_at, updated_at, name, description, visibility from collections
+select id, created_at, updated_at, name, description, visibility, theme_color from collections
 where id = ?1
 `
 
@@ -170,6 +172,7 @@ func (q *Queries) GetCollectionById(ctx context.Context, id uuid.UUID) (Collecti
 		&i.Name,
 		&i.Description,
 		&i.Visibility,
+		&i.ThemeColor,
 	)
 	return i, err
 }
@@ -328,9 +331,11 @@ func (q *Queries) GetDeckVersionsBatch(ctx context.Context, arg GetDeckVersionsB
 const getDecksBatch = `-- name: GetDecksBatch :many
 select
 	distinct decks.id, decks.collection_id, decks.created_at, decks.updated_at, decks.name, decks.description, decks.visibility, decks.latest_version_id,
-	deck_versions.card_count as size
+	deck_versions.card_count as size,
+	collections.theme_color as collection_theme_color
 from decks
 	left join deck_versions on deck_versions.id = decks.latest_version_id
+	left join collections on collections.id = decks.collection_id
 where (?1 is null or decks.id in (
 	select value from json_each(?1)
 )) and (decks.collection_id = ?2
@@ -352,15 +357,16 @@ type GetDecksBatchParams struct {
 }
 
 type GetDecksBatchRow struct {
-	ID              uuid.UUID
-	CollectionID    uuid.UUID
-	CreatedAt       types.Time
-	UpdatedAt       types.Time
-	Name            string
-	Description     sql.NullString
-	Visibility      model.ResourceVisibility
-	LatestVersionID uuid.NullUUID
-	Size            sql.NullInt64
+	ID                   uuid.UUID
+	CollectionID         uuid.UUID
+	CreatedAt            types.Time
+	UpdatedAt            types.Time
+	Name                 string
+	Description          sql.NullString
+	Visibility           model.ResourceVisibility
+	LatestVersionID      uuid.NullUUID
+	Size                 sql.NullInt64
+	CollectionThemeColor sql.NullString
 }
 
 func (q *Queries) GetDecksBatch(ctx context.Context, arg GetDecksBatchParams) ([]GetDecksBatchRow, error) {
@@ -388,6 +394,7 @@ func (q *Queries) GetDecksBatch(ctx context.Context, arg GetDecksBatchParams) ([
 			&i.Visibility,
 			&i.LatestVersionID,
 			&i.Size,
+			&i.CollectionThemeColor,
 		); err != nil {
 			return nil, err
 		}
@@ -460,7 +467,7 @@ insert into collections (
 	?4,
 	?5,
 	?6
-) returning id, created_at, updated_at, name, description, visibility
+) returning id, created_at, updated_at, name, description, visibility, theme_color
 `
 
 type InsertCollectionParams struct {
@@ -489,6 +496,7 @@ func (q *Queries) InsertCollection(ctx context.Context, arg InsertCollectionPara
 		&i.Name,
 		&i.Description,
 		&i.Visibility,
+		&i.ThemeColor,
 	)
 	return i, err
 }
@@ -689,9 +697,10 @@ set
 	updated_at = ?1,
 	name = ?2,
 	description = ?3,
-	visibility = ?4
-where id = ?5
-returning id, created_at, updated_at, name, description, visibility
+	visibility = ?4,
+	theme_color = ?5
+where id = ?6
+returning id, created_at, updated_at, name, description, visibility, theme_color
 `
 
 type UpdateCollectionParams struct {
@@ -699,6 +708,7 @@ type UpdateCollectionParams struct {
 	Name        string
 	Description sql.NullString
 	Visibility  model.ResourceVisibility
+	ThemeColor  sql.NullString
 	ID          uuid.UUID
 }
 
@@ -708,6 +718,7 @@ func (q *Queries) UpdateCollection(ctx context.Context, arg UpdateCollectionPara
 		arg.Name,
 		arg.Description,
 		arg.Visibility,
+		arg.ThemeColor,
 		arg.ID,
 	)
 	var i Collection
@@ -718,6 +729,7 @@ func (q *Queries) UpdateCollection(ctx context.Context, arg UpdateCollectionPara
 		&i.Name,
 		&i.Description,
 		&i.Visibility,
+		&i.ThemeColor,
 	)
 	return i, err
 }

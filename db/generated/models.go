@@ -19,6 +19,7 @@ type Collection struct {
 	Name        string
 	Description sql.NullString
 	Visibility  model.ResourceVisibility
+	ThemeColor  sql.NullString
 }
 
 type Deck struct {

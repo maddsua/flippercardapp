@@ -18,6 +18,7 @@ import Skeleton from '@/components/App/Messages/Skeleton.vue';
 import CollectionFormHeader from './CollectionFormHeader.vue';
 import CollectionFormWrapper from './CollectionFormWrapper.vue';
 import OverlayErrorMessage from '@/components/App/Messages/OverlayErrorMessage.vue';
+import CollectionColorSwatch from './CollectionColorSwatch.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -30,6 +31,7 @@ const state = reactive({
 		name: '',
 		description: '',
 		visibility: 'HIDDEN' as ResourceVisibility,
+		theme_color: null as string | null,
 	},
 	exporter: {
 		busy: false,
@@ -70,6 +72,7 @@ onMounted(async () => {
 		name: collection.name,
 		description: collection.description || '',
 		visibility: collection.visibility,
+		theme_color: collection.theme_color || null,
 	};
 });
 
@@ -194,6 +197,16 @@ const deleteCollection = async () => {
 				</template>
 
 				<GenericInput type="text" variant="borderless" placeholder="Describe the purpose of this collection" v-model="state.inputs.description" />
+
+			</InputLabel>
+
+			<InputLabel>
+
+				<template v-slot:label>
+					Color theme
+				</template>
+
+				<CollectionColorSwatch v-model="state.inputs.theme_color" />
 
 			</InputLabel>
 

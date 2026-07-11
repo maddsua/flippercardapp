@@ -14,6 +14,7 @@ const props = defineProps<{
 	deckCount?: number | null;
 	score?: number | null;
 	completion?: number | null;
+	themeColor?: string | null;
 }>();
 
 const newBadgeThreshold = 7 * 24 * 60 * 60 * 1000;
@@ -35,7 +36,7 @@ const showNewBadge = computed(() => {
 
 <template>
 
-	<button type="button" class="content-list-entry" :class="{ 'badge-new': showNewBadge }">
+	<button type="button" class="content-list-entry" :class="{ 'badge-new': showNewBadge }" :style="{ backgroundColor: themeColor ?? undefined }">
 
 		<div class="row-group">
 
@@ -111,7 +112,12 @@ const showNewBadge = computed(() => {
 		}
 
 		@include media.non-sticky-hover {
-			background-color: var(--app-theme-spooky-orange);
+			background-color: var(--app-theme-kinda-white) !important;
+			color: var(--app-theme-carbon) !important;
+
+			&:hover .entry-badges {
+				filter: invert(0.75);
+			}
 		}
 
 		&.badge-new::before {
@@ -155,6 +161,7 @@ const showNewBadge = computed(() => {
 			flex-flow: row nowrap;
 			flex-shrink: 0;
 			gap: 0.5rem;
+			color: var(--app-theme-kinda-white);
 		}
 	}
 
