@@ -507,6 +507,12 @@ func (rslv *resolver) CreateCardDeck(ctx context.Context, params model.CardDeckP
 	}
 	defer tx.Rollback()
 
+	if count, err := tx.DeckNameExists(ctx, db_gen.DeckNameExistsParams{Name: params.Summary.Name}); err != nil {
+		return nil, InternalError("sqlc.DeckNameExists", err)
+	} else if count != 0 {
+		return nil, &model.Error{Message: "A deck with the same name already exists"}
+	}
+
 	deck, err := tx.InsertDeck(ctx, db_gen.InsertDeckParams{
 		ID:           uuid.New(),
 		CollectionID: params.CollectionID.UUID,
@@ -631,6 +637,12 @@ func (rslv *resolver) UpdateCardDeck(ctx context.Context, deckID uuid.UUID, para
 
 		if err := params.Summary.Valid(); err != nil {
 			return nil, &model.Error{Message: fmt.Sprintf("Invalid deck summary: %v", err)}
+		}
+
+		if count, err := tx.DeckNameExists(ctx, db_gen.DeckNameExistsParams{Name: params.Summary.Name}); err != nil {
+			return nil, InternalError("sqlc.DeckNameExists", err)
+		} else if count != 0 {
+			return nil, &model.Error{Message: "A deck with the same name already exists"}
 		}
 
 		metaPatchParams.Valid = true

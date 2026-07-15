@@ -109,6 +109,11 @@ set content_updated_at = (
 )
 where id = sqlc.arg(id);
 
+-- name: DeckNameExists :one
+select count(1) from decks
+where lower(name) = lower(sqlc.arg(name))
+	and (id != sqlc.narg(deck_id) or sqlc.narg(deck_id) is null);
+
 -- name: UpdateCollectionChildrenVisibility :execrows
 update decks
 set visibility = sqlc.arg(new_visibility)

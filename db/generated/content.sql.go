@@ -42,6 +42,24 @@ func (q *Queries) CollectionSize(ctx context.Context, id uuid.UUID) (int64, erro
 	return count, err
 }
 
+const deckNameExists = `-- name: DeckNameExists :one
+select count(1) from decks
+where lower(name) = lower(?1)
+	and (id != ?2 or ?2 is null)
+`
+
+type DeckNameExistsParams struct {
+	Name   string
+	DeckID uuid.NullUUID
+}
+
+func (q *Queries) DeckNameExists(ctx context.Context, arg DeckNameExistsParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, deckNameExists, arg.Name, arg.DeckID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const deleteCollection = `-- name: DeleteCollection :execrows
 delete from collections
 where id = ?1
