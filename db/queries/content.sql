@@ -101,10 +101,12 @@ set
 where id = sqlc.arg(id)
 returning *;
 
--- name: UpdateCollectionMtime :execrows
+-- name: UpdateCollectionContentMtime :execrows
 update collections
-set
-	updated_at = sqlc.arg(updated_at)
+set content_updated_at = (
+	select max(created_at) from decks
+	where collection_id = sqlc.arg(id)
+)
 where id = sqlc.arg(id);
 
 -- name: UpdateCollectionChildrenVisibility :execrows
@@ -177,9 +179,10 @@ set
 where id = sqlc.arg(id)
 returning *;
 
--- name: DeleteDeck :execrows
+-- name: DeleteDeck :one
 delete from decks
-where id = sqlc.arg(id);
+where id = sqlc.arg(id)
+returning *;
 
 -- name: InsertImage :one
 insert into images (

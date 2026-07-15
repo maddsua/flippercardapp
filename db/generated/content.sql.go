@@ -55,17 +55,26 @@ func (q *Queries) DeleteCollection(ctx context.Context, id uuid.UUID) (int64, er
 	return result.RowsAffected()
 }
 
-const deleteDeck = `-- name: DeleteDeck :execrows
+const deleteDeck = `-- name: DeleteDeck :one
 delete from decks
 where id = ?1
+returning id, collection_id, created_at, updated_at, name, description, visibility, latest_version_id
 `
 
-func (q *Queries) DeleteDeck(ctx context.Context, id uuid.UUID) (int64, error) {
-	result, err := q.db.ExecContext(ctx, deleteDeck, id)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected()
+func (q *Queries) DeleteDeck(ctx context.Context, id uuid.UUID) (Deck, error) {
+	row := q.db.QueryRowContext(ctx, deleteDeck, id)
+	var i Deck
+	err := row.Scan(
+		&i.ID,
+		&i.CollectionID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Name,
+		&i.Description,
+		&i.Visibility,
+		&i.LatestVersionID,
+	)
+	return i, err
 }
 
 const deleteDeckVersion = `-- name: DeleteDeckVersion :execrows
@@ -88,7 +97,7 @@ func (q *Queries) DeleteDeckVersion(ctx context.Context, arg DeleteDeckVersionPa
 
 const getCollectionBatch = `-- name: GetCollectionBatch :many
 select
-	collections.id, collections.created_at, collections.updated_at, collections.name, collections.description, collections.visibility, collections.theme_color,
+	collections.id, collections.created_at, collections.updated_at, collections.name, collections.description, collections.visibility, collections.theme_color, collections.content_updated_at,
 	count(decks.id) as size
 from collections
 	left join decks on decks.collection_id = collections.id
@@ -110,14 +119,15 @@ type GetCollectionBatchParams struct {
 }
 
 type GetCollectionBatchRow struct {
-	ID          uuid.UUID
-	CreatedAt   types.Time
-	UpdatedAt   types.Time
-	Name        string
-	Description sql.NullString
-	Visibility  model.ResourceVisibility
-	ThemeColor  sql.NullString
-	Size        int64
+	ID               uuid.UUID
+	CreatedAt        types.Time
+	UpdatedAt        types.Time
+	Name             string
+	Description      sql.NullString
+	Visibility       model.ResourceVisibility
+	ThemeColor       sql.NullString
+	ContentUpdatedAt types.NullTime
+	Size             int64
 }
 
 func (q *Queries) GetCollectionBatch(ctx context.Context, arg GetCollectionBatchParams) ([]GetCollectionBatchRow, error) {
@@ -142,6 +152,7 @@ func (q *Queries) GetCollectionBatch(ctx context.Context, arg GetCollectionBatch
 			&i.Description,
 			&i.Visibility,
 			&i.ThemeColor,
+			&i.ContentUpdatedAt,
 			&i.Size,
 		); err != nil {
 			return nil, err
@@ -158,7 +169,7 @@ func (q *Queries) GetCollectionBatch(ctx context.Context, arg GetCollectionBatch
 }
 
 const getCollectionById = `-- name: GetCollectionById :one
-select id, created_at, updated_at, name, description, visibility, theme_color from collections
+select id, created_at, updated_at, name, description, visibility, theme_color, content_updated_at from collections
 where id = ?1
 `
 
@@ -173,6 +184,7 @@ func (q *Queries) GetCollectionById(ctx context.Context, id uuid.UUID) (Collecti
 		&i.Description,
 		&i.Visibility,
 		&i.ThemeColor,
+		&i.ContentUpdatedAt,
 	)
 	return i, err
 }
@@ -467,7 +479,7 @@ insert into collections (
 	?4,
 	?5,
 	?6
-) returning id, created_at, updated_at, name, description, visibility, theme_color
+) returning id, created_at, updated_at, name, description, visibility, theme_color, content_updated_at
 `
 
 type InsertCollectionParams struct {
@@ -497,6 +509,7 @@ func (q *Queries) InsertCollection(ctx context.Context, arg InsertCollectionPara
 		&i.Description,
 		&i.Visibility,
 		&i.ThemeColor,
+		&i.ContentUpdatedAt,
 	)
 	return i, err
 }
@@ -700,7 +713,7 @@ set
 	visibility = ?4,
 	theme_color = ?5
 where id = ?6
-returning id, created_at, updated_at, name, description, visibility, theme_color
+returning id, created_at, updated_at, name, description, visibility, theme_color, content_updated_at
 `
 
 type UpdateCollectionParams struct {
@@ -730,6 +743,7 @@ func (q *Queries) UpdateCollection(ctx context.Context, arg UpdateCollectionPara
 		&i.Description,
 		&i.Visibility,
 		&i.ThemeColor,
+		&i.ContentUpdatedAt,
 	)
 	return i, err
 }
@@ -755,20 +769,17 @@ func (q *Queries) UpdateCollectionChildrenVisibility(ctx context.Context, arg Up
 	return result.RowsAffected()
 }
 
-const updateCollectionMtime = `-- name: UpdateCollectionMtime :execrows
+const updateCollectionContentMtime = `-- name: UpdateCollectionContentMtime :execrows
 update collections
-set
-	updated_at = ?1
-where id = ?2
+set content_updated_at = (
+	select max(created_at) from decks
+	where collection_id = ?1
+)
+where id = ?1
 `
 
-type UpdateCollectionMtimeParams struct {
-	UpdatedAt types.Time
-	ID        uuid.UUID
-}
-
-func (q *Queries) UpdateCollectionMtime(ctx context.Context, arg UpdateCollectionMtimeParams) (int64, error) {
-	result, err := q.db.ExecContext(ctx, updateCollectionMtime, arg.UpdatedAt, arg.ID)
+func (q *Queries) UpdateCollectionContentMtime(ctx context.Context, id uuid.UUID) (int64, error) {
+	result, err := q.db.ExecContext(ctx, updateCollectionContentMtime, id)
 	if err != nil {
 		return 0, err
 	}

@@ -120,7 +120,7 @@ const searchInput = (value?: string) => {
 				:title="item.name"
 				:summary="item.description"
 				:visibility="item.visibility"
-				:date="item.updated"
+				:date="item.content_updated"
 				:starrable="true"
 				:starred="item.starred"
 				:deckCount="item.size"

@@ -12,6 +12,7 @@ interface ContentEntryMeta extends ContentSummary {
 export type ResourceVisibility = 'PRIVATE' | 'HIDDEN' | 'PUBLIC';
 
 export interface CollectionMeta extends ContentEntryMeta {
+	content_updated?: string | null;
 	size: number;
 	theme_color?: string | null;
 };

@@ -118,7 +118,7 @@ const openCollection = async (id: string) => {
 					<ContentListEntry v-for="entry of state.page.entries"
 						:title="entry.name"
 						:summary="entry.description"
-						:date="entry.updated"
+						:date="entry.content_updated"
 						:visibility="entry.visibility"
 						:deckCount="entry.size"
 						:starrable="true"

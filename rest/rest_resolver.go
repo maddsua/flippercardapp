@@ -507,15 +507,6 @@ func (rslv *resolver) CreateCardDeck(ctx context.Context, params model.CardDeckP
 	}
 	defer tx.Rollback()
 
-	if affected, err := tx.UpdateCollectionMtime(ctx, db_gen.UpdateCollectionMtimeParams{
-		UpdatedAt: db_types.NewTime(time.Now()),
-		ID:        params.CollectionID.UUID,
-	}); err != nil {
-		return nil, InternalError("sqlc.UpdateCollectionMtime", err)
-	} else if affected != 1 {
-		return nil, &model.Error{Message: "Collection ID not found", Code: http.StatusNotFound}
-	}
-
 	deck, err := tx.InsertDeck(ctx, db_gen.InsertDeckParams{
 		ID:           uuid.New(),
 		CollectionID: params.CollectionID.UUID,
@@ -528,6 +519,12 @@ func (rslv *resolver) CreateCardDeck(ctx context.Context, params model.CardDeckP
 
 	if err != nil {
 		return nil, InternalError("sqlc.InsertDeck", err)
+	}
+
+	if affected, err := tx.UpdateCollectionContentMtime(ctx, deck.CollectionID); err != nil {
+		return nil, InternalError("sqlc.UpdateCollectionMtime", err)
+	} else if affected != 1 {
+		return nil, &model.Error{Message: "Collection ID not found", Code: http.StatusNotFound}
 	}
 
 	result := db_pkg.TransformRow[model.CardDeckMeta](deck)
@@ -614,10 +611,7 @@ func (rslv *resolver) UpdateCardDeck(ctx context.Context, deckID uuid.UUID, para
 		metaPatchParams.Valid = true
 		metaPatchParams.V.CollectionID = params.CollectionID.UUID
 
-		if affected, err := tx.UpdateCollectionMtime(ctx, db_gen.UpdateCollectionMtimeParams{
-			UpdatedAt: db_types.NewTime(time.Now()),
-			ID:        params.CollectionID.UUID,
-		}); err != nil {
+		if affected, err := tx.UpdateCollectionContentMtime(ctx, params.CollectionID.UUID); err != nil {
 			return nil, InternalError("sqlc.UpdateCollectionMtime", err)
 		} else if affected != 1 {
 			return nil, &model.Error{Message: "Collection ID not found", Code: http.StatusNotFound}
@@ -707,10 +701,27 @@ func (rslv *resolver) DeleteDeck(ctx context.Context, deckID uuid.UUID) error {
 		return err
 	}
 
-	if count, err := rslv.db.DeleteDeck(ctx, deckID); err != nil {
-		return InternalError("sqlc.DeleteDeck", err)
-	} else if count == 0 {
+	tx, err := rslv.db.BeginTx(ctx)
+	if err != nil {
+		return InternalError("sqlc.BeginTx", err)
+	}
+	defer tx.Rollback()
+
+	entry, err := tx.DeleteDeck(ctx, deckID)
+	if db_pkg.IsNull(err) {
 		return &model.Error{Message: "Deck not found", Code: http.StatusNotFound}
+	} else if err != nil {
+		return InternalError("sqlc.DeleteDeck", err)
+	}
+
+	if affected, err := tx.UpdateCollectionContentMtime(ctx, entry.CollectionID); err != nil {
+		return InternalError("sqlc.UpdateCollectionMtime", err)
+	} else if affected != 1 {
+		return &model.Error{Message: "Collection ID not found", Code: http.StatusNotFound}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return InternalError("sqlc.Commit", err)
 	}
 
 	return nil

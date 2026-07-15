@@ -13,13 +13,14 @@ import (
 )
 
 type Collection struct {
-	ID          uuid.UUID
-	CreatedAt   types.Time
-	UpdatedAt   types.Time
-	Name        string
-	Description sql.NullString
-	Visibility  model.ResourceVisibility
-	ThemeColor  sql.NullString
+	ID               uuid.UUID
+	CreatedAt        types.Time
+	UpdatedAt        types.Time
+	Name             string
+	Description      sql.NullString
+	Visibility       model.ResourceVisibility
+	ThemeColor       sql.NullString
+	ContentUpdatedAt types.NullTime
 }
 
 type Deck struct {

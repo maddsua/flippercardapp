@@ -72,8 +72,9 @@ type ContentEntryMeta struct {
 
 type CollectionMeta struct {
 	ContentEntryMeta
-	Size       int    `json:"size"`
-	ThemeColor string `json:"theme_color,omitempty"`
+	ContentUpdated *time.Time `json:"content_updated,omitempty"`
+	Size           int        `json:"size"`
+	ThemeColor     string     `json:"theme_color,omitempty"`
 }
 
 func (model *CollectionMeta) FromRow(row db_gen.Collection) {
@@ -85,10 +86,15 @@ func (model *CollectionMeta) FromRow(row db_gen.Collection) {
 			Description: row.Description.String,
 		},
 
-		ID:         row.ID,
-		Created:    row.CreatedAt.Time,
-		Updated:    row.UpdatedAt.Time,
+		ID:      row.ID,
+		Created: row.CreatedAt.Time,
+		Updated: row.UpdatedAt.Time,
+
 		Visibility: row.Visibility,
+	}
+
+	if row.ContentUpdatedAt.Valid {
+		model.ContentUpdated = &row.ContentUpdatedAt.Time
 	}
 
 	model.ThemeColor = row.ThemeColor.String
@@ -107,6 +113,10 @@ func (model *CollectionMeta) FromBatchRow(row db_gen.GetCollectionBatchRow) {
 		Created:    row.CreatedAt.Time,
 		Updated:    row.UpdatedAt.Time,
 		Visibility: row.Visibility,
+	}
+
+	if row.ContentUpdatedAt.Valid {
+		model.ContentUpdated = &row.ContentUpdatedAt.Time
 	}
 
 	model.Size = int(row.Size)
