@@ -13,6 +13,20 @@ export const parseDateString = (value?: string | null): Date | null => {
 	}
 };
 
+export const fmtDateString = (value?: string | null) => {
+
+	const date = parseDateString(value);
+	if (!date) {
+		return '-';
+	}
+
+	return date.toLocaleDateString('en-UK', {
+		year: 'numeric',
+		month: 'short',
+		day: 'numeric',
+	});
+};
+
 export const fmtTimeString = (value?: string | null) => {
 
 	const date = parseDateString(value);

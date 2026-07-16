@@ -16,7 +16,7 @@ import ContentListEntry from '../Content/ContentListEntry.vue';
 import ContentEntryBadge from '../Content/ContentEntryBadge.vue';
 import InlineErrorMessage from '../App/Messages/InlineErrorMessage.vue';
 import { appCanShareData, appShareData } from '@/share';
-import { fmtTimeString } from '@/date';
+import { fmtDateString, fmtTimeString } from '@/date';
 import { appSetTitle } from '@/app';
 
 const router = useRouter();
@@ -42,7 +42,11 @@ const state = reactive({
 	error: null as string | null,
 });
 
-const backRef = computed(() => state.auth?.actor?.permissions.team_member ? '/collections/all' : '/');
+const isTeamMember = computed(() => !!state.auth?.actor?.permissions.team_member);
+
+const backRef = computed(() => isTeamMember.value ? '/collections/all' : '/');
+
+const displayMtime = computed(() => isTeamMember.value ? fmtTimeString(state.data?.content_updated) : fmtDateString(state.data?.content_updated));
 
 const toggleStar = async () => {
 
@@ -192,8 +196,8 @@ onMounted(async () => {
 						{{ capitalize(state.data.visibility) }}
 					</ContentEntryBadge>
 
-					<ContentEntryBadge icon="clock">
-						{{ fmtTimeString(state.data.updated) }}
+					<ContentEntryBadge icon="card-stars">
+						{{ displayMtime }}
 					</ContentEntryBadge>
 
 					<ContentEntryBadge icon="decks">
@@ -204,7 +208,7 @@ onMounted(async () => {
 
 			</template>
 
-			<template v-if="state.data && state.auth?.actor?.permissions.team_member" v-slot:actions>
+			<template v-if="state.data && isTeamMember" v-slot:actions>
 				<GenericButton variant="thin" theme="green" @click="openNewDeckEditor">
 					+ Add deck
 				</GenericButton>
